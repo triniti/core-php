@@ -1,8 +1,6 @@
 Triniti Core
 =============
 
-[![Build Status](https://api.travis-ci.org/triniti/core-php.svg)](https://travis-ci.org/triniti/core-php)
-
 The core Triniti php application that provides implementations for all triniti schemas.
 
 
