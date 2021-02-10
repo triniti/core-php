@@ -1,0 +1,28 @@
+{
+  "name": "triniti/core",
+  "description": "The core Triniti php application and utilities.",
+  "type": "library",
+  "license": "Apache-2.0",
+  "require": {
+    "php": ">=7.4",
+    "gdbots/ncr": "^2.1",
+    "triniti/schemas": "^2.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.2",
+    "triniti/acme-schemas": "^2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Triniti\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Triniti\\Tests\\": "tests"
+    }
+  },
+  "scripts": {
+    "test": "vendor/bin/phpunit"
+  }
+}
