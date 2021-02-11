@@ -5,10 +5,12 @@
   "license": "Apache-2.0",
   "require": {
     "php": ">=7.4",
+    "aws/aws-sdk-php": "^3.52.11",
     "gdbots/app-bundle": "^2.1",
     "gdbots/crypto-bundle": "^2.0",
     "gdbots/enrichments": "^2.0",
     "gdbots/iam-bundle": "^2.1",
+    "guzzlehttp/guzzle": "^6.2.1",
     "triniti/schemas": "^2.0"
   },
   "require-dev": {
