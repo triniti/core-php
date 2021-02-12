@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace Triniti\Tests\Dam\Enricher;
+namespace Triniti\Tests\Dam;
 
 use Acme\Schemas\Dam\Node\ImageAssetV1;
 use Aws\S3\S3Client;
 use Gdbots\Pbjx\Event\PbjxEvent;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Triniti\Dam\Enricher\AssetEnricher;
+use Triniti\Dam\AssetEnricher;
 use Triniti\Schemas\Dam\AssetId;
 
 final class AssetEnricherTest extends TestCase

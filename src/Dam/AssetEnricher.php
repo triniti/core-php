@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Triniti\Dam\Enricher;
+namespace Triniti\Dam;
 
 use Aws\RetryMiddleware;
 use Aws\S3\S3Client;
@@ -15,24 +15,24 @@ use Triniti\Schemas\Dam\AssetId;
 
 class AssetEnricher implements EventSubscriber, PbjxEnricher
 {
-    private const MAX_RETRIES = 3;
+    protected const MAX_RETRIES = 3;
 
-    private LoggerInterface $logger;
-    private S3Client $s3Client;
-    private string $bucket;
-
-    public function __construct(S3Client $s3Client, string $damBucket, ?LoggerInterface $logger = null)
-    {
-        $this->s3Client = $s3Client;
-        $this->bucket = $damBucket;
-        $this->logger = $logger ?: new NullLogger();
-    }
+    protected LoggerInterface $logger;
+    protected S3Client $s3Client;
+    protected string $bucket;
 
     public static function getSubscribedEvents()
     {
         return [
             'triniti:dam:mixin:asset.enrich' => 'enrichWithS3Object',
         ];
+    }
+
+    public function __construct(S3Client $s3Client, string $damBucket, ?LoggerInterface $logger = null)
+    {
+        $this->s3Client = $s3Client;
+        $this->bucket = $damBucket;
+        $this->logger = $logger ?: new NullLogger();
     }
 
     /**
@@ -104,7 +104,7 @@ class AssetEnricher implements EventSubscriber, PbjxEnricher
                 );
                 return;
             }
-        };
+        }
     }
 
     protected function getKey(AssetId $assetId): string
