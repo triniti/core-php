@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace Triniti\Tests\Canvas;
 
 use Acme\Schemas\Canvas\Node\PageV1;
-use Acme\Schemas\Canvas\Request\SearchPagesRequestV1;
 use Triniti\Canvas\SearchPagesRequestHandler;
+use Triniti\Schemas\Canvas\Request\SearchPagesRequestV1;
 use Triniti\Tests\AbstractPbjxTest;
 use Triniti\Tests\MockNcrSearch;
 

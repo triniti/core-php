@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Triniti\Tests\Canvas\Enricher;
+namespace Triniti\Tests\Canvas;
 
 use Acme\Schemas\Canvas\Block\TextBlockV1;
 use Gdbots\Pbjx\Event\PbjxEvent;
-use Triniti\Canvas\Enricher\BlockEnricher;
+use Triniti\Canvas\BlockEnricher;
 use Triniti\Tests\AbstractPbjxTest;
 
 final class BlockEnricherTest extends AbstractPbjxTest
