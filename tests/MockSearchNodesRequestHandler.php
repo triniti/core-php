@@ -3,11 +3,12 @@ declare(strict_types=1);
 
 namespace Triniti\Tests;
 
-use Acme\Schemas\Canvas\Request\SearchPagesResponseV1;
 use Gdbots\Ncr\AbstractSearchNodesRequestHandler;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\QueryParser\ParsedQuery;
+use Triniti\Schemas\Canvas\Request\SearchPagesResponseV1;
+use Triniti\Schemas\News\Request\SearchArticlesResponseV1;
 use Triniti\Schemas\Sys\Request\SearchFlagsetsResponseV1;
 use Triniti\Schemas\Sys\Request\SearchPicklistsResponseV1;
 
@@ -24,6 +25,9 @@ class MockSearchNodesRequestHandler extends AbstractSearchNodesRequestHandler
                 break;
             case 'search-picklists-request':
                 $response = SearchPicklistsResponseV1::create();
+                break;
+            case 'search-articles-request':
+                $response = SearchArticlesResponseV1::create();
                 break;
             default:
                 var_dump('need to update switch in MockSearchNodesRequestHandler');
