@@ -20,6 +20,7 @@ use Triniti\Schemas\Dam\AssetId;
 use Triniti\Schemas\Dam\Command\UnlinkAssetsV1;
 use Triniti\Schemas\Ovp\Command\UpdateTranscodingStatusV1;
 use Triniti\Schemas\Ovp\Enum\TranscodingStatus;
+use Triniti\Tests\AbstractPbjxTest;
 
 final class AssetAggregateTest extends AbstractPbjxTest
 {

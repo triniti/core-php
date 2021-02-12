@@ -10,6 +10,7 @@ use Gdbots\Schemas\Pbjx\StreamId;
 use Triniti\Dam\UnlinkAssetsHandler;
 use Triniti\Schemas\Dam\AssetId;
 use Triniti\Schemas\Dam\Event\AssetUnlinkedV1;
+use Triniti\Tests\AbstractPbjxTest;
 
 final class UnlinkAssetsHandlerTest extends AbstractPbjxTest
 {

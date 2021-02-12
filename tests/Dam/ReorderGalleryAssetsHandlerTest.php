@@ -10,6 +10,7 @@ use Gdbots\Schemas\Pbjx\StreamId;
 use Triniti\Dam\ReorderGalleryAssetsHandler;
 use Triniti\Schemas\Dam\AssetId;
 use Triniti\Schemas\Dam\Event\GalleryAssetReorderedV1;
+use Triniti\Tests\AbstractPbjxTest;
 
 final class ReorderGalleryAssetsHandlerTest extends AbstractPbjxTest
 {

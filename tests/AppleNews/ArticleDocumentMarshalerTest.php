@@ -63,6 +63,7 @@ use Triniti\AppleNews\Style\TextStyle;
 use Triniti\Dam\UrlProvider;
 use Triniti\Schemas\Common\Enum\AspectRatio;
 use Triniti\Schemas\Dam\AssetId;
+use Triniti\Tests\AbstractPbjxTest;
 
 class ArticleDocumentMarshalerTest extends AbstractPbjxTest
 {

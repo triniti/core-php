@@ -17,6 +17,8 @@ use Triniti\Schemas\Ovp\Event\TranscodingStartedV1;
 use Triniti\Schemas\Ovp\Event\TranscriptionCompletedV1;
 use Triniti\Schemas\Ovp\Event\TranscriptionFailedV1;
 use Triniti\Schemas\Ovp\Event\TranscriptionStartedV1;
+use Triniti\Tests\AbstractPbjxTest;
+use Triniti\Tests\MockNcrSearch;
 
 final class NcrAssetProjectorTest extends AbstractPbjxTest
 {

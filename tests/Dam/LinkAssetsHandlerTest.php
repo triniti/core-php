@@ -11,6 +11,7 @@ use Gdbots\Schemas\Pbjx\StreamId;
 use Triniti\Dam\LinkAssetsHandler;
 use Triniti\Schemas\Dam\AssetId;
 use Triniti\Schemas\Dam\Event\AssetLinkedV1;
+use Triniti\Tests\AbstractPbjxTest;
 
 final class LinkAssetsHandlerTest extends AbstractPbjxTest
 {

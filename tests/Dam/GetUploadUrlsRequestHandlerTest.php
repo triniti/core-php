@@ -11,6 +11,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Triniti\Dam\Exception\InvalidArgumentException;
 use Triniti\Dam\GetUploadUrlsRequestHandler;
 use Triniti\Schemas\Dam\AssetId;
+use Triniti\Tests\AbstractPbjxTest;
 
 final class GetUploadUrlsRequestHandlerTest extends AbstractPbjxTest
 {

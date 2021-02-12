@@ -7,6 +7,8 @@ use Acme\Schemas\Dam\Node\ImageAssetV1;
 use Acme\Schemas\Dam\Request\SearchAssetsRequestV1;
 use Triniti\Dam\SearchAssetsRequestHandler;
 use Triniti\Schemas\Dam\AssetId;
+use Triniti\Tests\AbstractPbjxTest;
+use Triniti\Tests\MockNcrSearch;
 
 final class SearchAssetsRequestHandlerTest extends AbstractPbjxTest
 {

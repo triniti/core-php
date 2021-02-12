@@ -9,6 +9,7 @@ use Gdbots\Schemas\Pbjx\StreamId;
 use Triniti\Dam\PatchAssetsHandler;
 use Triniti\Schemas\Dam\AssetId;
 use Triniti\Schemas\Dam\Event\AssetPatchedV1;
+use Triniti\Tests\AbstractPbjxTest;
 
 final class PatchAssetsHandlerTest extends AbstractPbjxTest
 {
