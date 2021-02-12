@@ -18,6 +18,7 @@ class MockPbjx implements Pbjx
     private ServiceLocator $locator;
     private int $maxRecursion;
     private array $sent = [];
+    private bool $canceled = false;
 
     public function __construct(ServiceLocator $locator, int $maxRecursion = 10)
     {
@@ -30,6 +31,11 @@ class MockPbjx implements Pbjx
     public function getSent(): array
     {
         return $this->sent;
+    }
+
+    public function getCanceled(): bool
+    {
+        return $this->canceled;
     }
 
     public function trigger(Message $message, string $suffix, ?PbjxEvent $event = null, bool $recursive = true): Pbjx
@@ -53,12 +59,16 @@ class MockPbjx implements Pbjx
 
     public function sendAt(Message $command, int $timestamp, ?string $jobId = null, array $context = []): string
     {
-        $this->sent[] = $command;
+        $this->sent[] = [
+            'command'   => $command,
+            'timestamp' => $timestamp,
+        ];
         return $jobId ?: 'jobid';
     }
 
     public function cancelJobs(array $jobIds, array $context = []): void
     {
+        $this->canceled = true;
     }
 
     public function publish(Message $event): void

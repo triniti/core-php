@@ -48,7 +48,7 @@ final class NcrTeaserProjectorTest extends AbstractPbjxTest
         $this->ncr->putNode($teaser);
         $teaserRef = $teaser->generateNodeRef();
         $this->projector->onTeaserPublished(TeaserPublishedV1::create()->set('node_ref', $teaserRef), $this->pbjx);
-        $sentCommand = $this->pbjx->getSent()[0];
+        $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(RemoveTeaserSlottingV1::class, $sentCommand);
         $this->assertTrue($teaserRef->equals($sentCommand->get('except_ref')));
         $this->assertSame(1, $sentCommand->get('slotting')['home']);
@@ -111,7 +111,7 @@ final class NcrTeaserProjectorTest extends AbstractPbjxTest
             ->set('old_node', $teaser)
             ->set('new_node', $newNode);
         $this->projector->onTeaserUpdated($event, $this->pbjx);
-        $sentCommand = $this->pbjx->getSent()[0];
+        $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(RemoveTeaserSlottingV1::class, $sentCommand);
         $this->assertTrue($teaserRef->equals($sentCommand->get('except_ref')));
         $this->assertSame(2, $sentCommand->get('slotting')['home']);

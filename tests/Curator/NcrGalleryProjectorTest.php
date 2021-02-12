@@ -56,7 +56,7 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
 
         $event = AssetCreatedV1::create()->set('node', $image);
         $this->projector->onAssetCreated($event, $this->pbjx);
-        $sentCommand = $this->pbjx->getSent()[0];
+        $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(UpdateGalleryImageCountV1::class, $sentCommand);
         $this->assertTrue($galleryRef->equals($galleryRef));
     }
@@ -116,7 +116,7 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
             ->set('gallery_ref', $galleryRef);
 
         $this->projector->onGalleryAssetReordered($event, $this->pbjx);
-        $sentCommand = $this->pbjx->getSent()[0];
+        $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(UpdateGalleryImageCountV1::class, $sentCommand);
         $this->assertTrue($galleryRef->equals($sentCommand->get('node_ref')));
     }
@@ -142,7 +142,7 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         $this->ncrSearch->searchNodes(SearchGalleriesRequestV1::create(), new ParsedQuery(), $response);
         $this->assertSame('new-title', $response->get('nodes', [])[0]->get('title'));
 
-        $sentCommand = $this->pbjx->getSent()[0];
+        $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(UpdateGalleryImageCountV1::class, $sentCommand);
         $this->assertTrue($nodeRef->equals($sentCommand->get('node_ref')));
     }
@@ -196,7 +196,7 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         $this->assertTrue(NodeStatus::PUBLISHED()->equals($indexedNode->get('status')));
         $this->assertSame($events[0]->get('published_at')->getTimestamp(), $indexedNode->get('published_at')->getTimestamp());
 
-        $sentCommand = $this->pbjx->getSent()[0];
+        $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(UpdateGalleryImageCountV1::class, $sentCommand);
         $this->assertTrue($nodeRef->equals($sentCommand->get('node_ref')));
     }
@@ -228,7 +228,7 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
 
         $this->projector->onAssetDeletedOrExpired(AssetDeletedV1::create()->set('node_ref', $image->generateNodeRef()), $this->pbjx);
 
-        $sentCommand = $this->pbjx->getSent()[0];
+        $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(UpdateGalleryImageCountV1::class, $sentCommand);
         $this->assertTrue($nodeRef->equals($sentCommand->get('node_ref')));
     }

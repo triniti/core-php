@@ -42,7 +42,7 @@ final class TeaserableWatcherTest extends AbstractPbjxTest
         $node = ArticleV1::create();
         $watcher = new TeaserableWatcher($this->ncr);
         $watcher->onNodeCreated(ArticleCreatedV1::create()->set('node', $node), $this->pbjx);
-        $sentCommand = $this->pbjx->getSent()[0];
+        $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(SyncTeaserV1::class, $sentCommand);
         $this->assertTrue($node->generateNodeRef()->equals($sentCommand->get('target_ref')));
     }
@@ -76,7 +76,7 @@ final class TeaserableWatcherTest extends AbstractPbjxTest
         $this->ncr->putNode($teaser);
         $watcher = new TeaserableWatcher($this->ncr);
         $watcher->onNodeDeleted(ArticleDeletedV1::create()->set('node_ref', $nodeRef), $this->pbjx);
-        $sentCommand = $this->pbjx->getSent()[0];
+        $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(DeleteTeaserV1::class, $sentCommand);
         $this->assertTrue($teaser->generateNodeRef()->equals($sentCommand->get('node_ref')));
     }
@@ -115,7 +115,7 @@ final class TeaserableWatcherTest extends AbstractPbjxTest
         $this->ncr->putNode($teaser);
         $watcher = new TeaserableWatcher($this->ncr);
         $watcher->onNodeExpired(ArticleExpiredV1::create()->set('node_ref', $nodeRef), $this->pbjx);
-        $sentCommand = $this->pbjx->getSent()[0];
+        $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(ExpireTeaserV1::class, $sentCommand);
         $this->assertTrue($teaser->generateNodeRef()->equals($sentCommand->get('node_ref')));
     }
@@ -134,7 +134,7 @@ final class TeaserableWatcherTest extends AbstractPbjxTest
             ->set('node_ref', $nodeRef)
             ->set('published_at', $publishedAt);
         $watcher->onNodePublished($event, $this->pbjx);
-        $sentCommand = $this->pbjx->getSent()[0];
+        $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(PublishTeaserV1::class, $sentCommand);
         $this->assertTrue($teaser->generateNodeRef()->equals($sentCommand->get('node_ref')));
         $this->assertSame($publishedAt->format('Y-m-d'), $sentCommand->get('publish_at')->format('Y-m-d'));
@@ -181,7 +181,7 @@ final class TeaserableWatcherTest extends AbstractPbjxTest
             ->set('node_ref', $nodeRef)
             ->set('publish_at', $publishAt);
         $watcher->onNodeScheduled($event, $this->pbjx);
-        $sentCommand = $this->pbjx->getSent()[0];
+        $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(PublishTeaserV1::class, $sentCommand);
         $this->assertTrue($teaser->generateNodeRef()->equals($sentCommand->get('node_ref')));
         $this->assertSame($publishAt->format('Y-m-d'), $sentCommand->get('publish_at')->format('Y-m-d'));
@@ -200,7 +200,7 @@ final class TeaserableWatcherTest extends AbstractPbjxTest
         $event = ArticleUnpublishedV1::create()
             ->set('node_ref', $nodeRef);
         $watcher->onNodeUnpublished($event, $this->pbjx);
-        $sentCommand = $this->pbjx->getSent()[0];
+        $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(UnpublishTeaserV1::class, $sentCommand);
         $this->assertTrue($teaser->generateNodeRef()->equals($sentCommand->get('node_ref')));
     }
@@ -214,7 +214,7 @@ final class TeaserableWatcherTest extends AbstractPbjxTest
             ->set('node_ref', $nodeRef)
             ->set('new_node', (clone $node)->set('title', 'new-title'));
         $watcher->onNodeCreated($event, $this->pbjx);
-        $sentCommand = $this->pbjx->getSent()[0];
+        $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(SyncTeaserV1::class, $sentCommand);
         $this->assertTrue($nodeRef->equals($sentCommand->get('target_ref')));
     }
