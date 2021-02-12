@@ -26,6 +26,7 @@ use Acme\Schemas\Dam\Node\ImageAssetV1;
 use Acme\Schemas\Dam\Request\SearchAssetsResponseV1;
 use Acme\Schemas\News\Node\ArticleV1;
 use Acme\Schemas\Ovp\Node\VideoV1;
+use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\WellKnown\GeoPoint;
 use Gdbots\Pbj\WellKnown\NodeRef;
@@ -71,6 +72,29 @@ class ArticleDocumentMarshalerTest extends AbstractPbjxTest
     protected ArticleDocumentMarshaler $articleDocumentMarshaler;
     protected Message $notification;
     protected UrlProvider $urlProvider;
+    private InMemoryNcr $ncr;
+
+    protected function setup(): void
+    {
+        parent::setup();
+        $this->ncr = new InMemoryNcr();
+        $this->urlProvider = new UrlProvider(
+            [
+                'default' => 'https://someurl',
+                'image'   => 'https://someurl',
+            ]
+        );
+
+        UriTemplateService::registerGlobals([
+            'web_base_url' => 'https://www.acme.com/',
+        ]);
+
+        UriTemplateService::registerTemplates([
+            'acme:article.canonical' => '{+web_base_url}{+slug}/',
+        ]);
+
+        $this->articleDocumentMarshaler = new ArticleDocumentMarshaler($this->ncr, $this->pbjx, $this->urlProvider);
+    }
 
     /**
      * Create a ReflectionClass to make protected method public during tests
@@ -838,27 +862,6 @@ class ArticleDocumentMarshalerTest extends AbstractPbjxTest
             $transformYoutubeVideoBlock->invokeArgs($this->articleDocumentMarshaler, [$youtubeVideoBlock, &$context]),
             'it should transform youtube-video-block correctly'
         );
-    }
-
-    protected function setup(): void
-    {
-        parent::setup();
-        $this->urlProvider = new UrlProvider(
-            [
-                'default' => 'https://someurl',
-                'image'   => 'https://someurl',
-            ]
-        );
-
-        UriTemplateService::registerGlobals([
-            'web_base_url' => 'https://www.acme.com/',
-        ]);
-
-        UriTemplateService::registerTemplates([
-            'acme:article.canonical' => '{+web_base_url}{+slug}/',
-        ]);
-
-        $this->articleDocumentMarshaler = new ArticleDocumentMarshaler($this->ncr, $this->pbjx, $this->urlProvider);
     }
 
     /**

@@ -5,6 +5,7 @@ namespace Triniti\Tests\Dam;
 
 use Acme\Schemas\Dam\Command\ReorderGalleryAssetsV1;
 use Acme\Schemas\Dam\Node\ImageAssetV1;
+use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Schemas\Pbjx\StreamId;
 use Triniti\Dam\ReorderGalleryAssetsHandler;
@@ -14,6 +15,14 @@ use Triniti\Tests\AbstractPbjxTest;
 
 final class ReorderGalleryAssetsHandlerTest extends AbstractPbjxTest
 {
+    private InMemoryNcr $ncr;
+
+    protected function setup(): void
+    {
+        parent::setup();
+        $this->ncr = new InMemoryNcr();
+    }
+
     public function testHandleCommand(): void
     {
         $oldGalleryNodeRef = NodeRef::fromString('acme:gallery:123s');

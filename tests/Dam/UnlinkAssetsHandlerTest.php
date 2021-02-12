@@ -5,6 +5,7 @@ namespace Triniti\Tests\Dam;
 
 use Acme\Schemas\Dam\Command\UnlinkAssetsV1;
 use Acme\Schemas\Dam\Node\ImageAssetV1;
+use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Schemas\Pbjx\StreamId;
 use Triniti\Dam\UnlinkAssetsHandler;
@@ -14,6 +15,14 @@ use Triniti\Tests\AbstractPbjxTest;
 
 final class UnlinkAssetsHandlerTest extends AbstractPbjxTest
 {
+    private InMemoryNcr $ncr;
+
+    protected function setup(): void
+    {
+        parent::setup();
+        $this->ncr = new InMemoryNcr();
+    }
+
     public function testHandleCommand(): void
     {
         $nodeRef = NodeRef::fromString('acme:article:56eac630-d499-4865-90c9-7018299cd2aa');

@@ -5,6 +5,7 @@ namespace Triniti\Tests\Dam;
 
 use Acme\Schemas\Dam\Node\DocumentAssetV1;
 use Acme\Schemas\Dam\Node\VideoAssetV1;
+use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Schemas\Pbjx\Enum\Code;
 use Triniti\Dam\NcrAssetProjector;
@@ -24,11 +25,13 @@ final class NcrAssetProjectorTest extends AbstractPbjxTest
 {
     protected NcrAssetProjector $projector;
     protected MockNcrSearch $ncrSearch;
+    private InMemoryNcr $ncr;
 
     public function setup(): void
     {
         parent::setup();
         $this->ncrSearch = new MockNcrSearch();
+        $this->ncr = new InMemoryNcr();
         $this->projector = new NcrAssetProjector($this->ncr, $this->ncrSearch);
     }
 

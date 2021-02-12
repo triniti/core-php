@@ -6,6 +6,7 @@ namespace Triniti\Tests\Dam;
 use Acme\Schemas\Dam\Command\LinkAssetsV1;
 use Acme\Schemas\Dam\Node\ImageAssetV1;
 use Gdbots\Ncr\AggregateResolver;
+use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Schemas\Pbjx\StreamId;
 use Triniti\Dam\LinkAssetsHandler;
@@ -15,6 +16,14 @@ use Triniti\Tests\AbstractPbjxTest;
 
 final class LinkAssetsHandlerTest extends AbstractPbjxTest
 {
+    private InMemoryNcr $ncr;
+
+    protected function setup(): void
+    {
+        parent::setup();
+        $this->ncr = new InMemoryNcr();
+    }
+
     public function testHandle(): void
     {
         $nodeRef = NodeRef::fromString('acme:article:56eac630-d499-4865-90c9-7018299cd2aa');

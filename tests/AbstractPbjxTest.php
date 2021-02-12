@@ -14,7 +14,7 @@ abstract class AbstractPbjxTest extends TestCase
     protected RegisteringServiceLocator $locator;
     protected Pbjx $pbjx;
     protected InMemoryEventStore $eventStore;
-    protected InMemoryNcr $ncr;
+//    protected InMemoryNcr $ncr;
 
     protected function setup(): void
     {
@@ -22,6 +22,6 @@ abstract class AbstractPbjxTest extends TestCase
         $this->pbjx = $this->locator->getPbjx();
         $this->eventStore = new InMemoryEventStore($this->pbjx);
         $this->locator->setEventStore($this->eventStore);
-        $this->ncr = new InMemoryNcr();
+//        $this->ncr = new InMemoryNcr();
     }
 }

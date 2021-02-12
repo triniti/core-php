@@ -5,6 +5,7 @@ namespace Triniti\Tests\Dam;
 
 use Acme\Schemas\Dam\Command\PatchAssetsV1;
 use Acme\Schemas\Dam\Node\ImageAssetV1;
+use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Schemas\Pbjx\StreamId;
 use Triniti\Dam\PatchAssetsHandler;
 use Triniti\Schemas\Dam\AssetId;
@@ -13,6 +14,14 @@ use Triniti\Tests\AbstractPbjxTest;
 
 final class PatchAssetsHandlerTest extends AbstractPbjxTest
 {
+    private InMemoryNcr $ncr;
+
+    protected function setup(): void
+    {
+        parent::setup();
+        $this->ncr = new InMemoryNcr();
+    }
+
     public function testHandleCommand(): void
     {
         $asset1 = ImageAssetV1::fromArray([
