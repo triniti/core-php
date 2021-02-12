@@ -17,6 +17,14 @@ use Triniti\Schemas\Canvas\Request\SearchPagesResponseV1;
 
 class SearchPagesRequestHandler extends AbstractSearchNodesRequestHandler
 {
+    public static function handlesCuries(): array
+    {
+        // deprecated mixins, will be removed in 3.x
+        $curies = MessageResolver::findAllUsingMixin('triniti:canvas:mixin:search-pages-request:v1', false);
+        $curies[] = 'triniti:canvas:request:search-pages-request';
+        return $curies;
+    }
+
     protected function beforeSearchNodes(Message $request, ParsedQuery $parsedQuery): void
     {
         parent::beforeSearchNodes($request, $parsedQuery);
@@ -62,14 +70,6 @@ class SearchPagesRequestHandler extends AbstractSearchNodesRequestHandler
                 )
             );
         }
-    }
-
-    public static function handlesCuries(): array
-    {
-        // deprecated mixins, will be removed in 3.x
-        $curies = MessageResolver::findAllUsingMixin('triniti:canvas:mixin:search-pages-request:v1', false);
-        $curies[] = 'triniti:canvas:request:search-pages-request';
-        return $curies;
     }
 
     protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
