@@ -22,6 +22,9 @@
     }
   },
   "autoload-dev": {
+    "files": [
+      "tests/Ovp/base-urls.php"
+    ],
     "psr-4": {
       "Triniti\\Tests\\": "tests"
     }
