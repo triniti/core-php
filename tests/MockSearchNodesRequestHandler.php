@@ -8,6 +8,9 @@ use Gdbots\Pbj\Message;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\QueryParser\ParsedQuery;
 use Triniti\Schemas\Canvas\Request\SearchPagesResponseV1;
+use Triniti\Schemas\Curator\Request\SearchPromotionsResponseV1;
+use Triniti\Schemas\Curator\Request\SearchTeasersResponseV1;
+use Triniti\Schemas\Dam\Request\SearchAssetsResponseV1;
 use Triniti\Schemas\News\Request\SearchArticlesResponseV1;
 use Triniti\Schemas\Sys\Request\SearchFlagsetsResponseV1;
 use Triniti\Schemas\Sys\Request\SearchPicklistsResponseV1;
@@ -28,6 +31,15 @@ class MockSearchNodesRequestHandler extends AbstractSearchNodesRequestHandler
                 break;
             case 'search-articles-request':
                 $response = SearchArticlesResponseV1::create();
+                break;
+            case 'search-promotions-request':
+                $response = SearchPromotionsResponseV1::create();
+                break;
+            case 'search-assets-request':
+                $response = SearchAssetsResponseV1::create();
+                break;
+            case 'search-teasers-request':
+                $response = SearchTeasersResponseV1::create();
                 break;
             default:
                 var_dump('need to update switch in MockSearchNodesRequestHandler');

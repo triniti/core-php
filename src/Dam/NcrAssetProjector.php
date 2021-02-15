@@ -14,12 +14,12 @@ class NcrAssetProjector extends NcrProjector
     public static function getSubscribedEvents()
     {
         return [
-            'triniti:ovp:event:transcoding-completed'     => 'onTranscodingCompleted',
-            'triniti:ovp:event:transcoding-failed'        => 'onTranscodingFailed',
-            'triniti:ovp:event:transcoding-started'       => 'onTranscodingStarted',
-            'triniti:ovp:event:transcription-completed'   => 'onTranscriptionCompleted',
-            'triniti:ovp:event:transcription-failed'      => 'onTranscriptionFailed',
-            'triniti:ovp:event:transcription-started'     => 'onTranscriptionStarted',
+            'triniti:ovp:event:transcoding-completed'   => 'onTranscodingCompleted',
+            'triniti:ovp:event:transcoding-failed'      => 'onTranscodingFailed',
+            'triniti:ovp:event:transcoding-started'     => 'onTranscodingStarted',
+            'triniti:ovp:event:transcription-completed' => 'onTranscriptionCompleted',
+            'triniti:ovp:event:transcription-failed'    => 'onTranscriptionFailed',
+            'triniti:ovp:event:transcription-started'   => 'onTranscriptionStarted',
         ];
     }
 

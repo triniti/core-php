@@ -13,6 +13,7 @@ use Triniti\Curator\UpdateGalleryImageCountHandler;
 use Triniti\Schemas\Curator\Event\GalleryImageCountUpdatedV1;
 use Triniti\Tests\AbstractPbjxTest;
 use Triniti\Tests\MockNcrSearch;
+use Triniti\Tests\MockSearchNodesRequestHandler;
 
 final class UpdateGalleryImageCountHandlerTest extends AbstractPbjxTest
 {

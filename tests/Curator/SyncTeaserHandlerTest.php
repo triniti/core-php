@@ -6,6 +6,7 @@ namespace Triniti\Tests\Curator;
 use Acme\Schemas\Curator\Command\SyncTeaserV1;
 use Acme\Schemas\Curator\Node\ArticleTeaserV1;
 use Acme\Schemas\News\Node\ArticleV1;
+use Gdbots\Ncr\AggregateResolver;
 use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;

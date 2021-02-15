@@ -14,6 +14,7 @@ use Triniti\Schemas\Curator\Command\RemoveTeaserSlottingV1;
 use Triniti\Schemas\Curator\Event\TeaserSlottingRemovedV1;
 use Triniti\Tests\AbstractPbjxTest;
 use Triniti\Tests\MockNcrSearch;
+use Triniti\Tests\MockSearchNodesRequestHandler;
 
 final class RemoveTeaserSlottingHandlerTest extends AbstractPbjxTest
 {

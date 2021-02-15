@@ -13,6 +13,7 @@ use Triniti\Curator\RenderPromotionRequestHandler;
 use Triniti\Schemas\Common\RenderContextV1;
 use Triniti\Tests\AbstractPbjxTest;
 use Triniti\Tests\MockNcrSearch;
+use Triniti\Tests\MockSearchNodesRequestHandler;
 
 final class RenderPromotionRequestHandlerTest extends AbstractPbjxTest
 {

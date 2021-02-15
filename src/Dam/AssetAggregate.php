@@ -23,9 +23,6 @@ use Triniti\Schemas\Ovp\Event\TranscriptionStartedV1;
 
 class AssetAggregate extends Aggregate
 {
-    // todo: add tests for transcoding/transcription things
-    // todo: add processing/canceled apply methods for transcoding/transcription
-
     protected function __construct(Message $node, Pbjx $pbjx, bool $syncAllEvents = false)
     {
         parent::__construct($node, $pbjx, $syncAllEvents);
