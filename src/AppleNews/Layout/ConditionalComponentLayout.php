@@ -12,7 +12,7 @@ use Triniti\AppleNews\Condition;
 class ConditionalComponentLayout extends ComponentLayout
 {
     /** @var Condition[] */
-    protected array $conditions = [];
+    protected $conditions = [];
 
     /**
      * @return Condition[]
@@ -40,6 +40,11 @@ class ConditionalComponentLayout extends ComponentLayout
         return $this;
     }
 
+    /**
+     * @param Condition $condition
+     *
+     * @return static
+     */
     public function addCondition(?Condition $condition = null): self
     {
         if (null !== $condition) {
@@ -66,6 +71,9 @@ class ConditionalComponentLayout extends ComponentLayout
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notEmpty($this->conditions);

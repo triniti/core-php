@@ -11,13 +11,16 @@ use Triniti\AppleNews\AppleNewsObject;
  */
 class ListItemStyle extends AppleNewsObject
 {
-    protected string $type = 'bullet';
-    protected ?string $character = null;
+    /** @var string */
+    protected $type = 'bullet';
+
+    /** @var string */
+    protected $character;
 
     /**
      * @var array
      */
-    private array $validTypes = [
+    private $validTypes = [
         'bullet',
         'decimal',
         'lower_alphabetical',
@@ -28,11 +31,19 @@ class ListItemStyle extends AppleNewsObject
         'none',
     ];
 
+    /**
+     * @return string
+     */
     public function getType(): string
     {
         return $this->type;
     }
 
+    /**
+     * @param string $type
+     *
+     * @return ListItemStyle
+     */
     public function setType(string $type = 'bullet'): self
     {
         Assertion::inArray($type, $this->validTypes, 'type does not have a valid value.');
@@ -40,11 +51,19 @@ class ListItemStyle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getCharacter(): ?string
     {
         return $this->character;
     }
 
+    /**
+     * @param string $character
+     *
+     * @return static
+     */
     public function setCharacter(string $character): self
     {
         Assertion::eq(strlen($character), 1, 'Only a single character is supported.');
@@ -52,11 +71,17 @@ class ListItemStyle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->type, 'Type is required');

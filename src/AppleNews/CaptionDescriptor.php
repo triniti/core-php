@@ -13,14 +13,17 @@ use Triniti\AppleNews\Style\InlineTextStyle;
  */
 class CaptionDescriptor extends AppleNewsObject
 {
-    protected ?string $format = null;
-    protected ?string $text = null;
-
     /** @var Addition[] */
-    protected array $additions = [];
+    protected $additions = [];
+
+    /** @var string */
+    protected $format;
 
     /** @var InlineTextStyle[] */
-    protected array $inlineTextStyles = [];
+    protected $inlineTextStyles = [];
+
+    /** @var string */
+    protected $text;
 
     /** @var string|ComponentTextStyle */
     protected $textStyle;
@@ -33,6 +36,11 @@ class CaptionDescriptor extends AppleNewsObject
         return $this->additions;
     }
 
+    /**
+     * @param Addition $addition
+     *
+     * @return static
+     */
     public function addAddition(?Addition $addition = null): self
     {
         if (null === $addition) {
@@ -44,6 +52,11 @@ class CaptionDescriptor extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @param array $additions
+     *
+     * @return static
+     */
     public function addAdditions(?array $additions = []): self
     {
         foreach ($additions as $addition) {
@@ -53,6 +66,11 @@ class CaptionDescriptor extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @param array $additions
+     *
+     * @return static
+     */
     public function setAdditions(?array $additions = []): self
     {
         $this->additions = [];
@@ -60,11 +78,19 @@ class CaptionDescriptor extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getFormat(): ?string
     {
         return $this->format;
     }
 
+    /**
+     * @param string $format
+     *
+     * @return static
+     */
     public function setFormat(string $format): self
     {
         Assertion::inArray($format, ['markdown', 'html', 'none']);
@@ -80,6 +106,11 @@ class CaptionDescriptor extends AppleNewsObject
         return $this->inlineTextStyles;
     }
 
+    /**
+     * @param InlineTextStyle $inlineTextStyle
+     *
+     * @return static
+     */
     public function addInlineTextStyle(?InlineTextStyle $inlineTextStyle = null): self
     {
         if (null === $inlineTextStyle) {
@@ -91,6 +122,11 @@ class CaptionDescriptor extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @param array $inlineTextStyles
+     *
+     * @return static
+     */
     public function addInlineTextStyles(?array $inlineTextStyles = []): self
     {
         foreach ($inlineTextStyles as $inlineTextStyle) {
@@ -100,6 +136,11 @@ class CaptionDescriptor extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @param array $inlineTextStyles
+     *
+     * @return static
+     */
     public function setInlineTextStyles(?array $inlineTextStyles = []): self
     {
         $this->inlineTextStyles = [];
@@ -107,11 +148,19 @@ class CaptionDescriptor extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getText(): ?string
     {
         return $this->text;
     }
 
+    /**
+     * @param string $text
+     *
+     * @return static
+     */
     public function setText(string $text): self
     {
         $this->text = $text;
@@ -148,11 +197,17 @@ class CaptionDescriptor extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->text);

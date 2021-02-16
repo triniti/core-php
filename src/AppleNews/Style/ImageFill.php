@@ -10,15 +10,22 @@ use Assert\Assertion;
  */
 class ImageFill extends Fill
 {
-    protected ?string $URL = null;
-    protected ?string $fillMode = null;
-    protected ?string $horizontalAlignment = null;
-    protected ?string $verticalAlignment = null;
+    /** @var  string */
+    protected $URL;
+
+    /** @var  string */
+    protected $fillMode;
+
+    /** @var  string */
+    protected $horizontalAlignment;
+
+    /** @var  string */
+    protected $verticalAlignment;
 
     /**
      * @var string[] Valid fill mode
      */
-    private array $validFillModes = [
+    private $validFillModes = [
         'fit',
         'cover',
     ];
@@ -26,7 +33,7 @@ class ImageFill extends Fill
     /**
      * @var string[] Valid horizontal alignment
      */
-    private array $validHorizontalAlignments = [
+    private $validHorizontalAlignments = [
         'left',
         'center',
         'right',
@@ -35,28 +42,44 @@ class ImageFill extends Fill
     /**
      * @var string[] Valid vertical alignment
      */
-    private array $validVerticalAlignments = [
+    private $validVerticalAlignments = [
         'top',
         'center',
         'bottom',
     ];
 
+    /**
+     * @return string
+     */
     public function getURL(): ?string
     {
         return $this->URL;
     }
 
+    /**
+     * @param string $URL
+     *
+     * @return static
+     */
     public function setURL(string $URL): self
     {
         $this->URL = $URL;
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getFillMode(): ?string
     {
         return $this->fillMode;
     }
 
+    /**
+     * @param string $fillMode
+     *
+     * @return static
+     */
     public function setFillMode(?string $fillMode = 'cover'): self
     {
         if (is_string($fillMode)) {
@@ -67,11 +90,19 @@ class ImageFill extends Fill
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getHorizontalAlignment(): ?string
     {
         return $this->horizontalAlignment;
     }
 
+    /**
+     * @param string $horizontalAlignment
+     *
+     * @return static
+     */
     public function setHorizontalAlignment(?string $horizontalAlignment = 'center'): self
     {
         if (is_string($horizontalAlignment)) {
@@ -82,11 +113,19 @@ class ImageFill extends Fill
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getVerticalAlignment(): ?string
     {
         return $this->verticalAlignment;
     }
 
+    /**
+     * @param string $verticalAlignment
+     *
+     * @return static
+     */
     public function setVerticalAlignment(?string $verticalAlignment = 'center'): self
     {
         if (is_string($verticalAlignment)) {
@@ -97,6 +136,9 @@ class ImageFill extends Fill
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();
@@ -104,6 +146,9 @@ class ImageFill extends Fill
         return $properties;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->URL);

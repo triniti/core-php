@@ -10,19 +10,31 @@ use Triniti\AppleNews\AppleNewsObject;
  */
 class TextDecoration extends AppleNewsObject
 {
-    protected ?string $color = null;
+    /** @var string */
+    protected $color;
 
+    /**
+     * @return string
+     */
     public function getColor(): ?string
     {
         return $this->color;
     }
 
+    /**
+     * @param string $color
+     *
+     * @return static
+     */
     public function setColor(?string $color = null): self
     {
         $this->color = $color;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();

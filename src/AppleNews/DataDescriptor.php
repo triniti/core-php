@@ -11,16 +11,23 @@ use Triniti\AppleNews\Style\FormattedText;
  */
 class DataDescriptor extends AppleNewsObject
 {
-    protected ?string $dataType = null;
-    protected ?string $identifier = null;
-    protected ?string $key = null;
-    protected ?DataFormat $format = null;
+    /** @var string */
+    protected $dataType;
 
-    /** @var string|FormattedText */
-    protected $label = null;
+    /** @var DataFormat */
+    protected $format;
+
+    /** @var string */
+    protected $identifier;
+
+    /** @var string */
+    protected $key;
+
+    /** @var FormattedText|string */
+    protected $label;
 
     /** @var string[] */
-    private array $validDataTypes = [
+    private $validDataTypes = [
         'string',
         'text',
         'image',
@@ -29,11 +36,19 @@ class DataDescriptor extends AppleNewsObject
         'float',
     ];
 
+    /**
+     * @return string
+     */
     public function getDataType(): ?string
     {
         return $this->dataType;
     }
 
+    /**
+     * @param string $dataType
+     *
+     * @return static
+     */
     public function setDataType(string $dataType): self
     {
         Assertion::inArray($dataType, $this->validDataTypes);
@@ -41,11 +56,19 @@ class DataDescriptor extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return DataFormat
+     */
     public function getFormat(): ?DataFormat
     {
         return $this->format;
     }
 
+    /**
+     * @param DataFormat $format
+     *
+     * @return static
+     */
     public function setFormat(?DataFormat $format = null): self
     {
         if ($format) {
@@ -56,22 +79,38 @@ class DataDescriptor extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getIdentifier(): ?string
     {
         return $this->identifier;
     }
 
+    /**
+     * @param string $identifier
+     *
+     * @return static
+     */
     public function setIdentifier(?string $identifier = null): self
     {
         $this->identifier = $identifier;
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getKey(): ?string
     {
         return $this->key;
     }
 
+    /**
+     * @param string $key
+     *
+     * @return static
+     */
     public function setKey(string $key): self
     {
         $this->key = $key;
@@ -108,11 +147,18 @@ class DataDescriptor extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
-        return $this->getSetProperties();
+        $properties = $this->getSetProperties();
+        return $properties;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->dataType);

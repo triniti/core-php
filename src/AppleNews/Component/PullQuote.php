@@ -8,6 +8,9 @@ namespace Triniti\AppleNews\Component;
  */
 class PullQuote extends Text
 {
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

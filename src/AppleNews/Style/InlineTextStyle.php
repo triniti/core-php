@@ -11,28 +11,47 @@ use Triniti\AppleNews\AppleNewsObject;
  */
 class InlineTextStyle extends AppleNewsObject
 {
-    protected ?int $rangeLength = null;
-    protected ?int $rangeStart = null;
+    /** @var int */
+    protected $rangeLength;
+
+    /** @var int */
+    protected $rangeStart;
 
     /** @var string|TextStyle */
     protected $textStyle;
 
+    /**
+     * @return int
+     */
     public function getRangeLength(): ?int
     {
         return $this->rangeLength;
     }
 
+    /**
+     * @param int $rangeLength
+     *
+     * @return static
+     */
     public function setRangeLength(int $rangeLength): self
     {
         $this->rangeLength = $rangeLength;
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getRangeStart(): ?int
     {
         return $this->rangeStart;
     }
 
+    /**
+     * @param int $rangeStart
+     *
+     * @return static
+     */
     public function setRangeStart(int $rangeStart): self
     {
         $this->rangeStart = $rangeStart;
@@ -58,11 +77,17 @@ class InlineTextStyle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->rangeStart);

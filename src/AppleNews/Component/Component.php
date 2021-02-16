@@ -16,10 +16,17 @@ use Triniti\AppleNews\Style\ComponentStyle;
  */
 abstract class Component extends AppleNewsObject
 {
-    protected ?Anchor $anchor = null;
-    protected ?ComponentAnimation $animation = null;
-    protected ?Behavior $behavior = null;
-    protected ?string $identifier = null;
+    /** @var Anchor */
+    protected $anchor;
+
+    /** @var ComponentAnimation */
+    protected $animation;
+
+    /** @var Behavior */
+    protected $behavior;
+
+    /** @var string */
+    protected $identifier;
 
     /** @var string|ComponentLayout */
     protected $layout;
@@ -27,11 +34,19 @@ abstract class Component extends AppleNewsObject
     /** @var string|ComponentStyle */
     protected $style;
 
+    /**
+     * @return Anchor
+     */
     public function getAnchor(): ?Anchor
     {
         return $this->anchor;
     }
 
+    /**
+     * @param Anchor $anchor
+     *
+     * @return static
+     */
     public function setAnchor(?Anchor $anchor = null): self
     {
         if (null !== $anchor) {
@@ -42,11 +57,19 @@ abstract class Component extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return ComponentAnimation
+     */
     public function getAnimation(): ?ComponentAnimation
     {
         return $this->animation;
     }
 
+    /**
+     * @param ComponentAnimation $animation
+     *
+     * @return static
+     */
     public function setAnimation(?ComponentAnimation $animation = null): self
     {
         if (null !== $animation) {
@@ -57,11 +80,19 @@ abstract class Component extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return Behavior
+     */
     public function getBehavior(): ?Behavior
     {
         return $this->behavior;
     }
 
+    /**
+     * @param Behavior $behavior
+     *
+     * @return static
+     */
     public function setBehavior(?Behavior $behavior = null): self
     {
         if (null !== $behavior) {
@@ -72,11 +103,19 @@ abstract class Component extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getIdentifier(): ?string
     {
         return $this->identifier;
     }
 
+    /**
+     * @param string $identifier
+     *
+     * @return static
+     */
     public function setIdentifier(?string $identifier = null): self
     {
         $this->identifier = $identifier;

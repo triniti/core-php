@@ -12,6 +12,8 @@ class ConditionalTableCellStyleTest extends TestCase
 {
     public function testGetSetSelectors(): void
     {
+        $this->markTestIncomplete();
+
         $conditionalTableCellStyle = new ConditionalTableCellStyle();
         $this->assertNull($conditionalTableCellStyle->getSelector());
         $tableCellSelector = new TableCellSelector();

@@ -8,31 +8,53 @@ use Triniti\AppleNews\AppleNewsObject;
 
 abstract class Addition extends AppleNewsObject
 {
-    protected ?int $rangeLength = null;
-    protected ?int $rangeStart = null;
+    /** @var int $rangeLength */
+    protected $rangeLength;
 
+    /** @var int $rangeStart */
+    protected $rangeStart;
+
+    /**
+     * @return int
+     */
     public function getRangeLength(): ?int
     {
         return $this->rangeLength;
     }
 
+    /**
+     * @param int $rangeLength
+     *
+     * @return static
+     */
     public function setRangeLength(?int $rangeLength)
     {
         $this->rangeLength = $rangeLength;
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getRangeStart(): ?int
     {
         return $this->rangeStart;
     }
 
+    /**
+     * @param int $rangeStart
+     *
+     * @return static
+     */
     public function setRangeStart(?int $rangeStart)
     {
         $this->rangeStart = $rangeStart;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->rangeLength, 'rangeLength is required');

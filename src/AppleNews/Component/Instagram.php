@@ -10,13 +10,22 @@ use Assert\Assertion;
  */
 class Instagram extends Component
 {
-    protected ?string $URL = null;
+    /** @var string */
+    protected $URL;
 
+    /**
+     * @return string
+     */
     public function getURL(): ?string
     {
         return $this->URL;
     }
 
+    /**
+     * @param string $url
+     *
+     * @return static
+     */
     public function setURL(string $url): self
     {
         Assertion::url($url);
@@ -24,11 +33,17 @@ class Instagram extends Component
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->URL);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

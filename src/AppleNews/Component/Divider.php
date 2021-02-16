@@ -10,13 +10,22 @@ use Triniti\AppleNews\Style\StrokeStyle;
  */
 class Divider extends Component
 {
-    protected ?StrokeStyle $stroke = null;
+    /** @var StrokeStyle */
+    protected $stroke;
 
+    /**
+     * @return StrokeStyle
+     */
     public function getStroke(): ?StrokeStyle
     {
         return $this->stroke;
     }
 
+    /**
+     * @param StrokeStyle $stroke
+     *
+     * @return static
+     */
     public function setStroke(?StrokeStyle $stroke = null): self
     {
         if (null !== $stroke) {
@@ -27,6 +36,9 @@ class Divider extends Component
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

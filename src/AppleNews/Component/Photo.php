@@ -12,21 +12,34 @@ use Triniti\AppleNews\Link\ComponentLink;
  */
 class Photo extends Component
 {
-    public ?string $URL = null; //we will not support bundles yet
-    public ?string $accessibilityCaption = null;
-    public bool $explicitContent;
+    /** @var string */
+    public $URL; //we will not support bundles yet
+
+    /** @var string */
+    public $accessibilityCaption;
 
     /** @var ComponentLink[] */
-    protected array $additions = [];
+    protected $additions = [];
 
     /** @var string|CaptionDescriptor */
     public $caption;
 
+    /** @var bool */
+    public $explicitContent;
+
+    /**
+     * @return string
+     */
     public function getURL(): ?string
     {
         return $this->URL;
     }
 
+    /**
+     * @param string $url
+     *
+     * @return static
+     */
     public function setURL(string $url): self
     {
         Assertion::url($url);
@@ -34,11 +47,19 @@ class Photo extends Component
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getAccessibilityCaption(): ?string
     {
         return $this->accessibilityCaption;
     }
 
+    /**
+     * @param string $accessibilityCaption
+     *
+     * @return static
+     */
     public function setAccessibilityCaption(?string $accessibilityCaption = null): self
     {
         $this->accessibilityCaption = $accessibilityCaption;
@@ -71,6 +92,11 @@ class Photo extends Component
         return $this;
     }
 
+    /**
+     * @param ComponentLink $addition
+     *
+     * @return static
+     */
     public function addAddition(?ComponentLink $addition = null): self
     {
         if (null !== $addition) {
@@ -127,22 +153,36 @@ class Photo extends Component
         return $this;
     }
 
+    /**
+     * @return bool
+     */
     public function getExplicitContent(): ?bool
     {
         return $this->explicitContent;
     }
 
+    /**
+     * @param bool $explicitContent
+     *
+     * @return static
+     */
     public function setExplicitContent(bool $explicitContent = false): self
     {
         $this->explicitContent = $explicitContent;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->URL);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

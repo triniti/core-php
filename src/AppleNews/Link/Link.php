@@ -10,13 +10,22 @@ use Assert\Assertion;
  */
 class Link extends Addition
 {
-    protected ?string $URL = null;
+    /** @var string */
+    protected $URL;
 
+    /**
+     * @return string
+     */
     public function getURL(): ?string
     {
         return $this->URL;
     }
 
+    /**
+     * @param string $URL
+     *
+     * @return static
+     */
     public function setURL(string $URL): self
     {
         Assertion::url($URL, 'Invalid URL');
@@ -24,6 +33,9 @@ class Link extends Addition
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();
@@ -31,6 +43,9 @@ class Link extends Addition
         return $properties;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->URL, 'URL is required');

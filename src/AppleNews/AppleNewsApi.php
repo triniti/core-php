@@ -16,10 +16,20 @@ use Psr\Http\Message\RequestInterface;
 class AppleNewsApi
 {
     const ENDPOINT = 'https://news-api.apple.com';
-    protected GuzzleClient $guzzleClient;
-    protected string $apiKey;
-    protected string $apiSecret;
 
+    /* @var GuzzleClient */
+    protected $guzzleClient;
+
+    /* @var string */
+    protected $apiKey;
+
+    /* @var string */
+    protected $apiSecret;
+
+    /**
+     * @param string $apiKey
+     * @param string $apiSecret
+     */
     public function __construct(string $apiKey, string $apiSecret)
     {
         $this->apiKey = $apiKey;
@@ -227,6 +237,9 @@ class AppleNewsApi
         ];
     }
 
+    /**
+     * @return GuzzleClient
+     */
     protected function getGuzzleClient(): GuzzleClient
     {
         if (null === $this->guzzleClient) {

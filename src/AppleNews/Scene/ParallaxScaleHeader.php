@@ -5,6 +5,9 @@ namespace Triniti\AppleNews\Scene;
 
 class ParallaxScaleHeader extends Scene
 {
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

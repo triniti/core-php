@@ -18,69 +18,118 @@ use Triniti\AppleNews\Style\TextStyle;
  */
 class ArticleDocument extends AppleNewsObject
 {
-    protected string $identifier;
-    protected string $title;
-    protected string $language = 'en';
-    protected Layout $layout;
-    protected ?AdvertisingSettings $advertisingSettings = null;
-    protected ?AutoPlacement $autoPlacement = null;
-    protected ?string $subtitle = null;
-    protected Metadata $metadata;
-    protected DocumentStyle $documentStyle;
+    /** @var string */
+    protected $identifier;
+
+    /** @var string */
+    protected $title;
+
+    /** @var string */
+    protected $language = 'en';
+
+    /** @var Layout */
+    protected $layout;
 
     /** @var Component[] */
-    protected array $components = [];
+    protected $components = [];
+
+    /** @var AdvertisingSettings */
+    protected $advertisingSettings;
+
+    /** @var AutoPlacement */
+    protected $autoplacement;
+
+    /** @var string */
+    protected $subtitle;
+
+    /** @var Metadata */
+    protected $metadata;
+
+    /** @var DocumentStyle */
+    protected $documentStyle;
 
     /** @var TextStyle[] */
-    protected array $textStyles = [];
+    protected $textStyles = [];
 
     /** @var ComponentLayout[] */
-    protected array $componentLayouts = [];
+    protected $componentLayouts = [];
 
     /** @var ComponentStyle[] */
-    protected array $componentStyles = [];
+    protected $componentStyles = [];
 
     /** @var ComponentTextStyle[] */
-    protected array $componentTextStyles = [];
+    protected $componentTextStyles = [];
 
+    /**
+     * @return string
+     */
     public function getIdentifier(): ?string
     {
         return $this->identifier;
     }
 
+    /**
+     * @param string $identifier
+     *
+     * @return static
+     */
     public function setIdentifier(string $identifier): self
     {
         $this->identifier = $identifier;
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getTitle(): ?string
     {
         return $this->title;
     }
 
+    /**
+     * @param string $title
+     *
+     * @return static
+     */
     public function setTitle(string $title): self
     {
         $this->title = $title;
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getLanguage(): string
     {
         return $this->language;
     }
 
+    /**
+     * @param string $language
+     *
+     * @return static
+     */
     public function setLanguage(string $language): self
     {
         $this->language = $language;
         return $this;
     }
 
+    /**
+     * @return Layout
+     */
     public function getLayout(): ?Layout
     {
         return $this->layout;
     }
 
+    /**
+     * @param Layout $layout
+     *
+     * @return static
+     */
     public function setLayout(Layout $layout): self
     {
         $layout->validate();
@@ -96,6 +145,11 @@ class ArticleDocument extends AppleNewsObject
         return $this->components;
     }
 
+    /**
+     * @param Component $component
+     *
+     * @return static
+     */
     public function addComponent(Component $component): self
     {
         $component->validate();
@@ -105,12 +159,12 @@ class ArticleDocument extends AppleNewsObject
 
     public function getAutoPlacement(): ?AutoPlacement
     {
-        return $this->autoPlacement;
+        return $this->autoplacement;
     }
 
     public function setAutoPlacement(?AutoPlacement $autoPlacement = null): self
     {
-        $this->autoPlacement = $autoPlacement;
+        $this->autoplacement = $autoPlacement;
         return $this;
     }
 
@@ -133,6 +187,9 @@ class ArticleDocument extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getSubtitle(): ?string
     {
         return $this->subtitle;
@@ -329,6 +386,9 @@ class ArticleDocument extends AppleNewsObject
         }
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

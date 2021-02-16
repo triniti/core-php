@@ -10,13 +10,22 @@ use Assert\Assertion;
  */
 class Heading extends Text
 {
-    protected ?string $role = null;
+    /** @var string */
+    protected $role;
 
+    /**
+     * @return string
+     */
     public function getRole(): ?string
     {
         return $this->role;
     }
 
+    /**
+     * @param string $role
+     *
+     * @return static
+     */
     public function setRole(string $role): self
     {
         Assertion::inArray(
@@ -29,12 +38,18 @@ class Heading extends Text
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->role);
         parent::validate();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

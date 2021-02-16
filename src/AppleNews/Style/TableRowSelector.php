@@ -11,27 +11,50 @@ use Triniti\AppleNews\AppleNewsObject;
  */
 class TableRowSelector extends AppleNewsObject
 {
-    protected ?string $descriptor = null;
-    protected ?int $rowIndex = null;
-    protected ?bool $odd = null;
-    protected ?bool $even = null;
+    /** @var string */
+    protected $descriptor;
 
+    /** @var int */
+    protected $rowIndex;
+
+    /** @var bool */
+    protected $odd;
+
+    /** @var bool */
+    protected $even;
+
+    /**
+     * @return string
+     */
     public function getDescriptor(): ?string
     {
         return $this->descriptor;
     }
 
+    /**
+     * @param string $descriptor
+     *
+     * @return static
+     */
     public function setDescriptor(?string $descriptor = null): self
     {
         $this->descriptor = $descriptor;
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getRowIndex(): ?int
     {
         return $this->rowIndex;
     }
 
+    /**
+     * @param int $rowIndex
+     *
+     * @return static
+     */
     public function setRowIndex(int $rowIndex): self
     {
         Assertion::greaterOrEqualThan($rowIndex, 0);
@@ -39,28 +62,47 @@ class TableRowSelector extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return bool
+     */
     public function getOdd(): ?bool
     {
         return $this->odd;
     }
 
+    /**
+     * @param bool $odd
+     *
+     * @return static
+     */
     public function setOdd(?bool $odd = true): self
     {
         $this->odd = $odd;
         return $this;
     }
 
+    /**
+     * @return bool
+     */
     public function getEven(): ?bool
     {
         return $this->even;
     }
 
+    /**
+     * @param bool $even
+     *
+     * @return static
+     */
     public function setEven(?bool $even = true): self
     {
         $this->even = $even;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();

@@ -10,13 +10,22 @@ use Triniti\AppleNews\AppleNewsObject;
  */
 abstract class ComponentAnimation extends AppleNewsObject
 {
-    protected bool $userControllable = false;
+    /** @var bool */
+    protected $userControllable = false;
 
+    /**
+     * @return bool
+     */
     public function getUserControllable(): bool
     {
         return $this->userControllable;
     }
 
+    /**
+     * @param bool $userControllable
+     *
+     * @return static
+     */
     public function setUserControllable(bool $userControllable = false): self
     {
         $this->userControllable = $userControllable;

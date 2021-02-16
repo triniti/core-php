@@ -13,23 +13,34 @@ use Triniti\AppleNews\Style\InlineTextStyle;
  */
 abstract class Text extends Component
 {
-    protected ?string $text = null;
-    protected string $format;
+    /** @var string */
+    protected $text;
 
     /** @var Addition[] */
-    protected array $additions = [];
+    protected $additions = [];
+
+    /** @var string */
+    protected $format;
 
     /** @var InlineTextStyle[] */
-    protected array $inlineTextStyles = [];
+    protected $inlineTextStyles = [];
 
     /** @var string|ComponentTextStyle */
     protected $textStyle;
 
+    /**
+     * @return string
+     */
     public function getText(): ?string
     {
         return $this->text;
     }
 
+    /**
+     * @param string $text
+     *
+     * @return static
+     */
     public function setText(?string $text = null): self
     {
         $this->text = $text;
@@ -62,6 +73,11 @@ abstract class Text extends Component
         return $this;
     }
 
+    /**
+     * @param Addition $addition
+     *
+     * @return static
+     */
     public function addAddition(?Addition $addition = null): self
     {
         if (null !== $addition) {
@@ -88,11 +104,19 @@ abstract class Text extends Component
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getFormat(): ?string
     {
         return $this->format;
     }
 
+    /**
+     * @param string $format
+     *
+     * @return static
+     */
     public function setFormat(string $format = 'none'): self
     {
         Assertion::inArray($format, ['none', 'html', 'markdown'], 'format must be one of the following values: none, html, markdown.');
@@ -126,6 +150,11 @@ abstract class Text extends Component
         return $this;
     }
 
+    /**
+     * @param InlineTextStyle $inlineTextStyle
+     *
+     * @return static
+     */
     public function addInlineTextStyle(?InlineTextStyle $inlineTextStyle = null): self
     {
         if (null !== $inlineTextStyle) {
@@ -182,6 +211,9 @@ abstract class Text extends Component
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->text);

@@ -10,13 +10,22 @@ use Assert\Assertion;
  */
 class MoveInAnimation extends ComponentAnimation
 {
-    protected ?string $preferredStartingPosition = null;
+    /** @var string */
+    protected $preferredStartingPosition;
 
+    /**
+     * @return string
+     */
     public function getPreferredStartingPosition(): ?string
     {
         return $this->preferredStartingPosition;
     }
 
+    /**
+     * @param string $preferredStartingPosition
+     *
+     * @return static
+     */
     public function setPreferredStartingPosition(?string $preferredStartingPosition = null): self
     {
         if (is_string($preferredStartingPosition)) {
@@ -27,6 +36,9 @@ class MoveInAnimation extends ComponentAnimation
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

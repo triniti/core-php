@@ -8,18 +8,30 @@ use Triniti\AppleNews\AppleNewsObject;
 
 abstract class Fill extends AppleNewsObject
 {
-    protected ?string $attachment = null;
+    /** @var string */
+    protected $attachment;
 
-    private array $validAttachments = [
+    /**
+     * @var array
+     */
+    private $validAttachments = [
         'fixed',
         'scroll',
     ];
 
+    /**
+     * @return string
+     */
     public function getAttachment(): ?string
     {
         return $this->attachment;
     }
 
+    /**
+     * @param string $attachment
+     *
+     * @return static
+     */
     public function setAttachment(string $attachment = 'scroll'): self
     {
         Assertion::inArray($attachment, $this->validAttachments);

@@ -10,13 +10,22 @@ use Assert\Assertion;
  */
 class FadeInAnimation extends ComponentAnimation
 {
-    protected ?float $initialAlpha = 0.3;
+    /** @var float */
+    protected $initialAlpha = 0.3;
 
+    /**
+     * @return float
+     */
     public function getInitialAlpha(): ?float
     {
         return $this->initialAlpha;
     }
 
+    /**
+     * @param float $initialAlpha
+     *
+     * @return static
+     */
     public function setInitialAlpha(?float $initialAlpha = null): self
     {
         if (is_float($initialAlpha)) {
@@ -28,6 +37,9 @@ class FadeInAnimation extends ComponentAnimation
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

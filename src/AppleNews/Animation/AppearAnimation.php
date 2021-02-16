@@ -5,6 +5,9 @@ namespace Triniti\AppleNews\Animation;
 
 class AppearAnimation extends ComponentAnimation
 {
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

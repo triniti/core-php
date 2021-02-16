@@ -11,64 +11,99 @@ use Triniti\AppleNews\AppleNewsObject;
  */
 class TableCellStyle extends AppleNewsObject
 {
-    protected ?string $backgroundColor = null;
-    protected ?Border $border = null;
-    protected ?ConditionalTableCellStyle $conditional = null;
-    protected ?string $horizontalAlignment = null;
-    protected ?string $verticalAlignment = null;
-    protected ?int $width = null;
+    /** @var string */
+    protected $backgroundColor;
+
+    /** @var Border */
+    protected $border;
+
+    /** @var ConditionalTableCellStyle */
+    protected $conditional;
 
     /** @var int|string */
-    protected $height = null;
+    protected $height;
 
-    /** @var int|string */
-    protected $minimumWidth = null;
+    /** @var string */
+    protected $horizontalAlignment;
+
+    /** int|string */
+    protected $minimumWidth;
 
     /** @var int|string|Padding */
-    protected $padding = null;
+    protected $padding;
 
     /** @var ComponentTextStyle|string */
-    protected $textStyle = null;
+    protected $textStyle;
 
-    private array $validHorizontalAlignments = [
+    /** @var string */
+    protected $verticalAlignment;
+
+    /** @var int */
+    protected $width;
+
+    private $validHorizontalAlignments = [
         'left',
         'center',
         'right',
     ];
 
-    private array $validVerticalAlignments = [
+    private $validVerticalAlignments = [
         'top',
         'center',
         'bottom',
     ];
 
+    /**
+     * @return string
+     */
     public function getBackgroundColor(): ?string
     {
         return $this->backgroundColor;
     }
 
+    /**
+     * @param string $backgroundColor
+     *
+     * @return static
+     */
     public function setBackgroundColor(?string $backgroundColor = null): self
     {
         $this->backgroundColor = $backgroundColor;
         return $this;
     }
 
+    /**
+     * @return Border
+     */
     public function getBorder(): ?Border
     {
         return $this->border;
     }
 
+    /**
+     * @param Border $border
+     *
+     * @return static
+     */
     public function setBorder(?Border $border = null): self
     {
         $this->border = $border;
         return $this;
     }
 
+    /**
+     * @return ConditionalTableCellStyle
+     */
     public function getConditional(): ?ConditionalTableCellStyle
     {
         return $this->conditional;
     }
 
+    /**
+     * @param ConditionalTableCellStyle $conditional
+     *
+     * @return static
+     */
     public function setConditional(?ConditionalTableCellStyle $conditional = null): self
     {
         $this->conditional = $conditional;
@@ -94,11 +129,19 @@ class TableCellStyle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getHorizontalAlignment(): ?string
     {
         return $this->horizontalAlignment;
     }
 
+    /**
+     * @param string $horizontalAlignment
+     *
+     * @return static
+     */
     public function setHorizontalAlignment(string $horizontalAlignment = 'left'): self
     {
         Assertion::inArray($horizontalAlignment, $this->validHorizontalAlignments);
@@ -163,11 +206,19 @@ class TableCellStyle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getVerticalAlignment(): ?string
     {
         return $this->verticalAlignment;
     }
 
+    /**
+     * @param string $verticalAlignment
+     *
+     * @return static
+     */
     public function setVerticalAlignment(string $verticalAlignment = 'center'): self
     {
         Assertion::inArray($verticalAlignment, $this->validVerticalAlignments);
@@ -175,17 +226,28 @@ class TableCellStyle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getWidth(): ?int
     {
         return $this->width;
     }
 
+    /**
+     * @param int $width
+     *
+     * @return static
+     */
     public function setWidth(?int $width = null): self
     {
         $this->width = $width;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();

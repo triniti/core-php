@@ -8,6 +8,9 @@ namespace Triniti\AppleNews\Component;
  */
 class Header extends Container
 {
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

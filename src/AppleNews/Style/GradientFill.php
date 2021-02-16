@@ -8,7 +8,7 @@ use Assert\Assertion;
 abstract class GradientFill extends Fill
 {
     /** @var ColorStop[] */
-    protected array $colorStops = [];
+    protected $colorStops = [];
 
     /**
      * @return ColorStop[]
@@ -18,6 +18,11 @@ abstract class GradientFill extends Fill
         return $this->colorStops;
     }
 
+    /**
+     * @param ColorStop $colorStop
+     *
+     * @return static
+     */
     public function addColorStop(?ColorStop $colorStop = null): self
     {
         if (null === $colorStop) {
@@ -34,7 +39,7 @@ abstract class GradientFill extends Fill
      *
      * @return static
      */
-    protected function addColorStops(?array $colorStops = []): self
+    public function addColorStops(?array $colorStops = []): self
     {
         foreach ($colorStops as $colorStop) {
             $this->addColorStop($colorStop);
@@ -44,7 +49,7 @@ abstract class GradientFill extends Fill
     }
 
     /**
-     * @param ColorStop[] $colorStops
+     * @param array $colorStops
      *
      * @return static
      */
@@ -55,6 +60,9 @@ abstract class GradientFill extends Fill
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->colorStops);

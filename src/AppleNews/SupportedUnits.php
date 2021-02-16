@@ -10,14 +10,21 @@ use Assert\Assertion;
  */
 class SupportedUnits extends AppleNewsObject
 {
-    private string $units;
+    /** @var string */
+    private $units;
 
+    /**
+     * @param string $units
+     */
     public function __construct(string $units)
     {
         Assertion::regex($units, '/^\d+(vw|vmin|vmax|vh|dg|dm|cw|gut|pt)?$/');
         $this->units = $units;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->units;

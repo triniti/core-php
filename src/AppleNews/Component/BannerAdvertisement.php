@@ -10,13 +10,22 @@ use Assert\Assertion;
  */
 class BannerAdvertisement extends Component
 {
-    protected string $bannerType;
+    /** @var string */
+    protected $bannerType;
 
+    /**
+     * @return string
+     */
     public function getBannerType(): ?string
     {
         return $this->bannerType;
     }
 
+    /**
+     * @param string $bannerType
+     *
+     * @return static
+     */
     public function setBannerType(string $bannerType = 'any'): self
     {
         Assertion::inArray(
@@ -29,6 +38,9 @@ class BannerAdvertisement extends Component
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

@@ -11,7 +11,7 @@ use Assert\Assertion;
 class Gallery extends Component
 {
     /** @var GalleryItem[] */
-    protected array $items = [];
+    protected $items = [];
 
     /**
      * @return GalleryItem[]
@@ -39,6 +39,11 @@ class Gallery extends Component
         return $this;
     }
 
+    /**
+     * @param GalleryItem $item
+     *
+     * @return static
+     */
     public function addItem(?GalleryItem $item = null): self
     {
         if (null !== $item) {
@@ -65,11 +70,17 @@ class Gallery extends Component
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notEmpty($this->items);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

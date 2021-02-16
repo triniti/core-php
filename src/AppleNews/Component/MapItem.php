@@ -11,48 +11,83 @@ use Triniti\AppleNews\AppleNewsObject;
  */
 class MapItem extends AppleNewsObject
 {
-    protected ?string $caption = null;
-    protected ?float $latitude = null;
-    protected ?float $longitude = null;
+    /** @var string */
+    protected $caption;
 
+    /** @var float */
+    protected $latitude;
+
+    /** @var float */
+    protected $longitude;
+
+    /**
+     * @return string
+     */
     public function getCaption(): ?string
     {
         return $this->caption;
     }
 
+    /**
+     * @param string $caption
+     *
+     * @return static
+     */
     public function setCaption(?string $caption = null): self
     {
         $this->caption = $caption;
         return $this;
     }
 
+    /**
+     * @return float
+     */
     public function getLatitude(): ?float
     {
         return $this->latitude;
     }
 
+    /**
+     * @param float $latitude
+     *
+     * @return static
+     */
     public function setLatitude(float $latitude): self
     {
         $this->latitude = $latitude;
         return $this;
     }
 
+    /**
+     * @return float
+     */
     public function getLongitude(): ?float
     {
         return $this->longitude;
     }
 
+    /**
+     * @param float $longitude
+     *
+     * @return static
+     */
     public function setLongitude(float $longitude): self
     {
         $this->longitude = $longitude;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->latitude);

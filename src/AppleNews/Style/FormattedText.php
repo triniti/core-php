@@ -12,20 +12,23 @@ use Triniti\AppleNews\Link\Addition;
  */
 class FormattedText extends AppleNewsObject
 {
-    protected ?string $format = null;
-    protected ?string $text = null;
-
     /** @var Addition[] */
-    protected array $additions = [];
+    protected $additions = [];
+
+    /** @var string */
+    protected $format;
 
     /** @var InlineTextStyle[] */
-    protected array $inlineTextStyles = [];
+    protected $inlineTextStyles = [];
+
+    /** @var string */
+    protected $text;
 
     /** @var ComponentTextStyle|string */
     protected $textStyle;
 
     /** @var string[] */
-    private array $validFormats = [
+    private $validFormats = [
         'html',
         'none',
     ];
@@ -37,6 +40,12 @@ class FormattedText extends AppleNewsObject
     {
         return $this->additions;
     }
+
+    /**
+     * @param Addition $addition
+     *
+     * @return static
+     */
 
     public function addAddition(?Addition $addition = null): self
     {
@@ -75,11 +84,19 @@ class FormattedText extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getFormat(): ?string
     {
         return $this->format;
     }
 
+    /**
+     * @param string $format
+     *
+     * @return static
+     */
     public function setFormat(?string $format = 'none'): self
     {
         if (null === $format) {
@@ -99,6 +116,11 @@ class FormattedText extends AppleNewsObject
         return $this->inlineTextStyles;
     }
 
+    /**
+     * @param InlineTextStyle $inlineTextStyles
+     *
+     * @return static
+     */
     public function addInlineTextStyle(?InlineTextStyle $inlineTextStyles = null): self
     {
         if (null === $inlineTextStyles) {
@@ -137,11 +159,19 @@ class FormattedText extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getText(): ?string
     {
         return $this->text;
     }
 
+    /**
+     * @param string $text
+     *
+     * @return static
+     */
     public function setText(string $text): self
     {
         $this->text = $text;
@@ -171,11 +201,17 @@ class FormattedText extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->text, 'Text is required.');
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

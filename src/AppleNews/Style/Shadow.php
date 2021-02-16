@@ -11,27 +11,50 @@ use Triniti\AppleNews\AppleNewsObject;
  */
 class Shadow extends AppleNewsObject
 {
-    protected ?string $color = null;
-    protected ?Offset $offset = null;
-    protected ?float $opacity = null;
-    protected ?int $radius = null;
+    /** @var string */
+    protected $color;
 
+    /** @var Offset */
+    protected $offset;
+
+    /** @var float */
+    protected $opacity;
+
+    /** @var integer */
+    protected $radius;
+
+    /**
+     * @return string
+     */
     public function getColor(): ?string
     {
         return $this->color;
     }
 
+    /**
+     * @param string $color
+     *
+     * @return static
+     */
     public function setColor(string $color): self
     {
         $this->color = $color;
         return $this;
     }
 
+    /**
+     * @return Offset
+     */
     public function getOffset(): ?Offset
     {
         return $this->offset;
     }
 
+    /**
+     * @param Offset $offset
+     *
+     * @return static
+     */
     public function setOffset(?Offset $offset = null): self
     {
         if (null !== $offset) {
@@ -42,11 +65,19 @@ class Shadow extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return float
+     */
     public function getOpacity(): ?float
     {
         return $this->opacity;
     }
 
+    /**
+     * @param float $opacity
+     *
+     * @return static
+     */
     public function setOpacity(float $opacity = 1): self
     {
         Assertion::between($opacity, 0, 1.0);
@@ -54,11 +85,19 @@ class Shadow extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getRadius(): ?int
     {
         return $this->radius;
     }
 
+    /**
+     * @param int $radius
+     *
+     * @return static
+     */
     public function setRadius(int $radius = 0): self
     {
         Assertion::between($radius, 0, 100);
@@ -66,12 +105,18 @@ class Shadow extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->color);
         Assertion::notNull($this->radius);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();

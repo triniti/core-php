@@ -8,6 +8,9 @@ namespace Triniti\AppleNews\Behavior;
  */
 class Springy extends Behavior
 {
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

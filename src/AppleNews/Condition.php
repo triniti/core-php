@@ -11,27 +11,58 @@ use Assert\Assertion;
  */
 class Condition extends AppleNewsObject
 {
-    protected ?float $maxViewportAspectRatio = null;
-    protected ?float $minViewportAspectRatio = null;
-    protected ?int $maxColumns = null;
-    protected ?int $maxViewportWidth = null;
-    protected ?int $minColumns = null;
-    protected ?int $minViewportWidth = null;
-    protected ?string $horizontalSizeClass = null;
-    protected ?string $maxContentSizeCategory = null;
-    protected ?string $maxSpecVersion = null;
-    protected ?string $minContentSizeCategory = null;
-    protected ?string $minSpecVersion = null;
-    protected ?string $platform = null;
-    protected ?string $preferredColorScheme = null;
-    protected ?string $subscriptionStatus = null;
-    protected ?string $verticalSizeClass = null;
-    protected ?string $viewLocation = null;
+    /** @var string */
+    protected $horizontalSizeClass;
+
+    /** @var int */
+    protected $maxColumns;
+
+    /** @var string */
+    protected $maxContentSizeCategory;
+
+    /** @var string */
+    protected $maxSpecVersion;
+
+    /** @var float */
+    protected $maxViewportAspectRatio;
+
+    /** @var int */
+    protected $maxViewportWidth;
+
+    /** @var int */
+    protected $minColumns;
+
+    /** @var string */
+    protected $minContentSizeCategory;
+
+    /** @var string */
+    protected $minSpecVersion;
+
+    /** @var float */
+    protected $minViewportAspectRatio;
+
+    /** @var int */
+    protected $minViewportWidth;
+
+    /** @var string */
+    protected $platform;
+
+    /** @var string */
+    protected $preferredColorScheme;
+
+    /** @var string */
+    protected $subscriptionStatus;
+
+    /** @var string */
+    protected $verticalSizeClass;
+
+    /** @var string */
+    protected $viewLocation;
 
     /**
      * @var string[]
      */
-    private array $validHorizontalSizeClass = [
+    private $validHorizontalSizeClass = [
         'any',
         'regular',
         'compact',
@@ -40,7 +71,7 @@ class Condition extends AppleNewsObject
     /**
      * @var string[]
      */
-    private array $validContentSizeCategory = [
+    private $validContentSizeCategory = [
         'XS',
         'S',
         'M',
@@ -58,7 +89,7 @@ class Condition extends AppleNewsObject
     /**
      * @var string[]
      */
-    private array $validPlatform = [
+    private $validPlatform = [
         'any',
         'ios',
         'macos',
@@ -68,7 +99,7 @@ class Condition extends AppleNewsObject
     /**
      * @var string[]
      */
-    private array $validPreferredColorScheme = [
+    private $validPreferredColorScheme = [
         'any',
         'light',
         'dark',
@@ -77,7 +108,7 @@ class Condition extends AppleNewsObject
     /**
      * @var string[]
      */
-    private array $validSubscriptionStatus = [
+    private $validSubscriptionStatus = [
         'bundle',
         'subscribed',
     ];
@@ -85,7 +116,7 @@ class Condition extends AppleNewsObject
     /**
      * @var string[]
      */
-    private array $validVerticalSizeClass = [
+    private $validVerticalSizeClass = [
         'any',
         'regular',
         'compact',
@@ -94,18 +125,26 @@ class Condition extends AppleNewsObject
     /**
      * @var string[]
      */
-    private array $validViewLocation = [
+    private $validViewLocation = [
         'any',
         'article',
         'issue_table_of_contents',
         'issue',
     ];
 
+    /**
+     * @return string
+     */
     public function getHorizontalSizeClass(): ?string
     {
         return $this->horizontalSizeClass;
     }
 
+    /**
+     * @param string $horizontalSizeClass
+     *
+     * @return static
+     */
     public function setHorizontalSizeClass(?string $horizontalSizeClass = null): self
     {
         if (null !== $horizontalSizeClass) {
@@ -116,11 +155,19 @@ class Condition extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getMaxColumns(): ?int
     {
         return $this->maxColumns;
     }
 
+    /**
+     * @param int $maxColumns
+     *
+     * @return static
+     */
     public function setMaxColumns(?int $maxColumns = null): self
     {
         if (null !== $maxColumns) {
@@ -136,11 +183,19 @@ class Condition extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getMaxContentSizeCategory(): ?string
     {
         return $this->maxContentSizeCategory;
     }
 
+    /**
+     * @param string $maxContentSizeCategory
+     *
+     * @return static
+     */
     public function setMaxContentSizeCategory(?string $maxContentSizeCategory = null): self
     {
         if (null !== $maxContentSizeCategory) {
@@ -151,22 +206,38 @@ class Condition extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getMaxSpecVersion(): ?string
     {
         return $this->maxSpecVersion;
     }
 
+    /**
+     * @param string $maxSpecVersion
+     *
+     * @return static
+     */
     public function setMaxSpecVersion(?string $maxSpecVersion = null): self
     {
         $this->maxSpecVersion = $maxSpecVersion;
         return $this;
     }
 
+    /**
+     * @return float
+     */
     public function getMaxViewportAspectRatio(): ?float
     {
         return $this->maxViewportAspectRatio;
     }
 
+    /**
+     * @param float $maxViewportAspectRatio
+     *
+     * @return static
+     */
     public function setMaxViewportAspectRatio(?float $maxViewportAspectRatio = null): self
     {
         if (null !== $maxViewportAspectRatio) {
@@ -182,11 +253,19 @@ class Condition extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getMaxViewportWidth(): ?int
     {
         return $this->maxViewportWidth;
     }
 
+    /**
+     * @param int $maxViewportWidth
+     *
+     * @return static
+     */
     public function setMaxViewportWidth(?int $maxViewportWidth = null): self
     {
         if (null !== $maxViewportWidth) {
@@ -202,11 +281,19 @@ class Condition extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getMinColumns(): ?int
     {
         return $this->minColumns;
     }
 
+    /**
+     * @param int $minColumns
+     *
+     * @return static
+     */
     public function setMinColumns(?int $minColumns = null): self
     {
         if (null !== $minColumns) {
@@ -222,11 +309,19 @@ class Condition extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getMinContentSizeCategory(): ?string
     {
         return $this->minContentSizeCategory;
     }
 
+    /**
+     * @param string $minContentSizeCategory
+     *
+     * @return static
+     */
     public function setMinContentSizeCategory(?string $minContentSizeCategory = null): self
     {
         if (null !== $minContentSizeCategory) {
@@ -237,22 +332,38 @@ class Condition extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getMinSpecVersion(): ?string
     {
         return $this->minSpecVersion;
     }
 
+    /**
+     * @param string $minSpecVersion
+     *
+     * @return static
+     */
     public function setMinSpecVersion(?string $minSpecVersion = null): self
     {
         $this->minSpecVersion = $minSpecVersion;
         return $this;
     }
 
+    /**
+     * @return float
+     */
     public function getMinViewportAspectRatio(): ?float
     {
         return $this->minViewportAspectRatio;
     }
 
+    /**
+     * @param float $minViewportAspectRatio
+     *
+     * @return static
+     */
     public function setMinViewportAspectRatio(?float $minViewportAspectRatio = null): self
     {
         if (null !== $minViewportAspectRatio) {
@@ -268,11 +379,19 @@ class Condition extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getMinViewportWidth(): ?int
     {
         return $this->minViewportWidth;
     }
 
+    /**
+     * @param int $minViewportWidth
+     *
+     * @return static
+     */
     public function setMinViewportWidth(?int $minViewportWidth = null): self
     {
         if (null !== $minViewportWidth) {
@@ -288,11 +407,19 @@ class Condition extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getPlatform(): ?string
     {
         return $this->platform;
     }
 
+    /**
+     * @param string $platform
+     *
+     * @return static
+     */
     public function setPlatform(?string $platform = null): self
     {
         if (null !== $platform) {
@@ -303,11 +430,19 @@ class Condition extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getPreferredColorScheme(): ?string
     {
         return $this->preferredColorScheme;
     }
 
+    /**
+     * @param string $preferredColorScheme
+     *
+     * @return static
+     */
     public function setPreferredColorScheme(?string $preferredColorScheme = null): self
     {
         if (null !== $preferredColorScheme) {
@@ -318,11 +453,19 @@ class Condition extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getSubscriptionStatus(): ?string
     {
         return $this->subscriptionStatus;
     }
 
+    /**
+     * @param string $subscriptionStatus
+     *
+     * @return static
+     */
     public function setSubscriptionStatus(?string $subscriptionStatus = null): self
     {
         if (null !== $subscriptionStatus) {
@@ -333,11 +476,19 @@ class Condition extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getVerticalSizeClass(): ?string
     {
         return $this->verticalSizeClass;
     }
 
+    /**
+     * @param string $verticalSizeClass
+     *
+     * @return static
+     */
     public function setVerticalSizeClass(?string $verticalSizeClass = null): self
     {
         if (null !== $verticalSizeClass) {
@@ -348,11 +499,19 @@ class Condition extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getViewLocation(): ?string
     {
         return $this->viewLocation;
     }
 
+    /**
+     * @param string $viewLocation
+     *
+     * @return static
+     */
     public function setViewLocation(?string $viewLocation = null): self
     {
         if (null !== $viewLocation) {
@@ -363,6 +522,9 @@ class Condition extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();

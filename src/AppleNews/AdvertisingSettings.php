@@ -8,28 +8,41 @@ use Triniti\AppleNews\Layout\AdvertisingLayout;
 
 class AdvertisingSettings extends AppleNewsObject
 {
-    protected ?string $bannerType = null;
-    protected ?int $frequency = null;
-    protected ?AdvertisingLayout $layout = null;
+    /** @var string */
+    protected $bannerType;
 
     /** @var int|SupportedUnits */
     protected $distanceFromMedia;
 
+    /** @var int */
+    protected $frequency;
+
+    /** @var AdvertisingLayout */
+    protected $layout;
+
     /**
      * @var string[]
      */
-    private array $validBannerTypes = [
+    private $validBannerTypes = [
         'any',
         'standard',
         'double_height',
         'large',
     ];
 
+    /**
+     * @return string
+     */
     public function getBannerType(): ?string
     {
         return $this->bannerType;
     }
 
+    /**
+     * @param string $bannerType
+     *
+     * @return static
+     */
     public function setBannerType(?string $bannerType = 'any'): self
     {
         if (null === $bannerType) {
@@ -69,11 +82,19 @@ class AdvertisingSettings extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getFrequency(): ?int
     {
         return $this->frequency;
     }
 
+    /**
+     * @param int $frequency
+     *
+     * @return AdvertisingSettings
+     */
     public function setFrequency(?int $frequency = 0): self
     {
         if (null === $frequency) {
@@ -86,11 +107,19 @@ class AdvertisingSettings extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return AdvertisingLayout
+     */
     public function getLayout(): ?AdvertisingLayout
     {
         return $this->layout;
     }
 
+    /**
+     * @param AdvertisingLayout $layout
+     *
+     * @return static
+     */
     public function setLayout(?AdvertisingLayout $layout = null): self
     {
         if ($layout) {
@@ -101,6 +130,9 @@ class AdvertisingSettings extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();

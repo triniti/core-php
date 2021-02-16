@@ -11,14 +11,25 @@ use Triniti\AppleNews\AppleNewsObject;
  */
 class MapSpan extends AppleNewsObject
 {
-    protected ?float $latitudeDelta = null;
-    protected ?float $longitudeDelta = null;
+    /** @var float */
+    protected $latitudeDelta;
 
+    /** @var float */
+    protected $longitudeDelta;
+
+    /**
+     * @return float
+     */
     public function getLatitudeDelta(): ?float
     {
         return $this->latitudeDelta;
     }
 
+    /**
+     * @param float $latitudeDelta
+     *
+     * @return static
+     */
     public function setLatitudeDelta(float $latitudeDelta): self
     {
         Assertion::between($latitudeDelta, 0.0, 90.0);
@@ -26,11 +37,19 @@ class MapSpan extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return float
+     */
     public function getLongitudeDelta(): ?float
     {
         return $this->longitudeDelta;
     }
 
+    /**
+     * @param float $longitudeDelta
+     *
+     * @return static
+     */
     public function setLongitudeDelta(float $longitudeDelta): self
     {
         Assertion::between($longitudeDelta, 0.0, 180.0);
@@ -38,11 +57,17 @@ class MapSpan extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->latitudeDelta);

@@ -11,40 +11,69 @@ use Triniti\AppleNews\SupportedUnits;
  */
 class TableRowStyle extends AppleNewsObject
 {
-    protected ?string $backgroundColor = null;
-    protected ?ConditionalTableRowStyle $conditional = null;
-    protected ?StrokeStyle $divider = null;
+    /** @var string */
+    protected $backgroundColor;
+
+    /** @var  ConditionalTableRowStyle */
+    protected $conditional;
+
+    /** @var StrokeStyle */
+    protected $divider;
 
     /** @var int|SupportedUnits */
     protected $height;
 
+    /**
+     * @return string
+     */
     public function getBackgroundColor(): ?string
     {
         return $this->backgroundColor;
     }
 
+    /**
+     * @param string $backgroundColor
+     *
+     * @return static
+     */
     public function setBackgroundColor(?string $backgroundColor = null): self
     {
         $this->backgroundColor = $backgroundColor;
         return $this;
     }
 
+    /**
+     * @return ConditionalTableRowStyle
+     */
     public function getConditional(): ?ConditionalTableRowStyle
     {
         return $this->conditional;
     }
 
+    /**
+     * @param ConditionalTableRowStyle $conditional
+     *
+     * @return static
+     */
     public function setConditional(?ConditionalTableRowStyle $conditional = null): self
     {
         $this->conditional = $conditional;
         return $this;
     }
 
+    /**
+     * @return StrokeStyle|null
+     */
     public function getDivider(): ?StrokeStyle
     {
         return $this->divider;
     }
 
+    /**
+     * @param StrokeStyle $divider
+     *
+     * @return static
+     */
     public function setDivider(?StrokeStyle $divider = null): self
     {
         $this->divider = $divider;
@@ -70,6 +99,9 @@ class TableRowStyle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();

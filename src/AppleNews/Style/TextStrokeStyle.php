@@ -11,25 +11,44 @@ use Triniti\AppleNews\AppleNewsObject;
  */
 class TextStrokeStyle extends AppleNewsObject
 {
-    protected string $color;
-    protected int $width = 3;
+    /** @var string */
+    protected $color;
 
+    /** @var int */
+    protected $width = 3;
+
+    /**
+     * @return string
+     */
     public function getColor(): ?string
     {
         return $this->color;
     }
 
+    /**
+     * @param string $color
+     *
+     * @return static
+     */
     public function setColor(?string $color = null): self
     {
         $this->color = $color;
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getWidth(): int
     {
         return $this->width;
     }
 
+    /**
+     * @param int $width
+     *
+     * @return static
+     */
     public function setWidth(int $width = 3): self
     {
         Assertion::greaterOrEqualThan($width, 0);
@@ -37,6 +56,9 @@ class TextStrokeStyle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();

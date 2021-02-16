@@ -10,11 +10,21 @@ use Triniti\AppleNews\AppleNewsObject;
  */
 class ContentInset extends AppleNewsObject
 {
-    protected ?bool $bottom = null;
-    protected ?bool $left = null;
-    protected ?bool $right = null;
-    protected ?bool $top = null;
+    /** @var boolean */
+    protected $bottom;
 
+    /** @var boolean */
+    protected $left;
+
+    /** @var boolean */
+    protected $right;
+
+    /** @var boolean */
+    protected $top;
+
+    /**
+     * @return bool
+     */
     public function getBottom(): ?bool
     {
         return $this->bottom;
@@ -40,34 +50,58 @@ class ContentInset extends AppleNewsObject
         return $this->left;
     }
 
+    /**
+     * @param bool $left
+     *
+     * @return static
+     */
     public function setLeft(?bool $left = true): self
     {
         $this->left = $left;
         return $this;
     }
 
+    /**
+     * @return bool
+     */
     public function getRight(): ?bool
     {
         return $this->right;
     }
 
+    /**
+     * @param bool $right
+     *
+     * @return static
+     */
     public function setRight(?bool $right = true): self
     {
         $this->right = $right;
         return $this;
     }
 
+    /**
+     * @return bool
+     */
     public function getTop(): ?bool
     {
         return $this->top;
     }
 
+    /**
+     * @param bool $top
+     *
+     * @return static
+     */
     public function setTop(?bool $top = true): self
     {
         $this->top = $top;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();

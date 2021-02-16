@@ -11,21 +11,28 @@ use Triniti\AppleNews\Layout\AutoPlacementLayout;
  */
 class AdvertisementAutoPlacement extends AppleNewsObject
 {
-    protected ?string $bannerType = null;
-    protected bool $enabled = false;
-    protected ?int $frequency = null;
-    protected ?AutoPlacementLayout $layout = null;
+    /** @var string */
+    protected $bannerType;
 
     /** @var ConditionalAutoPlacement[] */
-    protected array $conditional;
+    protected $conditional;
 
     /** @var int|SupportedUnits */
     protected $distanceFromMedia;
 
+    /** @var bool */
+    protected $enabled = false;
+
+    /** @var int */
+    protected $frequency;
+
+    /** @var AutoPlacementLayout */
+    protected $layout;
+
     /**
      * @var string[]
      */
-    private array $validBannerTypes = [
+    private $validBannerTypes = [
         'any',
         'standard',
         'double_height',
@@ -171,6 +178,9 @@ class AdvertisementAutoPlacement extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();

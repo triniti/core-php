@@ -10,10 +10,11 @@ use Assert\Assertion;
  */
 class RecordStore extends AppleNewsObject
 {
-    protected ?\stdClass $records = null;
-
     /** @var DataDescriptor[] */
-    protected array $descriptors = [];
+    protected $descriptors = [];
+
+    /** @var \stdClass */
+    protected $records;
 
     /**
      * @return DataDescriptor[]
@@ -23,6 +24,11 @@ class RecordStore extends AppleNewsObject
         return $this->descriptors;
     }
 
+    /**
+     * @param DataDescriptor $descriptor
+     *
+     * @return static
+     */
     public function addDescriptor(?DataDescriptor $descriptor = null): self
     {
         if (null === $descriptor) {
@@ -60,22 +66,36 @@ class RecordStore extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return \stdClass
+     */
     public function getRecords(): ?\stdClass
     {
         return $this->records;
     }
 
+    /**
+     * @param \stdClass $records
+     *
+     * @return static
+     */
     public function setRecords(\stdClass $records): self
     {
         $this->records = $records;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->descriptors);

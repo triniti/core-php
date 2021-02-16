@@ -13,10 +13,10 @@ use Triniti\AppleNews\Link\ComponentLink;
 class Container extends Component
 {
     /** @var ComponentLink[] */
-    protected array $additions = [];
+    protected $additions = [];
 
     /** @var Component[] */
-    protected array $components = [];
+    protected $components = [];
 
     /** @var CollectionDisplay|HorizontalStackDisplay */
     protected $contentDisplay;
@@ -47,6 +47,11 @@ class Container extends Component
         return $this;
     }
 
+    /**
+     * @param ComponentLink $addition
+     *
+     * @return static
+     */
     public function addAddition(?ComponentLink $addition = null): self
     {
         if (null !== $addition) {
@@ -153,6 +158,9 @@ class Container extends Component
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

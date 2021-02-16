@@ -10,22 +10,34 @@ use Assert\Assertion;
  */
 class ConditionalTableRowStyle extends TableRowStyle
 {
-    protected ?TableRowSelector $selector = null;
+    /** @var TableRowSelector */
+    protected $selectors;
 
-    public function getSelector(): ?TableRowSelector
+    /**
+     * @return TableRowSelector
+     */
+    public function getSelectors(): ?TableRowSelector
     {
-        return $this->selector;
+        return $this->selectors;
     }
 
-    public function setSelector(TableRowSelector $selectors): self
+    /**
+     * @param TableRowSelector $selectors
+     *
+     * @return static
+     */
+    public function setSelectors(TableRowSelector $selectors): self
     {
-        $this->selector = $selectors;
+        $this->selectors = $selectors;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         parent::validate();
-        Assertion::notNull($this->selector);
+        Assertion::notNull($this->selectors);
     }
 }

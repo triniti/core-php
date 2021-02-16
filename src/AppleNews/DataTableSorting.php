@@ -10,29 +10,48 @@ use Assert\Assertion;
  */
 class DataTableSorting extends AppleNewsObject
 {
-    protected ?string $direction = null;
-
     /**
      * The identifier property of one of the table’s data descriptors
+     *
+     * @var string
      */
-    protected ?string $descriptor = null;
+    protected $descriptor;
 
+    /** @var string */
+    protected $direction;
+
+    /**
+     * @return string
+     */
     public function getDescriptor(): ?string
     {
         return $this->descriptor;
     }
 
+    /**
+     * @param string $descriptor
+     *
+     * @return static
+     */
     public function setDescriptor(string $descriptor): self
     {
         $this->descriptor = $descriptor;
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getDirection(): ?string
     {
         return $this->direction;
     }
 
+    /**
+     * @param string $direction
+     *
+     * @return static
+     */
     public function setDirection(string $direction): self
     {
         Assertion::inArray($direction, ['ascending', 'descending']);
@@ -40,11 +59,17 @@ class DataTableSorting extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->descriptor);

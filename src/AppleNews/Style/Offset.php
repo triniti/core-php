@@ -11,14 +11,25 @@ use Triniti\AppleNews\AppleNewsObject;
  */
 class Offset extends AppleNewsObject
 {
-    protected ?float $x = null;
-    protected ?float $y = null;
+    /** @var float */
+    protected $x;
 
+    /** @var float */
+    protected $y;
+
+    /**
+     * @return float
+     */
     public function getX(): ?float
     {
         return $this->x;
     }
 
+    /**
+     * @param float $x
+     *
+     * @return static
+     */
     public function setX(float $x): self
     {
         Assertion::between($x, -50, 50);
@@ -26,11 +37,19 @@ class Offset extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return float
+     */
     public function getY(): ?float
     {
         return $this->y;
     }
 
+    /**
+     * @param float $y
+     *
+     * @return static
+     */
     public function setY(float $y): self
     {
         Assertion::between($y, -50, 50);
@@ -38,11 +57,17 @@ class Offset extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->x);

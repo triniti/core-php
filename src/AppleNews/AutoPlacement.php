@@ -8,19 +8,31 @@ namespace Triniti\AppleNews;
  */
 class AutoPlacement extends AppleNewsObject
 {
-    protected ?AdvertisementAutoPlacement $advertisement = null;
+    /** @var AdvertisementAutoPlacement */
+    protected $advertisement;
 
+    /**
+     * @return AdvertisementAutoPlacement
+     */
     public function getAdvertisement(): ?AdvertisementAutoPlacement
     {
         return $this->advertisement;
     }
 
+    /**
+     * @param AdvertisementAutoPlacement $advertisement
+     *
+     * @return static
+     */
     public function setAdvertisement(AdvertisementAutoPlacement $advertisement): self
     {
         $this->advertisement = $advertisement;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();

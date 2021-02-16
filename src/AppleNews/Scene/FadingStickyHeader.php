@@ -8,19 +8,31 @@ namespace Triniti\AppleNews\Scene;
  */
 class FadingStickyHeader extends Scene
 {
-    protected string $fadeColor = '#000000';
+    /** @var string */
+    protected $fadeColor = '#000000';
 
+    /**
+     * @return string
+     */
     public function getFadeColor(): string
     {
         return $this->fadeColor;
     }
 
+    /**
+     * @param string $fadeColor
+     *
+     * @return static
+     */
     public function setFadeColor(string $fadeColor = '#000000'): self
     {
         $this->fadeColor = $fadeColor;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

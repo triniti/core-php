@@ -11,41 +11,72 @@ use Triniti\AppleNews\SupportedUnits;
  */
 class TableColumnStyle extends AppleNewsObject
 {
-    protected ?string $backgroundColor = null;
-    protected ?ConditionalTableColumnStyle $conditional = null;
-    protected ?StrokeStyle $divider = null;
-    protected ?int $width = null;
+    /** @var string */
+    protected $backgroundColor;
+
+    /** @var ConditionalTableColumnStyle */
+    protected $conditional;
+
+    /** @var StrokeStyle */
+    protected $divider;
 
     /** @var int|SupportedUnits */
-    protected $minimumWidth = null;
+    protected $minimumWidth;
 
+    /** @var int */
+    protected $width;
+
+    /**
+     * @return string
+     */
     public function getBackgroundColor(): ?string
     {
         return $this->backgroundColor;
     }
 
+    /**
+     * @param string $backgroundColor
+     *
+     * @return static
+     */
     public function setBackgroundColor(?string $backgroundColor = null): self
     {
         $this->backgroundColor = $backgroundColor;
         return $this;
     }
 
+    /**
+     * @return ConditionalTableColumnStyle
+     */
     public function getConditional(): ?ConditionalTableColumnStyle
     {
         return $this->conditional;
     }
 
+    /**
+     * @param ConditionalTableColumnStyle $conditional
+     *
+     * @return static
+     */
     public function setConditional(?ConditionalTableColumnStyle $conditional = null): self
     {
         $this->conditional = $conditional;
         return $this;
     }
 
+    /**
+     * @return StrokeStyle
+     */
     public function getDivider(): ?StrokeStyle
     {
         return $this->divider;
     }
 
+    /**
+     * @param StrokeStyle $divider
+     *
+     * @return static
+     */
     public function setDivider(?StrokeStyle $divider = null): self
     {
         $this->divider = $divider;
@@ -71,17 +102,28 @@ class TableColumnStyle extends AppleNewsObject
         return $this;
     }
 
-    public function getWidth(): ?int
+    /**
+     * @return int
+     */
+    public function getWidth(): int
     {
         return $this->width;
     }
 
+    /**
+     * @param int $width
+     *
+     * @return static
+     */
     public function setWidth(?int $width = null): self
     {
         $this->width = $width;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();

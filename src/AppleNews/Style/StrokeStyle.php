@@ -12,26 +12,37 @@ use Triniti\AppleNews\SupportedUnits;
  */
 class StrokeStyle extends AppleNewsObject
 {
-    protected ?string $color = null;
-    protected string $style = 'solid';
+    /** @var string */
+    protected $color;
 
     /** @var SupportedUnits|int */
     protected $width = 1;
 
+    /** @var string */
+    protected $style = 'solid';
+
     /**
      * @var string[] Valid styles
      */
-    private array $validStyles = [
+    private $validStyles = [
         'solid',
         'dashed',
         'dotted',
     ];
 
+    /**
+     * @return string
+     */
     public function getColor(): ?string
     {
         return $this->color;
     }
 
+    /**
+     * @param string $color
+     *
+     * @return static
+     */
     public function setColor(?string $color = null): self
     {
         $this->color = $color;
@@ -46,17 +57,30 @@ class StrokeStyle extends AppleNewsObject
         return $this->width;
     }
 
+    /**
+     * @param int $width
+     *
+     * @return static
+     */
     public function setWidth($width = 1): self
     {
         $this->width = $width;
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getStyle()
     {
         return $this->style;
     }
 
+    /**
+     * @param string $style
+     *
+     * @return static
+     */
     public function setStyle(string $style = 'solid'): self
     {
         Assertion::inArray($style, $this->validStyles);
@@ -64,6 +88,9 @@ class StrokeStyle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();

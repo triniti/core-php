@@ -48,13 +48,29 @@ use Triniti\Schemas\Dam\Request\SearchAssetsRequestV1;
 
 class ArticleDocumentMarshaler
 {
-    protected Ncr $ncr;
-    protected Pbjx $pbjx;
-    protected UrlProvider $urlProvider;
-    protected ArticleDocument $document;
-    protected Message $article;
-    protected Metadata $metadata;
+    /** @var Ncr */
+    protected $ncr;
 
+    /** @var Pbjx */
+    protected $pbjx;
+
+    /** @var UrlProvider */
+    protected $urlProvider;
+
+    /** @var ArticleDocument */
+    protected $document;
+
+    /** @var Message */
+    protected $article;
+
+    /** @var Metadata */
+    protected $metadata;
+
+    /**
+     * @param Ncr         $ncr
+     * @param Pbjx        $pbjx
+     * @param UrlProvider $urlProvider
+     */
     public function __construct(Ncr $ncr, Pbjx $pbjx, UrlProvider $urlProvider)
     {
         $this->ncr = $ncr;
@@ -115,6 +131,11 @@ class ArticleDocumentMarshaler
         return $this->document;
     }
 
+    /**
+     * @param Message $message
+     *
+     * @return string
+     */
     protected function getCanonicalUrl(Message $message): string
     {
         return UriTemplateService::expand(
@@ -315,11 +336,21 @@ class ArticleDocumentMarshaler
         }
     }
 
+    /**
+     * @param Component $component
+     */
     protected function addComponent(Component $component): void
     {
         $this->document->addComponent($component);
     }
 
+    /**
+     * @param NodeRef     $nodeRef
+     * @param AspectRatio $aspectRatio
+     * @param Message     $block
+     *
+     * @return string
+     */
     protected function getImageUrl(NodeRef $nodeRef, AspectRatio $aspectRatio, ?Message $block = null): string
     {
         $aspectRatio = (string)$aspectRatio;
@@ -343,6 +374,11 @@ class ArticleDocumentMarshaler
         return $this->urlProvider->getUrl(AssetId::fromString($nodeRef->getId()), $version, 'lg');
     }
 
+    /**
+     * @param NodeRef $nodeRef
+     *
+     * @return Message
+     */
     protected function getNode(NodeRef $nodeRef): ?Message
     {
         try {
@@ -376,10 +412,18 @@ class ArticleDocumentMarshaler
         return $nodes;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     */
     protected function beforeTransformBlock(Message $block, array &$context): void
     {
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     */
     protected function transformBlock(Message $block, array &$context): void
     {
         if ($context['skip_block']) {
@@ -398,10 +442,20 @@ class ArticleDocumentMarshaler
         }
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     */
     protected function afterTransformBlock(Message $block, array &$context): void
     {
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformArticleBlock(Message $block, array &$context): ?Component
     {
         if (!$block->has('node_ref')) {
@@ -451,6 +505,12 @@ class ArticleDocumentMarshaler
         return $container;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformAudioBlock(Message $block, array &$context): ?Component
     {
         if (!$block->has('node_ref')) {
@@ -485,11 +545,23 @@ class ArticleDocumentMarshaler
         return $component;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformCodeBlock(Message $block, array &$context): ?Component
     {
         return null;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformDividerBlock(Message $block, array &$context): ?Component
     {
         $validStrokeStyles = ['solid', 'dashed', 'dotted'];
@@ -508,6 +580,12 @@ class ArticleDocumentMarshaler
         return $component;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformDocumentBlock(Message $block, array &$context): ?Component
     {
         if (!$block->has('node_ref')) {
@@ -548,6 +626,12 @@ class ArticleDocumentMarshaler
         return $component;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformFacebookPostBlock(Message $block, array &$context): ?Component
     {
         if (!$block->has('href')) {
@@ -562,12 +646,24 @@ class ArticleDocumentMarshaler
         return $component;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformFacebookVideoBlock(Message $block, array &$context): ?Component
     {
         // todo: backup plan for facebook video
         return null;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformGalleryBlock(Message $block, array &$context): ?Component
     {
         if (!$block->has('node_ref')) {
@@ -608,8 +704,7 @@ class ArticleDocumentMarshaler
      */
     protected function getGalleryImages(NodeRef $nodeRef): array
     {
-        $request = SearchAssetsRequestV1::create();
-        $request
+        $request = SearchAssetsRequestV1::create()
             ->set('gallery_ref', $nodeRef)
             ->set('status', NodeStatus::PUBLISHED())
             ->set('sort', SearchAssetsSort::GALLERY_SEQ_DESC())
@@ -618,12 +713,19 @@ class ArticleDocumentMarshaler
 
         $request->set('ctx_causator_ref', $request->generateMessageRef());
 
-        /** @var Message $response */
         $response = $this->pbjx->request($request);
 
         return $response->get('nodes', []);
     }
 
+    /**
+     * @param Message $block
+     * @param Message $galleryNode
+     * @param Message $imageNode
+     * @param array   $context
+     *
+     * @return GalleryItem
+     */
     protected function createGalleryItem(
         Message $block,
         Message $galleryNode,
@@ -649,6 +751,12 @@ class ArticleDocumentMarshaler
         return $item;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformGoogleMapBlock(Message $block, array &$context): ?Component
     {
         if (!$block->has('center')) {
@@ -671,6 +779,12 @@ class ArticleDocumentMarshaler
         return $component;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformHeadingBlock(Message $block, array &$context): ?Component
     {
         if (!$block->has('text')) {
@@ -697,11 +811,23 @@ class ArticleDocumentMarshaler
         return $component;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformIframeBlock(Message $block, array &$context): ?Component
     {
         return null;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformImageBlock(Message $block, array &$context): ?Component
     {
         if (!$block->has('node_ref')) {
@@ -746,11 +872,23 @@ class ArticleDocumentMarshaler
         return $component;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformImgurPostBlock(Message $block, array &$context): ?Component
     {
         return null;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformInstagramMediaBlock(Message $block, array &$context): ?Component
     {
         if (!$block->has('id')) {
@@ -765,26 +903,56 @@ class ArticleDocumentMarshaler
         return $component;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformPageBreakBlock(Message $block, array &$context): ?Component
     {
         return null;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformPinterestPinBlock(Message $block, array &$context): ?Component
     {
         return null;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformPollBlock(Message $block, array &$context): ?Component
     {
         return null;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformPollGridBlock(Message $block, array &$context): ?Component
     {
         return null;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformQuoteBlock(Message $block, array &$context): ?Component
     {
         if (!$block->has('text')) {
@@ -807,21 +975,45 @@ class ArticleDocumentMarshaler
         return $component;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformSoundcloudAudioBlock(Message $block, array &$context): ?Component
     {
         return null;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformSpotifyEmbedBlock(Message $block, array &$context): ?Component
     {
         return null;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformSpotifyTrackBlock(Message $block, array &$context): ?Component
     {
         return null;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformTextBlock(Message $block, array &$context): ?Component
     {
         if (!$block->has('text')) {
@@ -837,11 +1029,23 @@ class ArticleDocumentMarshaler
         return $component;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformTiktokEmbedBlock(Message $block, array &$context): ?Component
     {
         return null;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformTwitterTweetBlock(Message $block, array &$context): ?Component
     {
         if (!$block->has('tweet_id') || !$block->has('screen_name')) {
@@ -859,6 +1063,12 @@ class ArticleDocumentMarshaler
         return $component;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformVideoBlock(Message $block, array &$context): ?Component
     {
         if (!$block->has('node_ref')) {
@@ -905,11 +1115,22 @@ class ArticleDocumentMarshaler
         return $component;
     }
 
+    /**
+     * @param Message $video
+     *
+     * @return string
+     */
     protected function getVideoUrl(Message $video): ?string
     {
         return $video->get('kaltura_mp4_url');
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformVimeoVideoBlock(Message $block, array &$context): ?Component
     {
         if (!$block->has('id')) {
@@ -925,6 +1146,12 @@ class ArticleDocumentMarshaler
         return $component;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformYoutubePlaylistBlock(Message $block, array &$context): ?Component
     {
         if (!$block->has('video_id')) {
@@ -943,6 +1170,12 @@ class ArticleDocumentMarshaler
         return $component;
     }
 
+    /**
+     * @param Message $block
+     * @param array   $context
+     *
+     * @return Component
+     */
     protected function transformYoutubeVideoBlock(Message $block, array &$context): ?Component
     {
         if (!$block->has('id')) {

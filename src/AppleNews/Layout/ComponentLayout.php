@@ -12,15 +12,20 @@ use Triniti\AppleNews\Style\Padding;
  */
 class ComponentLayout extends AppleNewsObject
 {
-    protected ?int $columnSpan = null;
-    protected ?int $columnStart = null;
-    protected ?string $horizontalContentAlignment = null;
+    /** @var int */
+    protected $columnSpan;
+
+    /** @var int */
+    protected $columnStart;
 
     /** @var ConditionalComponentLayout[] */
     protected $conditional;
 
     /** @var boolean|ContentInset */
     protected $contentInset;
+
+    /** @var string */
+    protected $horizontalContentAlignment;
 
     /** @var boolean|string */
     protected $ignoreDocumentGutter;
@@ -54,13 +59,14 @@ class ComponentLayout extends AppleNewsObject
      *
      * @var string[]
      */
-    private array $validHorizontalContentAlignment = [
+    private $validHorizontalContentAlignment = [
         'center',
         'left',
         'right',
     ];
 
-    private array $validIgnoreDocumentGutter = [
+    /** @var array */
+    private $validIgnoreDocumentGutter = [
         true,
         false,
         'none',
@@ -71,8 +77,10 @@ class ComponentLayout extends AppleNewsObject
 
     /**
      * Valid ignore document gutter margin values
+     *
+     * @var array
      */
-    private array $validIgnoreDocumentMargin = [
+    private $validIgnoreDocumentMargin = [
         true,
         false,
         'none',
@@ -83,8 +91,10 @@ class ComponentLayout extends AppleNewsObject
 
     /**
      * Valid ignore viewport padding values
+     *
+     * @var array
      */
-    private array $validIgnoreViewportPadding = [
+    private $validIgnoreViewportPadding = [
         true,
         false,
         'none',
@@ -93,11 +103,19 @@ class ComponentLayout extends AppleNewsObject
         'both',
     ];
 
+    /**
+     * @return int
+     */
     public function getColumnSpan(): ?int
     {
         return $this->columnSpan;
     }
 
+    /**
+     * @param int $columnSpan
+     *
+     * @return static
+     */
     public function setColumnSpan(int $columnSpan): self
     {
         Assertion::greaterOrEqualThan($columnSpan, 1);
@@ -105,11 +123,19 @@ class ComponentLayout extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getColumnStart(): ?int
     {
         return $this->columnStart;
     }
 
+    /**
+     * @param int $columnStart
+     *
+     * @return static
+     */
     public function setColumnStart(int $columnStart): self
     {
         Assertion::greaterOrEqualThan($columnStart, 0);
@@ -143,6 +169,11 @@ class ComponentLayout extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @param ConditionalComponentLayout $conditional
+     *
+     * @return static
+     */
     public function addConditional(?ConditionalComponentLayout $conditional = null): self
     {
         if (null !== $conditional) {
@@ -188,11 +219,19 @@ class ComponentLayout extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getHorizontalContentAlignment(): ?string
     {
         return $this->horizontalContentAlignment;
     }
 
+    /**
+     * @param string $horizontalContentAlignment
+     *
+     * @return static
+     */
     public function setHorizontalContentAlignment(string $horizontalContentAlignment = 'center'): self
     {
         Assertion::inArray($horizontalContentAlignment, $this->validHorizontalContentAlignment);
@@ -374,6 +413,9 @@ class ComponentLayout extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();

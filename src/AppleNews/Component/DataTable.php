@@ -12,18 +12,31 @@ use Triniti\AppleNews\RecordStore;
  */
 class DataTable extends Component
 {
-    protected ?RecordStore $data = null;
-    protected string $dataOrientation;
-    protected bool $showDescriptorLabels;
+    /** @var RecordStore */
+    protected $data;
+
+    /** @var string */
+    protected $dataOrientation;
+
+    /** @var bool */
+    protected $showDescriptorLabels;
 
     /** @var DataTableSorting[] */
-    protected array $sortBy = [];
+    protected $sortBy = [];
 
+    /**
+     * @return RecordStore
+     */
     public function getData(): ?RecordStore
     {
         return $this->data;
     }
 
+    /**
+     * @param RecordStore $data
+     *
+     * @return static
+     */
     public function setData(?RecordStore $data = null): self
     {
         if (null !== $data) {
@@ -34,11 +47,19 @@ class DataTable extends Component
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getDataOrientation(): ?string
     {
         return $this->dataOrientation;
     }
 
+    /**
+     * @param string $dataOrientation
+     *
+     * @return static
+     */
     public function setDataOrientation(?string $dataOrientation = 'horizontal'): self
     {
         if (null === $dataOrientation) {
@@ -55,11 +76,19 @@ class DataTable extends Component
         return $this;
     }
 
+    /**
+     * @return bool
+     */
     public function getShowDescriptorLabels(): ?bool
     {
         return $this->showDescriptorLabels;
     }
 
+    /**
+     * @param bool $showDescriptorLabels
+     *
+     * @return static
+     */
     public function setShowDescriptorLabels(?bool $showDescriptorLabels = true): self
     {
         if (null === $showDescriptorLabels) {
@@ -96,6 +125,11 @@ class DataTable extends Component
         return $this;
     }
 
+    /**
+     * @param DataTableSorting $sortBy
+     *
+     * @return static
+     */
     public function addSortBy(?DataTableSorting $sortBy = null): self
     {
         if (null !== $sortBy) {
@@ -122,11 +156,17 @@ class DataTable extends Component
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->data);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

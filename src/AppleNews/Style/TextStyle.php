@@ -11,36 +11,67 @@ use Triniti\AppleNews\AppleNewsObject;
  */
 class TextStyle extends AppleNewsObject
 {
-    protected ?string $backgroundColor = null;
-    protected ?string $fontFamily = null;
-    protected ?string $fontName = null;
-    protected ?int $fontSize = null;
-    protected ?string $fontStyle = null;
-    protected ?string $fontWidth = null;
-    protected ?ListItemStyle $orderedListItems = null;
-    protected ?TextStrokeStyle $stroke = null;
-    protected ?string $textColor = null;
-    protected ?Shadow $textShadow = null;
-    protected ?float $tracking = null;
-    protected ?ListItemStyle $unorderedListItems = null;
-    protected ?string $verticalAlignment = null;
+    /** @var string */
+    protected $backgroundColor;
+
+    /** @var string */
+    protected $fontFamily;
+
+    /** @var string */
+    protected $fontName;
+
+    /** @var int */
+    protected $fontSize;
+
+    /** @var string */
+    protected $fontStyle;
 
     /** @var int|string */
     protected $fontWeight;
 
+    /** @var string */
+    protected $fontWidth;
+
+    /** @var ListItemStyle */
+    protected $orderedListItems;
+
     /** @var bool|TextDecoration */
     protected $strikethrough;
+
+    /** @var TextStrokeStyle */
+    protected $stroke;
+
+    /** @var string */
+    protected $textColor;
+
+    /** @var Shadow */
+    protected $textShadow;
+
+    /** @var float */
+    protected $tracking;
 
     /** @var bool|TextDecoration */
     protected $underline;
 
-    private array $validFontStyles = [
+    /** @var ListItemStyle */
+    protected $unorderedListItems;
+
+    /** @var string */
+    protected $verticalAlignment;
+
+    /**
+     * @var array
+     */
+    private $validFontStyles = [
         'normal',
         'italic',
         'oblique',
     ];
 
-    private array $validFontWeight = [
+    /**
+     * @var array
+     */
+    private $validFontWeight = [
         100,
         200,
         300,
@@ -78,7 +109,7 @@ class TextStyle extends AppleNewsObject
     /**
      * @var string[]
      */
-    private array $validFontWidth = [
+    private $validFontWidth = [
         'ultra-condensed',
         'extra-condensed',
         'condensed',
@@ -95,61 +126,101 @@ class TextStyle extends AppleNewsObject
      *
      * @var string[]
      */
-    private array $validVerticalAlignment = [
+    private $validVerticalAlignment = [
         'superscript',
         'subscript',
         'baseline',
     ];
 
+    /**
+     * @return string
+     */
     public function getBackgroundColor(): ?string
     {
         return $this->backgroundColor;
     }
 
+    /**
+     * @param string $backgroundColor
+     *
+     * @return static
+     */
     public function setBackgroundColor(?string $backgroundColor = null)
     {
         $this->backgroundColor = $backgroundColor;
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getFontFamily(): ?string
     {
         return $this->fontFamily;
     }
 
+    /**
+     * @param string $fontFamily
+     *
+     * @return static
+     */
     public function setFontFamily(?string $fontFamily = null)
     {
         $this->fontFamily = $fontFamily;
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getFontName(): ?string
     {
         return $this->fontName;
     }
 
+    /**
+     * @param string $fontName
+     *
+     * @return static
+     */
     public function setFontName(?string $fontName = null)
     {
         $this->fontName = $fontName;
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getFontSize(): ?int
     {
         return $this->fontSize;
     }
 
+    /**
+     * @param int $fontSize
+     *
+     * @return static
+     */
     public function setFontSize(?int $fontSize = null)
     {
         $this->fontSize = $fontSize;
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getFontStyle(): ?string
     {
         return $this->fontStyle;
     }
 
+    /**
+     * @param string $fontStyle
+     *
+     * @return static
+     */
     public function setFontStyle(string $fontStyle = 'normal')
     {
         Assertion::inArray($fontStyle, $this->validFontStyles);
@@ -177,11 +248,19 @@ class TextStyle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getFontWidth(): ?string
     {
         return $this->fontWidth;
     }
 
+    /**
+     * @param string $fontWidth
+     *
+     * @return static
+     */
     public function setFontWidth(string $fontWidth)
     {
         Assertion::inArray($fontWidth, $this->validFontWidth);
@@ -189,11 +268,19 @@ class TextStyle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return ListItemStyle
+     */
     public function getOrderedListItems(): ?ListItemStyle
     {
         return $this->orderedListItems;
     }
 
+    /**
+     * @param ListItemStyle $orderedListItems
+     *
+     * @return static
+     */
     public function setOrderedListItems(?ListItemStyle $orderedListItems = null)
     {
         if (null === $orderedListItems) {
@@ -227,44 +314,76 @@ class TextStyle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return TextStrokeStyle
+     */
     public function getStroke(): ?TextStrokeStyle
     {
         return $this->stroke;
     }
 
+    /**
+     * @param TextStrokeStyle $stroke
+     *
+     * @return static
+     */
     public function setStroke(?TextStrokeStyle $stroke = null)
     {
         $this->stroke = $stroke;
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getTextColor(): ?string
     {
         return $this->textColor;
     }
 
+    /**
+     * @param string $textColor
+     *
+     * @return static
+     */
     public function setTextColor(?string $textColor = null)
     {
         $this->textColor = $textColor;
         return $this;
     }
 
+    /**
+     * @return Shadow
+     */
     public function getTextShadow(): ?Shadow
     {
         return $this->textShadow;
     }
 
+    /**
+     * @param Shadow $shadow
+     *
+     * @return static
+     */
     public function setTextShadow(?Shadow $shadow = null)
     {
         $this->textShadow = $shadow;
         return $this;
     }
 
+    /**
+     * @return float
+     */
     public function getTracking(): ?float
     {
         return $this->tracking;
     }
 
+    /**
+     * @param float $tracking
+     *
+     * @return static
+     */
     public function setTracking(?float $tracking = null)
     {
         $this->tracking = $tracking;
@@ -294,11 +413,19 @@ class TextStyle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return ListItemStyle
+     */
     public function getUnorderedListItems(): ?ListItemStyle
     {
         return $this->unorderedListItems;
     }
 
+    /**
+     * @param ListItemStyle $unorderedListItems
+     *
+     * @return static
+     */
     public function setUnorderedListItems(?ListItemStyle $unorderedListItems = null)
     {
         if (null !== $unorderedListItems) {
@@ -309,11 +436,19 @@ class TextStyle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getVerticalAlignment(): ?string
     {
         return $this->verticalAlignment;
     }
 
+    /**
+     * @param string $verticalAlignment
+     *
+     * @return static
+     */
     public function setVerticalAlignment(string $verticalAlignment = 'baseline')
     {
         Assertion::inArray($verticalAlignment, $this->validVerticalAlignment);
@@ -321,6 +456,9 @@ class TextStyle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();

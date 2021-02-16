@@ -11,41 +11,78 @@ use Triniti\AppleNews\AppleNewsObject;
  */
 class DropCapStyle extends AppleNewsObject
 {
-    protected ?string $backgroundColor = null;
-    protected ?string $fontName = null;
-    protected int $numberOfCharacters = 1;
-    protected ?int $numberOfLines = null;
-    protected ?int $numberOfRaisedLines = null;
-    protected int $padding = 0;
-    protected ?string $textColor = null;
+    /** @var string */
+    protected $backgroundColor;
 
+    /** @var string */
+    protected $fontName;
+
+    /** @var int */
+    protected $numberOfCharacters = 1;
+
+    /** @var int */
+    protected $numberOfLines;
+
+    /** @var int */
+    protected $numberOfRaisedLines;
+
+    /** @var int */
+    protected $padding = 0;
+
+    /** @var string */
+    protected $textColor;
+
+    /**
+     * @return string
+     */
     public function getBackgroundColor(): ?string
     {
         return $this->backgroundColor;
     }
 
+    /**
+     * @param string $backgroundColor
+     *
+     * @return static
+     */
     public function setBackgroundColor(?string $backgroundColor = null): self
     {
         $this->backgroundColor = $backgroundColor;
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getFontName(): ?string
     {
         return $this->fontName;
     }
 
+    /**
+     * @param string $fontName
+     *
+     * @return static
+     */
     public function setFontName(?string $fontName = null): self
     {
         $this->fontName = $fontName;
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getNumberOfCharacters(): int
     {
         return $this->numberOfCharacters;
     }
 
+    /**
+     * @param int $numberOfCharacters
+     *
+     * @return static
+     */
     public function setNumberOfCharacters(int $numberOfCharacters = 1): self
     {
         Assertion::greaterOrEqualThan($numberOfCharacters, 1);
@@ -54,11 +91,19 @@ class DropCapStyle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getNumberOfLines(): ?int
     {
         return $this->numberOfLines;
     }
 
+    /**
+     * @param int $numberOfLines
+     *
+     * @return static
+     */
     public function setNumberOfLines(int $numberOfLines): self
     {
         Assertion::greaterOrEqualThan($numberOfLines, 2);
@@ -67,44 +112,74 @@ class DropCapStyle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getNumberOfRaisedLines(): ?int
     {
         return $this->numberOfRaisedLines;
     }
 
+    /**
+     * @param int $numberOfRaisedLines
+     *
+     * @return static
+     */
     public function setNumberOfRaisedLines(?int $numberOfRaisedLines = null): self
     {
         $this->numberOfRaisedLines = $numberOfRaisedLines;
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getPadding()
     {
         return $this->padding;
     }
 
+    /**
+     * @param int $padding
+     *
+     * @return static
+     */
     public function setPadding(int $padding = 0): self
     {
         $this->padding = $padding;
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getTextColor(): ?string
     {
         return $this->textColor;
     }
 
+    /**
+     * @param string $textColor
+     *
+     * @return static
+     */
     public function setTextColor(?string $textColor = null): self
     {
         $this->textColor = $textColor;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->numberOfLines);

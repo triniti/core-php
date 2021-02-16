@@ -10,13 +10,22 @@ use Assert\Assertion;
  */
 class HtmlTable extends Component
 {
-    protected ?string $html = null;
+    /** @var string */
+    protected $html;
 
+    /**
+     * @return string
+     */
     public function getHtml(): ?string
     {
         return $this->html;
     }
 
+    /**
+     * @param string $html
+     *
+     * @return static
+     */
     public function setHtml(string $html): self
     {
         Assertion::regex($html, '/^<table>.+?<\/table>$/s', 'Html must begin with <table> and end with </table>.');
@@ -24,11 +33,17 @@ class HtmlTable extends Component
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->html);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

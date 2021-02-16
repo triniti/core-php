@@ -10,14 +10,25 @@ use Assert\Assertion;
  */
 class ScaleFadeAnimation extends ComponentAnimation
 {
-    protected ?float $initialAlpha = 0.3;
-    protected ?float $initialScale = 0.75;
+    /** @var float */
+    protected $initialAlpha = 0.3;
 
+    /** @var float */
+    protected $initialScale = 0.75;
+
+    /**
+     * @return float
+     */
     public function getInitialAlpha(): ?float
     {
         return $this->initialAlpha;
     }
 
+    /**
+     * @param float $initialAlpha
+     *
+     * @return static
+     */
     public function setInitialAlpha(?float $initialAlpha = null): self
     {
         if (is_float($initialAlpha)) {
@@ -29,11 +40,19 @@ class ScaleFadeAnimation extends ComponentAnimation
         return $this;
     }
 
+    /**
+     * @return float
+     */
     public function getInitialScale(): ?float
     {
         return $this->initialScale;
     }
 
+    /**
+     * @param float $initialScale
+     *
+     * @return static
+     */
     public function setInitialScale(?float $initialScale = null): self
     {
         if (is_float($initialScale)) {
@@ -45,6 +64,9 @@ class ScaleFadeAnimation extends ComponentAnimation
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

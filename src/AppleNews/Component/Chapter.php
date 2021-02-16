@@ -10,13 +10,22 @@ use Triniti\AppleNews\Scene\Scene;
  */
 class Chapter extends Container
 {
-    protected ?Scene $scene = null;
+    /** @var Scene */
+    protected $scene;
 
+    /**
+     * @return Scene
+     */
     public function getScene(): ?Scene
     {
         return $this->scene;
     }
 
+    /**
+     * @param Scene $scene
+     *
+     * @return static
+     */
     public function setScene(?Scene $scene = null): self
     {
         if (null !== $scene) {
@@ -27,6 +36,9 @@ class Chapter extends Container
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

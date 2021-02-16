@@ -10,18 +10,30 @@ use Assert\Assertion;
  */
 class FloatDataFormat extends DataFormat
 {
-    protected ?int $decimals = null;
+    /** @var integer */
+    protected $decimals;
 
+    /**
+     * @param int $decimals
+     */
     public function __construct(?int $decimals = null)
     {
         $this->setDecimals($decimals);
     }
 
+    /**
+     * @return int
+     */
     public function getDecimals(): ?int
     {
         return $this->decimals;
     }
 
+    /**
+     * @param int $decimals
+     *
+     * @return static
+     */
     public function setDecimals(?int $decimals = null): self
     {
         if (null === $decimals) {
@@ -34,6 +46,9 @@ class FloatDataFormat extends DataFormat
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

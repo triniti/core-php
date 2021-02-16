@@ -10,14 +10,25 @@ use Assert\Assertion;
  */
 class CoverArt extends AppleNewsObject
 {
-    protected ?string $URL = null;
-    protected ?string $accessibilityCaption = null;
+    /** @var string */
+    protected $URL;
 
+    /** @var string */
+    protected $accessibilityCaption;
+
+    /**
+     * @return string
+     */
     public function getURL(): ?string
     {
         return $this->URL;
     }
 
+    /**
+     * @param string $url
+     *
+     * @return static
+     */
     public function setURL(string $url): self
     {
         Assertion::url($url);
@@ -25,17 +36,28 @@ class CoverArt extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getAccessibilityCaption(): ?string
     {
         return $this->accessibilityCaption;
     }
 
+    /**
+     * @param string $accessibilityCaption
+     *
+     * @return static
+     */
     public function setAccessibilityCaption(?string $accessibilityCaption = null): self
     {
         $this->accessibilityCaption = $accessibilityCaption;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();
@@ -43,6 +65,9 @@ class CoverArt extends AppleNewsObject
         return $properties;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->URL);

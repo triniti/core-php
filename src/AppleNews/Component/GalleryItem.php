@@ -11,18 +11,31 @@ use Triniti\AppleNews\CaptionDescriptor;
  */
 class GalleryItem extends Component
 {
-    protected ?string $URL = null; //we will not support bundles yet
-    protected ?string $accessibilityCaption = null;
-    protected bool $explicitContent;
+    /** @var string */
+    protected $URL; //we will not support bundles yet
 
     /** @var string|CaptionDescriptor */
     protected $caption;
 
+    /** @var string */
+    protected $accessibilityCaption;
+
+    /** @var bool */
+    protected $explicitContent;
+
+    /**
+     * @return string
+     */
     public function getURL(): ?string
     {
         return $this->URL;
     }
 
+    /**
+     * @param string $url
+     *
+     * @return static
+     */
     public function setURL(string $url): self
     {
         Assertion::url($url);
@@ -30,11 +43,19 @@ class GalleryItem extends Component
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getAccessibilityCaption(): ?string
     {
         return $this->accessibilityCaption;
     }
 
+    /**
+     * @param string $accessibilityCaption
+     *
+     * @return static
+     */
     public function setAccessibilityCaption(?string $accessibilityCaption = null): self
     {
         $this->accessibilityCaption = $accessibilityCaption;
@@ -71,22 +92,36 @@ class GalleryItem extends Component
         return $this;
     }
 
+    /**
+     * @return bool
+     */
     public function getExplicitContent(): ?bool
     {
         return $this->explicitContent;
     }
 
+    /**
+     * @param bool $explicitContent
+     *
+     * @return GalleryItem
+     */
     public function setExplicitContent(bool $explicitContent = false): self
     {
         $this->explicitContent = $explicitContent;
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->URL);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();

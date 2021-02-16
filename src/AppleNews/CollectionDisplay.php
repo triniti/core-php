@@ -10,10 +10,11 @@ use Assert\Assertion;
  */
 class CollectionDisplay extends AppleNewsObject
 {
-    protected string $alignment;
-    protected string $distribution;
-    protected bool $variableSizing;
-    protected string $widows;
+    /** @var string */
+    protected $alignment;
+
+    /** @var string */
+    protected $distribution;
 
     /** @var int|SupportedUnits */
     protected $gutter;
@@ -27,11 +28,25 @@ class CollectionDisplay extends AppleNewsObject
     /** @var int|SupportedUnits */
     protected $rowSpacing;
 
+    /** @var bool */
+    protected $variableSizing;
+
+    /** @var string */
+    protected $widows;
+
+    /**
+     * @return string
+     */
     public function getAlignment(): ?string
     {
         return $this->alignment;
     }
 
+    /**
+     * @param string $alignment
+     *
+     * @return static
+     */
     public function setAlignment(?string $alignment = 'left'): self
     {
         if (null === $alignment) {
@@ -43,11 +58,19 @@ class CollectionDisplay extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getDistribution(): ?string
     {
         return $this->distribution;
     }
 
+    /**
+     * @param string $distribution
+     *
+     * @return static
+     */
     function setDistribution(?string $distribution = 'wide'): self
     {
         if (null === $distribution) {
@@ -179,11 +202,19 @@ class CollectionDisplay extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return bool
+     */
     public function getVariableSizing(): ?bool
     {
         return $this->variableSizing;
     }
 
+    /**
+     * @param bool $variableSizing
+     *
+     * @return static
+     */
     public function setVariableSizing(?bool $variableSizing = false): self
     {
         if (null === $variableSizing) {
@@ -194,11 +225,19 @@ class CollectionDisplay extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getWidows(): ?string
     {
         return $this->widows;
     }
 
+    /**
+     * @param string $widows
+     *
+     * @return static
+     */
     public function setWidows(?string $widows = 'optimize'): self
     {
         if (null === $widows) {
@@ -210,6 +249,9 @@ class CollectionDisplay extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

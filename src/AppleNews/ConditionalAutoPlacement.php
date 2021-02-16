@@ -11,11 +11,14 @@ use Triniti\AppleNews\Layout\AutoPlacementLayout;
  */
 class ConditionalAutoPlacement extends AppleNewsObject
 {
-    protected bool $enabled = false;
-    protected ?AutoPlacementLayout $layout = null;
-
     /** @var Condition[] */
-    protected array $conditions = [];
+    protected $conditions = [];
+
+    /** @var bool */
+    protected $enabled = false;
+
+    /** @var AutoPlacementLayout */
+    protected $layout;
 
     /**
      * @return Condition[]
@@ -95,11 +98,17 @@ class ConditionalAutoPlacement extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notEmpty($this->conditions);

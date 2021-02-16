@@ -10,20 +10,31 @@ use Assert\Assertion;
  */
 class LinkedArticle extends AppleNewsObject
 {
-    protected ?string $URL = null;
-    protected ?string $relationship = null;
+    /** @var string */
+    protected $URL;
+
+    /** @var string */
+    protected $relationship;
 
     /** @var string[] */
-    private array $validRelationships = [
+    private $validRelationships = [
         'related',
         'promoted',
     ];
 
+    /**
+     * @return string
+     */
     public function getURL(): ?string
     {
         return $this->URL;
     }
 
+    /**
+     * @param string $URL
+     *
+     * @return static
+     */
     public function setURL(string $URL): self
     {
         Assertion::url($URL);
@@ -31,11 +42,19 @@ class LinkedArticle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getRelationship(): ?string
     {
         return $this->relationship;
     }
 
+    /**
+     * @param string $relationship
+     *
+     * @return static
+     */
     public function setRelationship(string $relationship): self
     {
         Assertion::inArray($relationship, $this->validRelationships);
@@ -43,11 +62,17 @@ class LinkedArticle extends AppleNewsObject
         return $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         return $this->getSetProperties();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate(): void
     {
         Assertion::notNull($this->URL);

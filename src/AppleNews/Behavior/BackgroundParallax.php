@@ -8,6 +8,9 @@ namespace Triniti\AppleNews\Behavior;
  */
 class BackgroundParallax extends Behavior
 {
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();

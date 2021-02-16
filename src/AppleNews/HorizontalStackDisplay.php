@@ -9,6 +9,9 @@ namespace Triniti\AppleNews;
  */
 class HorizontalStackDisplay extends AppleNewsObject
 {
+    /**
+     * {@inheritdoc}
+     */
     public function jsonSerialize()
     {
         $properties = $this->getSetProperties();
