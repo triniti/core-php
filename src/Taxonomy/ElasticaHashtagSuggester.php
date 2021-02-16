@@ -13,11 +13,9 @@ use Gdbots\Pbj\Util\HashtagUtil;
 
 class ElasticaHashtagSuggester extends ElasticaNcrSearch implements HashtagSuggester
 {
-    /**
-     * {@inheritdoc}
-     */
     public function autocomplete(string $prefix, int $count = 25, array $context = []): array
     {
+        $context = $this->enrichContext(__FUNCTION__, $context);
         $search = new Search($this->getClientForRead($context));
         $search->addIndex($this->indexManager->getIndexPrefix($context));
         $options = [
@@ -54,11 +52,6 @@ class ElasticaHashtagSuggester extends ElasticaNcrSearch implements HashtagSugge
         return $this->getHashtagsFromResults($results);
     }
 
-    /**
-     * @param ResultSet $results
-     *
-     * @return string[]
-     */
     protected function getHashtagsFromResults(ResultSet $results): array
     {
         $suggests = $results->getSuggests();

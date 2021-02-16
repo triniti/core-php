@@ -7,7 +7,6 @@ use Gdbots\Ncr\AbstractSearchNodesRequestHandler;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbjx\Pbjx;
-use Triniti\Schemas\Boost\Request\SearchSponsorsResponseV1;
 
 class SearchSponsorsRequestHandler extends AbstractSearchNodesRequestHandler
 {
@@ -21,6 +20,6 @@ class SearchSponsorsRequestHandler extends AbstractSearchNodesRequestHandler
 
     protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
     {
-        return SearchSponsorsResponseV1::create();
+        return MessageResolver::resolveCurie('*:boost:request:search-sponsors-response:v1')::create();
     }
 }

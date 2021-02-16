@@ -13,7 +13,6 @@ use Gdbots\QueryParser\Node\Field;
 use Gdbots\QueryParser\Node\Word;
 use Gdbots\QueryParser\ParsedQuery;
 use Gdbots\Schemas\Common\Enum\Trinary;
-use Triniti\Schemas\Canvas\Request\SearchPagesResponseV1;
 
 class SearchPagesRequestHandler extends AbstractSearchNodesRequestHandler
 {
@@ -74,6 +73,6 @@ class SearchPagesRequestHandler extends AbstractSearchNodesRequestHandler
 
     protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
     {
-        return SearchPagesResponseV1::create();
+        return MessageResolver::resolveCurie('*:canvas:request:search-pages-response:v1')::create();
     }
 }

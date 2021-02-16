@@ -3,26 +3,30 @@ declare(strict_types=1);
 
 namespace Triniti\Taxonomy;
 
-use Gdbots\Ncr\AbstractSearchNodesRequestHandler;
-use Gdbots\Ncr\NcrSearch;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbjx\Pbjx;
-use Triniti\Schemas\Taxonomy\Request\SuggestHashtagsResponseV1;
+use Gdbots\Pbjx\RequestHandler;
 
-class SuggestHashtagsRequestHandler extends AbstractSearchNodesRequestHandler
+class SuggestHashtagsRequestHandler implements RequestHandler
 {
     protected HashtagSuggester $suggester;
 
-    public function __construct(NcrSearch $ncrSearch, HashtagSuggester $suggester)
+    public static function handlesCuries(): array
     {
-        parent::__construct($ncrSearch);
+        $curies = MessageResolver::findAllUsingMixin('triniti:taxonomy:mixin:suggest-hashtags-request:v1', false);
+        $curies[] = 'triniti:taxonomy:request:suggest-hashtags-request';
+        return $curies;
+    }
+
+    public function __construct(HashtagSuggester $suggester)
+    {
         $this->suggester = $suggester;
     }
 
     public function handleRequest(Message $request, Pbjx $pbjx): Message
     {
-        $response = $this->createSearchNodesResponse($request, $pbjx);
+        $response = $this->createSuggestHashtagsResponse($request, $pbjx);
         if (!$request->has('prefix')) {
             return $response;
         }
@@ -30,30 +34,14 @@ class SuggestHashtagsRequestHandler extends AbstractSearchNodesRequestHandler
         $hashtags = $this->suggester->autocomplete(
             $request->get('prefix'),
             $request->get('count'),
-            $this->createNcrSearchContext($request)
+            ['causator' => $request]
         );
 
         return $response->addToList('hashtags', $hashtags);
     }
 
-    protected function createNcrSearchContext(Message $request): array
+    protected function createSuggestHashtagsResponse(Message $request, Pbjx $pbjx): Message
     {
-        return [];
+        return MessageResolver::resolveCurie('*:taxonomy:request:suggest-hashtags-response:v1')::create();
     }
-
-    /**
-     * {@inheritdoc}
-     */
-    public static function handlesCuries(): array
-    {
-        $curies = MessageResolver::findAllUsingMixin('triniti:taxonomy:mixin:suggest-hashtags-request:v1', false);
-        $curies[] = 'triniti:request:suggest-hashtags-request';
-        return $curies;
-    }
-
-    protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
-    {
-        return SuggestHashtagsResponseV1::create();
-    }
-
 }

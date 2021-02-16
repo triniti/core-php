@@ -4,11 +4,9 @@ declare(strict_types=1);
 namespace Triniti\Tests\Taxonomy;
 
 use Acme\Schemas\Taxonomy\Request\SuggestHashtagsRequestV1;
-use Gdbots\Ncr\NcrSearch;
 use Triniti\Taxonomy\HashtagSuggester;
 use Triniti\Taxonomy\SuggestHashtagsRequestHandler;
 use Triniti\Tests\AbstractPbjxTest;
-use Triniti\Tests\MockNcrSearch;
 
 class InMemoryHashtagSuggester implements HashtagSuggester
 {
@@ -29,7 +27,7 @@ class InMemoryHashtagSuggester implements HashtagSuggester
                 break;
             }
 
-            if (strpos($hashtag, $prefix) === 0) {
+            if (str_starts_with($hashtag, $prefix)) {
                 $suggestions[$hashtag] = $hashtag;
             }
         }
@@ -40,19 +38,9 @@ class InMemoryHashtagSuggester implements HashtagSuggester
 
 final class SuggestHashtagsRequestHandlerTest extends AbstractPbjxTest
 {
-    protected InMemoryHashtagSuggester $suggester;
-    protected NcrSearch $ncrSearch;
-
-    public function setup(): void
-    {
-        parent::setup();
-        $this->suggester = new InMemoryHashtagSuggester();
-        $this->ncrSearch = new MockNcrSearch();
-    }
-
     public function testWithResultsExpectedWithPrefix()
     {
-        $handler = new SuggestHashtagsRequestHandler($this->ncrSearch, $this->suggester);
+        $handler = new SuggestHashtagsRequestHandler(new InMemoryHashtagSuggester());
         $request = SuggestHashtagsRequestV1::create();
         $request->set('count', 3);
         $request->set('prefix', 'mu');
@@ -71,14 +59,14 @@ final class SuggestHashtagsRequestHandlerTest extends AbstractPbjxTest
 
     public function testNoResultsExpectedWithPrefix()
     {
-        $handler = new SuggestHashtagsRequestHandler($this->ncrSearch, $this->suggester);
+        $handler = new SuggestHashtagsRequestHandler(new InMemoryHashtagSuggester());
         $response = $handler->handleRequest(SuggestHashtagsRequestV1::create()->set('prefix', 'java'), $this->pbjx);
         $this->assertFalse($response->has('hashtags'));
     }
 
     public function testNoResultsExpected()
     {
-        $handler = new SuggestHashtagsRequestHandler($this->ncrSearch, $this->suggester);
+        $handler = new SuggestHashtagsRequestHandler(new InMemoryHashtagSuggester());
         $response = $handler->handleRequest(SuggestHashtagsRequestV1::create(), $this->pbjx);
 
         $this->assertFalse($response->has('hashtags'));

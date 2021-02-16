@@ -7,7 +7,6 @@ use Gdbots\Ncr\AbstractSearchNodesRequestHandler;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbjx\Pbjx;
-use Triniti\Schemas\People\Request\SearchPeopleResponseV1;
 
 class SearchPeopleRequestHandler extends AbstractSearchNodesRequestHandler
 {
@@ -21,6 +20,6 @@ class SearchPeopleRequestHandler extends AbstractSearchNodesRequestHandler
 
     protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
     {
-        return SearchPeopleResponseV1::create();
+        return MessageResolver::resolveCurie('*:people:request:search-people-response:v1')::create();
     }
 }

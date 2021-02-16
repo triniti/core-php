@@ -14,6 +14,11 @@ use Triniti\Schemas\Taxonomy\Request\SearchChannelsRequestV1;
  */
 class GetAllChannelsRequestHandler implements RequestHandler
 {
+    public static function handlesCuries(): array
+    {
+        return MessageResolver::findAllUsingMixin('triniti:taxonomy:mixin:get-all-channels-request:v1', false);
+    }
+
     public function handleRequest(Message $request, Pbjx $pbjx): Message
     {
         $response = $this->createGetAllChannelsResponse($request, $pbjx);
@@ -26,28 +31,13 @@ class GetAllChannelsRequestHandler implements RequestHandler
         }
 
         $channels = $searchResponse->get('nodes', []);
-        $refs = array_map(fn(Message $role) => $role->generateNodeRef(), $channels);
+        $refs = array_map(fn(Message $channel) => $channel->generateNodeRef(), $channels);
 
         $response->addToSet('channels', $refs);
     }
 
-    /**
-     * @param Message $request
-     * @param Pbjx                  $pbjx
-     *
-     * @return Message
-     */
     protected function createGetAllChannelsResponse(Message $request, Pbjx $pbjx): Message
     {
-        $curie = MessageResolver::findOneUsingMixin('gdbots:taxonomy:mixin:get-all-channels-response:v1');
-        return MessageResolver::resolveCurie($curie)::create();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public static function handlesCuries(): array
-    {
-        return MessageResolver::findAllUsingMixin('gdbots:taxonomy:mixin:get-all-channels-request:v1', false);
+        return MessageResolver::resolveCurie('*:taxonomy:request:get-all-channels-response:v1')::create();
     }
 }

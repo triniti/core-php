@@ -6,9 +6,33 @@ namespace Triniti\Taxonomy;
 use Gdbots\Ncr\Aggregate;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
+use Gdbots\Pbjx\Pbjx;
+use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 
 class CategoryAggregate extends Aggregate
 {
+    protected function __construct(Message $node, Pbjx $pbjx, bool $syncAllEvents = false)
+    {
+        parent::__construct($node, $pbjx, $syncAllEvents);
+        // categories are only published or deleted, enforce it.
+        if (NodeStatus::DELETED !== $this->node->fget('status')) {
+            $this->node->set('status', NodeStatus::PUBLISHED());
+        }
+    }
+
+    protected function enrichNodeUpdated(Message $event): void
+    {
+        /** @var Message $newNode */
+        $newNode = $event->get('new_node');
+
+        // categories are only published or deleted, enforce it.
+        if (NodeStatus::DELETED !== $newNode->fget('status')) {
+            $newNode->set('status', NodeStatus::PUBLISHED());
+        }
+
+        parent::enrichNodeUpdated($event);
+    }
+
     /**
      * This is for legacy uses of command/event mixins for common
      * ncr operations. It will be removed in 3.x.
@@ -24,6 +48,36 @@ class CategoryAggregate extends Aggregate
         if ($newName !== $name && is_callable([$this, $newName])) {
             return $this->$newName(...$arguments);
         }
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createNodeCreatedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:taxonomy:event:category-created:v1')::create();
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createNodeDeletedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:taxonomy:event:category-deleted:v1')::create();
     }
 
     /**
