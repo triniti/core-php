@@ -6,53 +6,39 @@ namespace Triniti\Curator;
 use Gdbots\Ncr\Aggregate;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
-use Gdbots\Schemas\Ncr\Enum\NodeStatus;
-use Triniti\Schemas\Curator\Event\GalleryImageCountUpdatedV1;
-use Triniti\Schemas\Dam\Request\SearchAssetsRequestV1;
+use Gdbots\Pbj\WellKnown\NodeRef;
 
 class GalleryAggregate extends Aggregate
 {
-    public function updateGalleryImageCount(Message $command): void
+    public function updateGalleryImageCount(Message $command, int $count): void
     {
-        $imageCount = $this->getImageCount($command);
-        if ($imageCount === $this->node->get('image_count')) {
+        /** @var NodeRef $nodeRef */
+        $nodeRef = $command->get('node_ref');
+        $this->assertNodeRefMatches($nodeRef);
+
+        if ($count === $this->node->get('image_count')) {
             return;
         }
 
-        $event = $this->createGalleryImageCountUpdated($command)
+        $event = $this->createGalleryImageCountUpdated($command);
+        $this->copyContext($command, $event);
+        $event
             ->set('node_ref', $this->nodeRef)
-            ->set('image_count', $imageCount);
+            ->set('image_count', $count);
         $this->recordEvent($event);
-    }
-
-    protected function getImageCount(Message $command): int
-    {
-        $request = SearchAssetsRequestV1::create()
-            ->addToSet('types', ['image-asset'])
-            ->set('count', 1)
-            ->set('gallery_ref', $this->nodeRef)
-            ->set('status', NodeStatus::PUBLISHED());
-
-        try {
-            return (int)$this->pbjx->copyContext($command, $request)->request($request)->get('total', 0);
-        } catch (\Throwable $e) {
-            return 0;
-        }
     }
 
     protected function createGalleryImageCountUpdated(Message $command): Message
     {
-        $event = GalleryImageCountUpdatedV1::create();
-        $this->pbjx->copyContext($command, $event);
-        return $event;
+        return MessageResolver::resolveCurie('*:curator:event:gallery-image-count-updated:v1')::create();
     }
 
     /**
-     * This is for legacy uses for command/event mixins for common
+     * This is for legacy uses of command/event mixins for common
      * ncr operations. It will be removed in 3.x.
      *
      * @param string $name
-     * @param array $arguments
+     * @param array  $arguments
      *
      * @return mixed
      */
@@ -62,6 +48,36 @@ class GalleryAggregate extends Aggregate
         if ($newName !== $name && is_callable([$this, $newName])) {
             return $this->$newName(...$arguments);
         }
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createNodeCreatedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:curator:event:gallery-created:v1')::create();
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createNodeDeletedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:curator:event:gallery-deleted:v1')::create();
     }
 
     /**

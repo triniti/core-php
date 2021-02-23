@@ -54,6 +54,6 @@ class CastVoteHandler implements CommandHandler
 
     protected function createVoteCasted(Message $command, Pbjx $pbjx): Message
     {
-        return VoteCastedV1::create();
+        return MessageResolver::resolveCurie('*:apollo:event:vote-casted:v1')::create();
     }
 }
