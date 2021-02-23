@@ -4,13 +4,13 @@ declare(strict_types=1);
 namespace Triniti\Tests\Curator;
 
 use Acme\Schemas\Curator\Command\UpdateGalleryImageCountV1;
+use Acme\Schemas\Curator\Event\GalleryImageCountUpdatedV1;
 use Acme\Schemas\Curator\Node\GalleryV1;;
 use Gdbots\Ncr\AggregateResolver;
 use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Pbj\SchemaCurie;
 use Gdbots\Schemas\Pbjx\StreamId;
 use Triniti\Curator\UpdateGalleryImageCountHandler;
-use Triniti\Schemas\Curator\Event\GalleryImageCountUpdatedV1;
 use Triniti\Tests\AbstractPbjxTest;
 use Triniti\Tests\MockNcrSearch;
 use Triniti\Tests\MockSearchNodesRequestHandler;
