@@ -21,19 +21,19 @@ class RenderWidgetRequestHandler implements RequestHandler
     protected Environment $twig;
     protected LoggerInterface $logger;
 
+    public static function handlesCuries(): array
+    {
+        // deprecated mixins, will be removed in 3.x
+        $curies = MessageResolver::findAllUsingMixin('triniti:curator:mixin:render-widget-request:v1', false);
+        $curies[] = 'triniti:curator:request:render-widget-request';
+        return $curies;
+    }
+
     public function __construct(Ncr $ncr, Environment $twig, ?LoggerInterface $logger = null)
     {
         $this->ncr = $ncr;
         $this->twig = $twig;
         $this->logger = $logger ?: new NullLogger();
-    }
-
-    public static function handlesCuries(): array
-    {
-        // deprecated mixins, will be removed in 3.x
-        $curies = MessageResolver::findAllUsingMixin('triniti:curator:mixin:render-widget-request', false);
-        $curies[] = 'triniti:curator:request:render-widget-request';
-        return $curies;
     }
 
     public function handleRequest(Message $request, Pbjx $pbjx): Message
@@ -145,7 +145,9 @@ class RenderWidgetRequestHandler implements RequestHandler
         }
 
         try {
-            return $this->ncr->getNode($request->get('widget_ref'));
+            return $this->ncr->getNode(
+                $request->get('widget_ref'), false, ['causator' => $request]
+            );
         } catch (\Throwable $e) {
             if ($this->twig->isDebug()) {
                 throw $e;
@@ -180,8 +182,23 @@ class RenderWidgetRequestHandler implements RequestHandler
          * writing this comment right now, but the now when the now
          * is at runtime.
          */
-        foreach ($searchRequest::schema()->getMixin('gdbots:pbjx:mixin:request')->getFields() as $field) {
-            $searchRequest->clear($field->getName());
+        $fields = [
+            'request_id',
+            'occurred_at',
+            'ctx_tenant_id',
+            'ctx_retries',
+            'ctx_causator_ref',
+            'ctx_correlator_ref',
+            'ctx_user_ref',
+            'ctx_app',
+            'ctx_cloud',
+            'ctx_ip',
+            'ctx_ipv6',
+            'ctx_ua',
+            // 'derefs',
+        ];
+        foreach ($fields as $field) {
+            $searchRequest->clear($field);
         }
 
         /*
