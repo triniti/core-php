@@ -28,6 +28,11 @@ class GalleryAggregate extends Aggregate
         $this->recordEvent($event);
     }
 
+    protected function applyGalleryImageCountUpdated(Message $event): void
+    {
+        $this->node->set('image_count', $event->get('image_count'));
+    }
+
     protected function createGalleryImageCountUpdated(Message $command): Message
     {
         return MessageResolver::resolveCurie('*:curator:event:gallery-image-count-updated:v1')::create();

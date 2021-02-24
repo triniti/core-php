@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace Triniti\Curator;
 
+use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Ncr\NcrProjector;
 use Gdbots\Pbj\Message;
-use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\Pbjx;
 use Triniti\Schemas\Curator\Command\UpdateGalleryImageCountV1;
@@ -14,44 +14,23 @@ class NcrGalleryProjector extends NcrProjector
 {
     public static function getSubscribedEvents()
     {
-        $vendor = MessageResolver::getDefaultVendor();
         return [
-            "{$vendor}:curator:event:gallery-image-count-updated" => 'onGalleryImageCountUpdated', // deprecated
-            "{$vendor}:dam:event:asset-created"                   => 'onAssetCreated',
-            "{$vendor}:dam:event:asset-deleted"                   => 'onAssetDeletedOrExpired',
-            "{$vendor}:dam:event:asset-expired"                   => 'onAssetDeletedOrExpired',
-            'triniti:curator:event:gallery-image-count-updated'   => 'onGalleryImageCountUpdated',
-            'triniti:dam:event:gallery-asset-reordered'           => 'onGalleryAssetReordered',
+            'triniti:curator:event:gallery-image-count-updated' => 'onNodeEvent',
+            'triniti:curator:mixin:gallery.published'           => 'onGalleryProjected',
+            'triniti:curator:mixin:gallery.updated'             => 'onGalleryProjected',
+            'triniti:dam:event:gallery-asset-reordered'         => 'onGalleryAssetReordered',
+            'triniti:dam:mixin:image-asset.created'             => 'onImageAssetProjected',
+            'triniti:dam:mixin:image-asset.deleted'             => 'onImageAssetProjected',
+            'triniti:dam:mixin:image-asset.expired'             => 'onImageAssetProjected',
+
+            // deprecated mixins, will be removed in 3.x
+            'triniti:curator:mixin:gallery-image-count-updated' => 'onNodeEvent',
+            'triniti:dam:mixin:gallery-asset-reordered'         => 'onGalleryAssetReordered',
         ];
-    }
-
-    public function onAssetCreated(Message $event, Pbjx $pbjx): void
-    {
-        if ($event->isReplay()) {
-            return;
-        }
-
-        /** @var Message $node */
-        $node = $event->get('node');
-        if (!$node::schema()->hasMixin('triniti:dam:mixin:image-asset') || !$node->has('gallery_ref')) {
-            return;
-        }
-
-        $this->updateGalleryImageCount($event, $node->get('gallery_ref'), $pbjx);
-    }
-
-    public function onGalleryUpdated(Message $event, Pbjx $pbjx): void
-    {
-        $this->onNodeUpdated($event, $pbjx);
-        $this->updateGalleryImageCount($event, $event->get('node_ref'), $pbjx);
     }
 
     public function onGalleryAssetReordered(Message $event, Pbjx $pbjx): void
     {
-        if ($event->isReplay()) {
-            return;
-        }
-
         if ($event->has('gallery_ref')) {
             $this->updateGalleryImageCount($event, $event->get('gallery_ref'), $pbjx);
         }
@@ -61,37 +40,21 @@ class NcrGalleryProjector extends NcrProjector
         }
     }
 
-    public function onAssetDeletedOrExpired(Message $event, Pbjx $pbjx): void
+    public function onGalleryProjected(NodeProjectedEvent $pbjxEvent): void
     {
-        if ($event->isReplay()) {
-            return;
-        }
-
-        try {
-            $node = $this->ncr->getNode($event->get('node_ref'), false);
-        } catch (\Throwable $e) {
-            return;
-        }
-
-        if (!$node::schema()->hasMixin('triniti:dam:mixin:image-asset') || !$node->has('gallery_ref')) {
-            return;
-        }
-
-        $this->updateGalleryImageCount($event, $node->get('gallery_ref'), $pbjx);
+        $event = $pbjxEvent->getLastEvent();
+        $this->updateGalleryImageCount($event, $event->get('node_ref'), $pbjxEvent::getPbjx());
     }
 
-    public function onGalleryImageCountUpdated(Message $event, Pbjx $pbjx): void
+    public function onImageAssetProjected(NodeProjectedEvent $pbjxEvent): void
     {
-        $nodeRef = $event->get('node_ref');
-        $node = $this->ncr->getNode($nodeRef);
-        $node->set('image_count', $event->get('image_count'));
-        $this->projectNode($node, $event, $pbjx);
-    }
+        $event = $pbjxEvent->getLastEvent();
+        $node = $pbjxEvent->getNode();
+        if (!$node->has('gallery_ref')) {
+            return;
+        }
 
-    public function onGalleryPublished(Message $event, Pbjx $pbjx): void
-    {
-        $this->onNodeEvent($event, $pbjx);
-        $this->updateGalleryImageCount($event, $event->get('node_ref'), $pbjx);
+        $this->updateGalleryImageCount($event, $node->get('gallery_ref'), $pbjxEvent::getPbjx());
     }
 
     protected function updateGalleryImageCount(Message $event, NodeRef $nodeRef, Pbjx $pbjx): void

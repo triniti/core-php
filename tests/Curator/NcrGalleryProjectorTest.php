@@ -6,7 +6,6 @@ namespace Triniti\Tests\Curator;
 use Acme\Schemas\Curator\Command\CreateGalleryV1;
 use Acme\Schemas\Curator\Command\PublishGalleryV1;
 use Acme\Schemas\Curator\Command\UpdateGalleryV1;
-use Acme\Schemas\Curator\Event\GalleryImageCountUpdatedV1;
 use Acme\Schemas\Curator\Node\GalleryV1;
 use Acme\Schemas\Curator\Request\SearchGalleriesRequestV1;
 use Acme\Schemas\Curator\Request\SearchGalleriesResponseV1;
@@ -14,8 +13,8 @@ use Acme\Schemas\Dam\Event\AssetCreatedV1;
 use Acme\Schemas\Dam\Event\AssetDeletedV1;
 use Acme\Schemas\Dam\Event\GalleryAssetReorderedV1;
 use Acme\Schemas\Dam\Node\ImageAssetV1;
-use Acme\Schemas\Dam\Node\VideoAssetV1;
 use Gdbots\Ncr\AggregateResolver;
+use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\QueryParser\ParsedQuery;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
@@ -36,6 +35,7 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
     public function setup(): void
     {
         parent::setup();
+        AggregateResolver::register(['acme:gallery' => GalleryAggregate::class]);
         $this->ncrSearch = new MockNcrSearch();
         $this->ncr = new InMemoryNcr();
         $this->projector = new NcrGalleryProjector($this->ncr, $this->ncrSearch);
@@ -55,7 +55,8 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         ]);
 
         $event = AssetCreatedV1::create()->set('node', $image);
-        $this->projector->onAssetCreated($event, $this->pbjx);
+        $pbjxEvent = new NodeProjectedEvent($image, $event);
+        $this->projector->onImageAssetProjected($pbjxEvent);
         $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(UpdateGalleryImageCountV1::class, $sentCommand);
         $this->assertTrue($galleryRef->equals($galleryRef));
@@ -69,20 +70,9 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         $event = AssetCreatedV1::create()->set('node', $item);
         $event->isReplay(true);
 
-        $this->projector->onAssetCreated($event, $this->pbjx);
-        $this->assertEmpty($this->pbjx->getSent());
-    }
+        $pbjxEvent = new NodeProjectedEvent($item, $event);
 
-    public function testOnNonImageAssetCreated()
-    {
-        $image = VideoAssetV1::fromArray([
-            '_id'       => AssetId::create('video', 'mp4'),
-            'mime_type' => 'video/mp4',
-            'status'    => NodeStatus::PUBLISHED(),
-        ]);
-
-        $event = AssetCreatedV1::create()->set('node', $image);
-        $this->projector->onAssetCreated($event, $this->pbjx);
+        $this->projector->onImageAssetProjected($pbjxEvent);
         $this->assertEmpty($this->pbjx->getSent());
     }
 
@@ -95,7 +85,8 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         ]);
 
         $event = AssetCreatedV1::create()->set('node', $image);
-        $this->projector->onAssetCreated($event, $this->pbjx);
+        $pbjxEvent = new NodeProjectedEvent($image, $event);
+        $this->projector->onImageAssetProjected($pbjxEvent);
         $this->assertEmpty($this->pbjx->getSent());
     }
 
@@ -127,6 +118,7 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         $nodeRef = $node->generateNodeRef();
         $aggregate = GalleryAggregate::fromNode($node, $this->pbjx);
         $aggregate->createNode(CreateGalleryV1::create()->set('node', $node));
+        $this->projector->onNodeCreated($aggregate->getUncommittedEvents()[0], $this->pbjx);
         $aggregate->commit();
 
         $newNode = (clone $node)->set('title', 'new-title');
@@ -136,7 +128,11 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         $aggregate->updateNode($command);
         $events = $aggregate->getUncommittedEvents();
         $aggregate->commit();
-        $this->projector->onGalleryUpdated($events[0], $this->pbjx);
+
+        $pbjxEvent = new NodeProjectedEvent($newNode, $events[0]);
+
+        $this->projector->onNodeEvent($events[0], $this->pbjx);
+        $this->projector->onGalleryProjected($pbjxEvent);
         $this->assertSame('new-title', $this->ncr->getNode($nodeRef)->get('title'));
         $response = SearchGalleriesResponseV1::create();
         $this->ncrSearch->searchNodes(SearchGalleriesRequestV1::create(), new ParsedQuery(), $response);
@@ -153,6 +149,7 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         $nodeRef = $node->generateNodeRef();
         $aggregate = GalleryAggregate::fromNode($node, $this->pbjx);
         $aggregate->createNode(CreateGalleryV1::create()->set('node', $node));
+        $this->projector->onNodeCreated($aggregate->getUncommittedEvents()[0], $this->pbjx);
         $aggregate->commit();
 
         $newNode = (clone $node)->set('title', 'new-title');
@@ -163,8 +160,11 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         $events = $aggregate->getUncommittedEvents();
         $event = $events[0];
         $aggregate->commit();
+        $this->projector->onNodeEvent($event, $this->pbjx);
         $event->isReplay(true);
-        $this->projector->onGalleryUpdated($event, $this->pbjx);
+
+        $pbjxEvent = new NodeProjectedEvent($newNode, $events[0]);
+        $this->projector->onGalleryProjected($pbjxEvent);
         $this->assertSame('new-title', $this->ncr->getNode($nodeRef)->get('title'));
         $response = SearchGalleriesResponseV1::create();
         $this->ncrSearch->searchNodes(SearchGalleriesRequestV1::create(), new ParsedQuery(), $response);
@@ -178,7 +178,6 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         $node = GalleryV1::create();
         $this->ncr->putNode($node);
         $nodeRef = $node->generateNodeRef();
-        AggregateResolver::register(['acme:gallery' => 'Triniti\Curator\GalleryAggregate']);
         $aggregate = GalleryAggregate::fromNode($node, $this->pbjx);
         $aggregate->createNode(CreateGalleryV1::create()->set('node', $node));
         $aggregate->commit();
@@ -186,7 +185,10 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         $aggregate->publishNode(PublishGalleryV1::create()->set('node_ref', $nodeRef));
         $events = $aggregate->getUncommittedEvents();
         $aggregate->commit();
-        $this->projector->onGalleryPublished($events[0], $this->pbjx);
+
+        $pbjxEvent = new NodeProjectedEvent($aggregate->getNode(), $events[0]);
+        $this->projector->onNodeEvent($events[0], $this->pbjx);
+        $this->projector->onGalleryProjected($pbjxEvent);
         $ncrNode = $this->ncr->getNode($nodeRef);
         $this->assertTrue(NodeStatus::PUBLISHED()->equals($ncrNode->get('status')));
         $this->assertSame($events[0]->get('published_at')->getTimestamp(), $ncrNode->get('published_at')->getTimestamp());
@@ -204,12 +206,18 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
     public function testOnGalleryImageCountUpdated(): void
     {
         $node = GalleryV1::create();
-        $this->ncr->putNode($node);
         $nodeRef = $node->generateNodeRef();
-        $event = GalleryImageCountUpdatedV1::create()
-            ->set('node_ref', $nodeRef)
-            ->set('image_count', 20);
-        $this->projector->onGalleryImageCountUpdated($event, $this->pbjx);
+        $aggregate = GalleryAggregate::fromNode($node, $this->pbjx);
+        $aggregate->createNode(CreateGalleryV1::create()->set('node', $node));
+        $event = $aggregate->getUncommittedEvents()[0];
+        $aggregate->commit();
+        $this->projector->onNodeCreated($event, $this->pbjx);
+
+        $command = UpdateGalleryImageCountV1::create()->set('node_ref', $nodeRef);
+        $aggregate->updateGalleryImageCount($command, 20);
+        $event = $aggregate->getUncommittedEvents()[0];
+        $aggregate->commit();
+        $this->projector->onNodeEvent($event, $this->pbjx);
 
         $this->assertSame(20, $this->ncr->getNode($nodeRef)->get('image_count'));
     }
@@ -219,14 +227,16 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         $node = GalleryV1::create();
         $nodeRef = $node->generateNodeRef();
         $image = ImageAssetV1::fromArray([
-            '_id'       => AssetId::create('image', 'jpg'),
-            'mime_type' => 'image/jpeg',
-            'status'    => NodeStatus::PUBLISHED(),
+            '_id'         => AssetId::create('image', 'jpg'),
+            'mime_type'   => 'image/jpeg',
+            'status'      => NodeStatus::PUBLISHED(),
             'gallery_ref' => $nodeRef,
         ]);
         $this->ncr->putNode($image);
 
-        $this->projector->onAssetDeletedOrExpired(AssetDeletedV1::create()->set('node_ref', $image->generateNodeRef()), $this->pbjx);
+        $event = AssetDeletedV1::create()->set('node_ref', $image->generateNodeRef());
+        $pbjxEvent = new NodeProjectedEvent($image, $event);
+        $this->projector->onImageAssetProjected($pbjxEvent);
 
         $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(UpdateGalleryImageCountV1::class, $sentCommand);
@@ -238,61 +248,32 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         $node = GalleryV1::create();
         $nodeRef = $node->generateNodeRef();
         $image = ImageAssetV1::fromArray([
-            '_id'       => AssetId::create('image', 'jpg'),
-            'mime_type' => 'image/jpeg',
-            'status'    => NodeStatus::PUBLISHED(),
+            '_id'         => AssetId::create('image', 'jpg'),
+            'mime_type'   => 'image/jpeg',
+            'status'      => NodeStatus::PUBLISHED(),
             'gallery_ref' => $nodeRef,
         ]);
         $this->ncr->putNode($image);
 
         $event = AssetDeletedV1::create()->set('node_ref', $image->generateNodeRef());
         $event->isReplay(true);
-        $this->projector->onAssetDeletedOrExpired($event, $this->pbjx);
+        $pbjxEvent = new NodeProjectedEvent($image, $event);
+        $this->projector->onImageAssetProjected($pbjxEvent);
 
         $this->assertEmpty($this->pbjx->getSent());
     }
 
     public function testOnAssetDeletedOrExpiredNoNode(): void
     {
-        $node = GalleryV1::create();
-        $nodeRef = $node->generateNodeRef();
-        $image = ImageAssetV1::fromArray([
-            '_id'       => AssetId::create('image', 'jpg'),
-            'mime_type' => 'image/jpeg',
-            'status'    => NodeStatus::PUBLISHED(),
-            'gallery_ref' => $nodeRef,
-        ]);
-
-        $this->projector->onAssetDeletedOrExpired(AssetDeletedV1::create()->set('node_ref', $image->generateNodeRef()), $this->pbjx);
-        $this->assertEmpty($this->pbjx->getSent());
-    }
-
-    public function testOnAssetDeletedOrExpiredNoGalleryRef(): void
-    {
         $image = ImageAssetV1::fromArray([
             '_id'       => AssetId::create('image', 'jpg'),
             'mime_type' => 'image/jpeg',
             'status'    => NodeStatus::PUBLISHED(),
         ]);
-        $this->ncr->putNode($image);
 
-        $this->projector->onAssetDeletedOrExpired(AssetDeletedV1::create()->set('node_ref', $image->generateNodeRef()), $this->pbjx);
-        $this->assertEmpty($this->pbjx->getSent());
-    }
-
-    public function testOnAssetDeletedOrExpiredWrongAssetType(): void
-    {
-        $node = GalleryV1::create();
-        $nodeRef = $node->generateNodeRef();
-        $image = VideoAssetV1::fromArray([
-            '_id'       => AssetId::create('video', 'mxf'),
-            'mime_type' => 'image/jpeg',
-            'status'    => NodeStatus::PUBLISHED(),
-            'gallery_ref' => $nodeRef,
-        ]);
-        $this->ncr->putNode($image);
-
-        $this->projector->onAssetDeletedOrExpired(AssetDeletedV1::create()->set('node_ref', $image->generateNodeRef()), $this->pbjx);
+        $event = AssetDeletedV1::create()->set('node_ref', $image->generateNodeRef());
+        $pbjxEvent = new NodeProjectedEvent($image, $event);
+        $this->projector->onImageAssetProjected($pbjxEvent);
         $this->assertEmpty($this->pbjx->getSent());
     }
 }
