@@ -14,17 +14,10 @@ use Gdbots\QueryParser\Node\Field;
 use Gdbots\QueryParser\Node\Numbr;
 use Gdbots\QueryParser\Node\Word;
 use Gdbots\QueryParser\ParsedQuery;
-use Triniti\Schemas\Curator\Request\SearchPromotionsResponseV1;
 
 class SearchPromotionsRequestHandler extends AbstractSearchNodesRequestHandler
 {
     protected \DateTimeZone $timeZone;
-
-    public function __construct(NcrSearch $ncrSearch, ?string $timeZone = null)
-    {
-        parent::__construct($ncrSearch);
-        $this->timeZone = new \DateTimeZone($timeZone ?: 'UTC');
-    }
 
     public static function handlesCuries(): array
     {
@@ -34,9 +27,10 @@ class SearchPromotionsRequestHandler extends AbstractSearchNodesRequestHandler
         return $curies;
     }
 
-    protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
+    public function __construct(NcrSearch $ncrSearch, ?string $timeZone = null)
     {
-        return SearchPromotionsResponseV1::create();
+        parent::__construct($ncrSearch);
+        $this->timeZone = new \DateTimeZone($timeZone ?: 'UTC');
     }
 
     protected function beforeSearchNodes(Message $request, ParsedQuery $parsedQuery): void
@@ -82,5 +76,10 @@ class SearchPromotionsRequestHandler extends AbstractSearchNodesRequestHandler
                     )
                 );
         }
+    }
+
+    protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
+    {
+        return MessageResolver::resolveCurie('*:curator:request:search-promotions-response:v1')::create();
     }
 }

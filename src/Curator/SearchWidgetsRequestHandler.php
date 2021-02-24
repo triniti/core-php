@@ -9,21 +9,15 @@ use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbj\SchemaCurie;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\QueryParser\ParsedQuery;
-use Triniti\Schemas\Curator\Request\SearchWidgetsResponseV1;
 
 class SearchWidgetsRequestHandler extends AbstractSearchNodesRequestHandler
 {
     public static function handlesCuries(): array
     {
         // deprecated mixins, will be removed in 3.x
-        $curies = MessageResolver::findAllUsingMixin('triniti:curator:mixin:search-widgets-request');
+        $curies = MessageResolver::findAllUsingMixin('triniti:curator:mixin:search-widgets-request:v1', false);
         $curies[] = 'triniti:curator:request:search-widgets-request';
         return $curies;
-    }
-
-    protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
-    {
-        return SearchWidgetsResponseV1::create();
     }
 
     protected function createQNamesForSearchNodes(Message $request, ParsedQuery $parsedQuery): array
@@ -49,5 +43,10 @@ class SearchWidgetsRequestHandler extends AbstractSearchNodesRequestHandler
         }
 
         return $qnames;
+    }
+
+    protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
+    {
+        return MessageResolver::resolveCurie('*:curator:request:search-widgets-response:v1')::create();
     }
 }

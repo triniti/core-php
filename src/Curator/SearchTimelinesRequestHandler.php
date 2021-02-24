@@ -13,7 +13,6 @@ use Gdbots\QueryParser\Node\Field;
 use Gdbots\QueryParser\Node\Word;
 use Gdbots\QueryParser\ParsedQuery;
 use Gdbots\Schemas\Common\Enum\Trinary;
-use Triniti\Schemas\Curator\Request\SearchTimelinesResponseV1;
 
 class SearchTimelinesRequestHandler extends AbstractSearchNodesRequestHandler
 {
@@ -23,11 +22,6 @@ class SearchTimelinesRequestHandler extends AbstractSearchNodesRequestHandler
         $curies = MessageResolver::findAllUsingMixin('triniti:curator:mixin:search-timelines-request:v1', false);
         $curies[] = 'triniti:curator:request:search-timelines-request';
         return $curies;
-    }
-
-    protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
-    {
-        return SearchTimelinesResponseV1::create();
     }
 
     protected function beforeSearchNodes(Message $request, ParsedQuery $parsedQuery): void
@@ -75,5 +69,10 @@ class SearchTimelinesRequestHandler extends AbstractSearchNodesRequestHandler
                 )
             );
         }
+    }
+
+    protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
+    {
+        return MessageResolver::resolveCurie('*:curator:request:search-timelines-response:v1')::create();
     }
 }

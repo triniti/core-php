@@ -20,7 +20,6 @@ use Gdbots\Schemas\Common\Enum\Trinary;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Psr\Cache\CacheItemPoolInterface;
 use Triniti\Schemas\Curator\Enum\SearchTeasersSort;
-use Triniti\Schemas\Curator\Request\SearchTeasersResponseV1;
 
 class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
 {
@@ -30,13 +29,6 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
     protected Ncr $ncr;
     protected CacheItemPoolInterface $cache;
 
-    public function __construct(NcrSearch $ncrSearch, Ncr $ncr, CacheItemPoolInterface $cache)
-    {
-        parent::__construct($ncrSearch);
-        $this->ncr = $ncr;
-        $this->cache = $cache;
-    }
-
     public static function handlesCuries(): array
     {
         // deprecated mixins, will be removed in 3.x
@@ -45,9 +37,11 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
         return $curies;
     }
 
-    protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
+    public function __construct(NcrSearch $ncrSearch, Ncr $ncr, CacheItemPoolInterface $cache)
     {
-        return SearchTeasersResponseV1::create();
+        parent::__construct($ncrSearch);
+        $this->ncr = $ncr;
+        $this->cache = $cache;
     }
 
     public function handleRequest(Message $request, Pbjx $pbjx): Message
@@ -77,7 +71,7 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
 
         $slottedIds = [];
         foreach ($slottedNodes as $slottedNode) {
-            $slottedIds[(string)$slottedNode->get('_id')] = true;
+            $slottedIds[$slottedNode->fget('_id')] = true;
         }
 
         /** @var Message[] $unslottedNodes */
@@ -99,7 +93,7 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
 
             do {
                 $node = array_shift($unslottedNodes);
-                if (!isset($slottedIds[(string)$node->get('_id')])) {
+                if (!isset($slottedIds[$node->fget('_id')])) {
                     $finalNodes[] = $node;
                     break;
                 }
@@ -112,7 +106,7 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
                 break;
             }
 
-            if (!isset($slottedIds[(string)$node->get('_id')])) {
+            if (!isset($slottedIds[$node->fget('_id')])) {
                 $finalNodes[] = $node;
             }
         }
@@ -125,15 +119,13 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
      * The return array is keyed by the slot position it should occupy.
      *
      * @param Message $request
-     * @param Pbjx $pbjx
+     * @param Pbjx    $pbjx
      *
      * @return Message[]
      */
     protected function getSlottedNodes(Message $request, Pbjx $pbjx): array
     {
-        if (!$request->has('slotting_key')
-            || !NodeStatus::PUBLISHED()->equals($request->get('status'))
-        ) {
+        if (!$request->has('slotting_key') || NodeStatus::PUBLISHED !== $request->fget('status')) {
             return [];
         }
 
@@ -151,11 +143,11 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
 
                 /** @var Message[] $slots */
                 $slots = [];
-                $nodes = $this->ncr->getNodes($nodeRefs, false, $this->createNcrContext($request));
+                $nodes = $this->ncr->getNodes($nodeRefs, false, ['causator' => $request]);
 
                 foreach ($nodes as $node) {
                     if (
-                        !NodeStatus::PUBLISHED()->equals($node->get('status'))
+                        NodeStatus::PUBLISHED !== $node->fget('status')
                         || $node->get('is_unlisted', false)
                         || !$node->isInMap('slotting', $slottingKey)
                     ) {
@@ -178,7 +170,6 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
         $query = "+slotting.{$slottingKey}:[1..{$slottingMax}]";
         $parsedQuery = (new QueryParser())->parse($query);
 
-        /** @var Message $slotRequest */
         $slotRequest = $request::schema()->createMessage();
         $slotRequest
             ->set('q', $query)
@@ -197,7 +188,8 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
             $slotRequest,
             $parsedQuery,
             $response,
-            $qnames
+            $qnames,
+            ['causator' => $request]
         );
 
         $slots = [];
@@ -309,5 +301,10 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
                 )
             );
         }
+    }
+
+    protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
+    {
+        return MessageResolver::resolveCurie('*:curator:request:search-teasers-response:v1')::create();
     }
 }
