@@ -12,7 +12,7 @@ final class BlockEnricher implements EventSubscriber, PbjxEnricher
     public static function getSubscribedEvents()
     {
         return [
-            'triniti:canvas:mixin:block.enrich' => [['enrichWithEtag', -5000]],
+            'triniti:canvas:mixin:block.enrich' => ['enrichWithEtag', -5000],
         ];
     }
 

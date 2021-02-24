@@ -24,7 +24,7 @@ use Twig\TwigFunction;
 
 final class CuratorExtension extends AbstractExtension
 {
-    private static PhpArraySerializer $serializer;
+    private static ?PhpArraySerializer $serializer = null;
     private Pbjx $pbjx;
     private RequestStack $requestStack;
     private LoggerInterface $logger;

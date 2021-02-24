@@ -36,6 +36,36 @@ class TimelineAggregate extends Aggregate
      *
      * @deprecated Will be removed in 3.x.
      */
+    protected function createNodeCreatedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:curator:event:timeline-created:v1')::create();
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createNodeDeletedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:curator:event:timeline-deleted:v1')::create();
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
     protected function createNodeExpiredEvent(Message $command): Message
     {
         return MessageResolver::resolveCurie('*:curator:event:timeline-expired:v1')::create();
