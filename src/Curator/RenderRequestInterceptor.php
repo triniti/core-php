@@ -25,12 +25,7 @@ class RenderRequestInterceptor implements EventSubscriber
      */
     protected array $cacheItems = [];
 
-    public function __construct(CacheItemPoolInterface $cache)
-    {
-        $this->cache = $cache;
-    }
-
-    public static function getSubscribedEvents(): array
+    public static function getSubscribedEvents()
     {
         return [
             'triniti:curator:mixin:render-promotion-request.before_handle'   => 'onRenderPromotionRequestBeforeHandle', // deprecated
@@ -42,6 +37,11 @@ class RenderRequestInterceptor implements EventSubscriber
             'triniti:curator:request:render-widget-request.before_handle'    => 'onRenderWidgetRequestBeforeHandle',
             'triniti:curator:request:render-widget-response.created'         => 'onRenderResponseCreated',
         ];
+    }
+
+    public function __construct(CacheItemPoolInterface $cache)
+    {
+        $this->cache = $cache;
     }
 
     public function onRenderPromotionRequestBeforeHandle(GetResponseEvent $pbjxEvent): void
@@ -112,13 +112,8 @@ class RenderRequestInterceptor implements EventSubscriber
 
         $cacheItem = $this->cache->getItem($this->getCacheKey($id, $context));
         if ($cacheItem->isHit()) {
-            /** @var Message $response */
             $response = $cacheItem->get();
-            if (
-                $response instanceof Message
-                && ($response::schema()->hasMixin('triniti:curator:mixin:render-promotion-response')
-                || $response::schema()->hasMixin('triniti:curator:mixin:render-widget-response'))
-            ) {
+            if ($response instanceof Message) {
                 /*
                 if ($response->isFrozen()) {
                     $response = clone $response;
