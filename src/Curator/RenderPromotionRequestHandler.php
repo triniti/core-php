@@ -22,18 +22,18 @@ class RenderPromotionRequestHandler implements RequestHandler
     protected Ncr $ncr;
     protected LoggerInterface $logger;
 
+    public static function handlesCuries(): array
+    {
+        // deprecated mixins, will be removed in 3.x
+        $curies = MessageResolver::findAllUsingMixin('triniti:curator:mixin:render-promotion-request:v1', false);
+        $curies[] = 'triniti:curator:request:render-promotion-request';
+        return $curies;
+    }
+
     public function __construct(Ncr $ncr, ?LoggerInterface $logger = null)
     {
         $this->ncr = $ncr;
         $this->logger = $logger ?: new NullLogger();
-    }
-
-    public static function handlesCuries(): array
-    {
-        // deprecated mixins, will be removed in 3.x
-        $curies = MessageResolver::findAllUsingMixin('triniti:curator:mixin:render-promotion-request', false);
-        $curies[] = 'triniti:curator:request:render-promotion-request';
-        return $curies;
     }
 
     public function handleRequest(Message $request, Pbjx $pbjx): Message
@@ -46,7 +46,7 @@ class RenderPromotionRequestHandler implements RequestHandler
 
         $response->set('promotion', $promotion);
 
-        if (NodeStatus::DELETED()->equals($promotion->get('status'))) {
+        if (NodeStatus::DELETED === $promotion->fget('status')) {
             // a deleted promotion cannot promote
             return $response;
         }
@@ -80,14 +80,6 @@ class RenderPromotionRequestHandler implements RequestHandler
         return $response->addToList('widgets', $widgets);
     }
 
-    /**
-     * Gets a promotion by its NodeRef if available or falls back to findPromotion.
-     *
-     * @param Message $request
-     * @param Pbjx    $pbjx
-     *
-     * @return Message|null
-     */
     protected function getPromotion(Message $request, Pbjx $pbjx): ?Message
     {
         if (!$request->has('promotion_ref')) {
@@ -95,7 +87,9 @@ class RenderPromotionRequestHandler implements RequestHandler
         }
 
         try {
-            return $this->ncr->getNode($request->get('promotion_ref'));
+            return $this->ncr->getNode(
+                $request->get('promotion_ref'), false, ['causator' => $request]
+            );
         } catch (\Throwable $e) {
             $this->logger->warning(
                 'Unable to getPromotion for request [{pbj_schema}]',
@@ -110,14 +104,6 @@ class RenderPromotionRequestHandler implements RequestHandler
         return null;
     }
 
-    /**
-     * Finds the promotion that should render for a given slot/time/etc.
-     *
-     * @param Message $request
-     * @param Pbjx $pbjx
-     *
-     * @return Message|null
-     */
     protected function findPromotion(Message $request, Pbjx $pbjx): ?Message
     {
         if (!$request->has('slot')) {
@@ -132,7 +118,6 @@ class RenderPromotionRequestHandler implements RequestHandler
                 ->set('slot', $request->get('slot'))
                 ->set('render_at', $request->get('render_at') ?: $request->get('occurred_at')->toDateTime());
 
-            /** @var Message $response */
             $response = $pbjx->copyContext($request, $searchRequest)->request($searchRequest);
             if (!$response->has('nodes')) {
                 return null;
