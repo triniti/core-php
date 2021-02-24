@@ -14,28 +14,23 @@ class WidgetAggregate extends Aggregate
     protected function __construct(Message $node, Pbjx $pbjx, bool $syncAllEvents = false)
     {
         parent::__construct($node, $pbjx, $syncAllEvents);
-        $this->enforceWidgetRules($this->node);
-    }
-
-    protected function enrichNodeCreated(Message $event): void
-    {
-        $this->enforceWidgetRules($event->get('node'));
-        parent::enrichNodeCreated($event);
+        // widgets are only published or deleted, enforce it.
+        if (NodeStatus::DELETED !== $this->node->fget('status')) {
+            $this->node->set('status', NodeStatus::PUBLISHED());
+        }
     }
 
     protected function enrichNodeUpdated(Message $event): void
     {
-        $this->enforceWidgetRules($event->get('new_node'));
-        parent::enrichNodeUpdated($event);
-    }
+        /** @var Message $newNode */
+        $newNode = $event->get('new_node');
 
-    protected function enforceWidgetRules(Message $node): void
-    {
-        /**
-         * a widget can only be "published". if it gets deleted
-         * and later updated it will be published again.
-         */
-        $node->set('status', NodeStatus::PUBLISHED());
+        // widgets are only published or deleted, enforce it.
+        if (NodeStatus::DELETED !== $newNode->fget('status')) {
+            $newNode->set('status', NodeStatus::PUBLISHED());
+        }
+
+        parent::enrichNodeUpdated($event);
     }
 
     /**
@@ -53,6 +48,36 @@ class WidgetAggregate extends Aggregate
         if ($newName !== $name && is_callable([$this, $newName])) {
             return $this->$newName(...$arguments);
         }
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createNodeCreatedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:curator:event:widget-created:v1')::create();
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createNodeDeletedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:curator:event:widget-deleted:v1')::create();
     }
 
     /**
