@@ -18,16 +18,17 @@ class TeaserValidator implements EventSubscriber, PbjxValidator
 {
     protected Ncr $ncr;
 
-    public function __construct(Ncr $ncr)
-    {
-        $this->ncr = $ncr;
-    }
-
     public static function getSubscribedEvents()
     {
         return [
-            'gdbots:ncr:mixin:publish-node.validate' => 'validatePublishNode',
+            'gdbots:ncr:command:publish-node.validate' => 'validatePublishNode',
+            'gdbots:ncr:mixin:publish-node.validate'   => 'validatePublishNode',
         ];
+    }
+
+    public function __construct(Ncr $ncr)
+    {
+        $this->ncr = $ncr;
     }
 
     public function validatePublishNode(PbjxEvent $pbjxEvent): void
@@ -58,18 +59,19 @@ class TeaserValidator implements EventSubscriber, PbjxValidator
         if ($command->has('ctx_causator_ref')) {
             /** @var MessageRef $causator */
             $causator = $command->get('ctx_causator_ref');
-            if (strpos($causator->getCurie()->getMessage(), '-published')) {
+            if (str_ends_with($causator->getCurie()->getMessage(), '-published')) {
                 return;
             }
         }
 
-        $teaser = $this->ncr->getNode($teaserRef);
+        $context = ['causator' => $command];
+        $teaser = $this->ncr->getNode($teaserRef, false, $context);
         if (!$teaser->has('target_ref')) {
             return;
         }
 
-        $target = $this->ncr->getNode($teaser->get('target_ref'));
-        if (!NodeStatus::PUBLISHED()->equals($target->get('status'))) {
+        $target = $this->ncr->getNode($teaser->get('target_ref'), false, $context);
+        if (NodeStatus::PUBLISHED !== $target->fget('status')) {
             throw new TargetNotPublished();
         }
     }
