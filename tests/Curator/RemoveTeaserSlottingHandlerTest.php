@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Triniti\Tests\Curator;
 
+use Acme\Schemas\Curator\Event\TeaserSlottingRemovedV1;
 use Acme\Schemas\Curator\Node\ArticleTeaserV1;
 use Acme\Schemas\News\Node\ArticleV1;
 use Gdbots\Ncr\AggregateResolver;
@@ -11,7 +12,6 @@ use Gdbots\Pbj\SchemaCurie;
 use Gdbots\Schemas\Pbjx\StreamId;
 use Triniti\Curator\RemoveTeaserSlottingHandler;
 use Triniti\Schemas\Curator\Command\RemoveTeaserSlottingV1;
-use Triniti\Schemas\Curator\Event\TeaserSlottingRemovedV1;
 use Triniti\Tests\AbstractPbjxTest;
 use Triniti\Tests\MockNcrSearch;
 use Triniti\Tests\MockSearchNodesRequestHandler;
@@ -63,7 +63,7 @@ final class RemoveTeaserSlottingHandlerTest extends AbstractPbjxTest
             new MockSearchNodesRequestHandler($ncrSearch)
         );
         $command = RemoveTeaserSlottingV1::create();
-        $handler = new RemoveTeaserSlottingHandler($this->ncr);
+        $handler = new RemoveTeaserSlottingHandler();
         $handler->handleCommand($command, $this->pbjx);
 
         $eventCount = 0;
@@ -85,7 +85,7 @@ final class RemoveTeaserSlottingHandlerTest extends AbstractPbjxTest
             new MockSearchNodesRequestHandler($ncrSearch),
             );
         $command = RemoveTeaserSlottingV1::create()->addToMap('slotting', 'home', 2);
-        $handler = new RemoveTeaserSlottingHandler($this->ncr);
+        $handler = new RemoveTeaserSlottingHandler();
         $handler->handleCommand($command, $this->pbjx);
 
         $eventCount = 0;
