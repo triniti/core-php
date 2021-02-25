@@ -6,7 +6,6 @@ namespace Triniti\Curator;
 use Gdbots\Ncr\Aggregate;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
-use Gdbots\Schemas\Ncr\Event\NodeUpdatedV1;
 
 class TeaserAggregate extends Aggregate
 {
@@ -32,24 +31,6 @@ class TeaserAggregate extends Aggregate
         $this->copyContext($command, $event);
         $event->set('node_ref', $this->nodeRef);
         $event->addToSet('slotting_keys', $slottingKeys);
-        $this->recordEvent($event);
-    }
-
-    public function syncTeaser(Message $command, Message $newTeaser): void
-    {
-        $oldETag = static::generateEtag($this->node);
-        $newETag = static::generateEtag($newTeaser);
-        if ($oldETag === $newETag) {
-            return;
-        }
-
-        $event = NodeUpdatedV1::create()
-            ->set('node_ref', $this->nodeRef)
-            ->set('old_node', $this->node)
-            ->set('old_etag', $oldETag)
-            ->set('new_node', $newTeaser)
-            ->set('new_etag', $newETag);
-        $this->pbjx->copyContext($command, $event);
         $this->recordEvent($event);
     }
 
@@ -83,6 +64,36 @@ class TeaserAggregate extends Aggregate
     protected function createTeaserSlottingRemoved(Message $command): Message
     {
         return MessageResolver::resolveCurie('*:curator:event:teaser-slotting-removed:v1')::create();
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createNodeCreatedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:curator:event:teaser-created:v1')::create();
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createNodeDeletedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:curator:event:teaser-deleted:v1')::create();
     }
 
     /**

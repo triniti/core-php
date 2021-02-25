@@ -7,11 +7,12 @@ use Gdbots\Ncr\AggregateResolver;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
-use Gdbots\Pbj\SchemaCurie;
 use Gdbots\Pbj\Util\StringUtil;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Pbjx;
+use Gdbots\Schemas\Ncr\Command\CreateNodeV1;
+use Gdbots\Schemas\Ncr\Command\UpdateNodeV1;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Triniti\Sys\Flags;
 
@@ -26,18 +27,18 @@ class SyncTeaserHandler implements CommandHandler
     protected Flags $flags;
     protected TeaserTransformer $transformer;
 
-    public function __construct(Ncr $ncr, Flags $flags, TeaserTransformer $transformer)
-    {
-        $this->ncr = $ncr;
-        $this->flags = $flags;
-        $this->transformer = $transformer;
-    }
-
     public static function handlesCuries(): array
     {
         $curies = MessageResolver::findAllUsingMixin('triniti:curator:mixin:sync-teaser:v1', false);
         $curies[] = 'triniti:curator:command:sync-teaser';
         return $curies;
+    }
+
+    public function __construct(Ncr $ncr, Flags $flags, TeaserTransformer $transformer)
+    {
+        $this->ncr = $ncr;
+        $this->flags = $flags;
+        $this->transformer = $transformer;
     }
 
     public function handleCommand(Message $command, Pbjx $pbjx): void
@@ -67,18 +68,19 @@ class SyncTeaserHandler implements CommandHandler
      *
      * If no teasers exist for that target, one will be created.
      *
-     * @param SyncTeaser $command
-     * @param Pbjx       $pbjx
+     * @param Message $causator
+     * @param Pbjx    $pbjx
      */
-    protected function handleSyncByTargetRef(Message $command, Pbjx $pbjx): void
+    protected function handleSyncByTargetRef(Message $causator, Pbjx $pbjx): void
     {
         /** @var NodeRef $targetRef */
-        $targetRef = $command->get('target_ref');
+        $targetRef = $causator->get('target_ref');
         $teasers = $this->getTeasers($targetRef);
+        $context = ['causator' => $causator];
 
-        $target = $this->ncr->getNode($targetRef, true);
+        $target = $this->ncr->getNode($targetRef, true, $context);
         if (count($teasers['all']) > 0) {
-            $this->updateTeasers($command, $pbjx, $teasers['sync'], $target);
+            $this->updateTeasers($causator, $pbjx, $teasers['sync'], $target);
             return;
         }
 
@@ -99,7 +101,7 @@ class SyncTeaserHandler implements CommandHandler
             return;
         }
 
-        if (NodeStatus::PUBLISHED()->equals($target->get('status'))) {
+        if (NodeStatus::PUBLISHED === $target->fget('status')) {
             /*
              * for now we don't create teasers for already published targets
              * simply because we are not yet handling the auto publishing
@@ -110,60 +112,56 @@ class SyncTeaserHandler implements CommandHandler
             return;
         }
 
-        static $class = null;
-        if (null === $class) {
-            $vendor = MessageResolver::getDefaultVendor();
-            $class = MessageResolver::resolveCurie(
-                SchemaCurie::fromString("{$vendor}:curator:command:create-teaser")
-            );
-        }
-
         $teaser = $this->transformer::transform($target);
-        $createCommand = $class::create()->set('node', $teaser);
-        $pbjx->copyContext($command, $createCommand);
-        $teaser
-            ->clear('updated_at')
-            ->clear('updater_ref')
-            ->set('created_at', $command->get('occurred_at'))
-            ->set('creator_ref', $command->get('ctx_user_ref', $target->get('updater_ref', $target->get('creator_ref'))));
+        $command = CreateNodeV1::create()->set('node', $teaser);
+        $pbjx->copyContext($causator, $command);
+        $command->set('ctx_user_ref', $causator->get('ctx_user_ref', $target->get('creator_ref')));
 
         $aggregate = AggregateResolver::resolve($teaser->generateNodeRef()->getQName())::fromNode($teaser, $pbjx);
-        $aggregate->sync(['causator' => $command]);
-        $aggregate->createNode($createCommand);
-        $aggregate->commit();
+        $aggregate->createNode($command);
+        $aggregate->commit($context);
     }
 
     /**
      * When syncing by teaser_ref, the teaser will always be synced regardless
      * of the value of sync_with_target.
      *
-     * @param Message $command
+     * @param Message $causator
      * @param Pbjx    $pbjx
      */
-    protected function handleSyncByTeaserRef(Message $command, Pbjx $pbjx): void
+    protected function handleSyncByTeaserRef(Message $causator, Pbjx $pbjx): void
     {
-        $teaser = $this->ncr->getNode($command->get('teaser_ref'), true);
+        $context = ['causator' => $causator];
+
+        $teaser = $this->ncr->getNode($causator->get('teaser_ref'), true, $context);
         if (!$this->isNodeSupported($teaser)) {
             return;
         }
 
-        $target = $this->ncr->getNode($teaser->get('target_ref'), true);
-        $this->updateTeasers($command, $pbjx, [$teaser], $target);
+        $target = $this->ncr->getNode($teaser->get('target_ref'), true, $context);
+        $this->updateTeasers($causator, $pbjx, [$teaser], $target);
     }
 
-    protected function updateTeasers(Message $command, Pbjx $pbjx, array $teasers, Message $target): void
+    protected function updateTeasers(Message $causator, Pbjx $pbjx, array $teasers, Message $target): void
     {
-        foreach ($teasers as $teaser) {
-            $newTeaser = $this->transformer::transform($target, (clone $teaser));
-            $newTeaser
-                ->set('updated_at', $command->get('occurred_at'))
-                ->set('updater_ref', $command->get('ctx_user_ref', $target->get('updater_ref')));
+        $context = ['causator' => $causator];
 
-            /** @var TeaserAggregate $aggregate */
-            $aggregate = AggregateResolver::resolve($teaser->generateNodeRef()->getQName())::fromNode($teaser, $pbjx);
-            $aggregate->sync(['causator' => $command]);
-            $aggregate->syncTeaser($command, $newTeaser);
-            $aggregate->commit();
+        /** @var Message $teaser */
+        foreach ($teasers as $teaser) {
+            $teaserRef = $teaser->generateNodeRef();
+            $aggregate = AggregateResolver::resolve($teaserRef->getQName())::fromNode($teaser, $pbjx);
+            $aggregate->sync($context);
+            $newTeaser = $this->transformer::transform($target, $aggregate->getNode());
+
+            $command = UpdateNodeV1::create()
+                ->set('node_ref', $teaserRef)
+                ->set('new_node', $newTeaser);
+
+            $pbjx->copyContext($causator, $command);
+            $command->set('ctx_user_ref', $causator->get('ctx_user_ref', $target->get('updater_ref')));
+
+            $aggregate->updateNode($command);
+            $aggregate->commit($context);
         }
     }
 
