@@ -3,14 +3,15 @@ declare(strict_types=1);
 
 namespace Triniti\Curator;
 
+use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
-use Gdbots\Pbj\MessageResolver;
-use Gdbots\Pbj\Schema;
-use Gdbots\Pbj\SchemaCurie;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\EventSubscriber;
-use Gdbots\Pbjx\Pbjx;
+use Gdbots\Schemas\Ncr\Command\DeleteNodeV1;
+use Gdbots\Schemas\Ncr\Command\ExpireNodeV1;
+use Gdbots\Schemas\Ncr\Command\PublishNodeV1;
+use Gdbots\Schemas\Ncr\Command\UnpublishNodeV1;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Triniti\Schemas\Curator\Command\SyncTeaserV1;
 
@@ -23,68 +24,29 @@ class TeaserableWatcher implements EventSubscriber
 {
     use SyncTeaserTrait;
 
+    public static function getSubscribedEvents()
+    {
+        return [
+            'triniti:curator:mixin:teaserable.created'     => 'syncTeasers',
+            'triniti:curator:mixin:teaserable.deleted'     => 'deactivateTeasers',
+            'triniti:curator:mixin:teaserable.expired'     => 'deactivateTeasers',
+            'triniti:curator:mixin:teaserable.published'   => 'activateTeasers',
+            'triniti:curator:mixin:teaserable.scheduled'   => 'activateTeasers',
+            'triniti:curator:mixin:teaserable.unpublished' => 'deactivateTeasers',
+            'triniti:curator:mixin:teaserable.updated'     => 'syncTeasers',
+        ];
+    }
+
     public function __construct(Ncr $ncr)
     {
         $this->ncr = $ncr;
     }
 
-    public static function getSubscribedEvents()
+    public function activateTeasers(NodeProjectedEvent $pbjxEvent): void
     {
-        return [
-            'gdbots:ncr:mixin:node-created'     => 'onNodeCreated',
-            'gdbots:ncr:mixin:node-deleted'     => 'onNodeDeleted',
-            'gdbots:ncr:mixin:node-expired'     => 'onNodeExpired',
-            'gdbots:ncr:mixin:node-published'   => 'onNodePublished',
-            'gdbots:ncr:mixin:node-scheduled'   => 'onNodeScheduled',
-            'gdbots:ncr:mixin:node-unpublished' => 'onNodeUnpublished',
-            'gdbots:ncr:mixin:node-updated'     => 'onNodeUpdated',
-        ];
-    }
-
-    public function onNodeCreated(Message $event, Pbjx $pbjx): void
-    {
-        $this->syncTeasers($event, $pbjx);
-    }
-
-    public function onNodeDeleted(Message $event, Pbjx $pbjx): void
-    {
-        $this->deactivateTeasers($event, $pbjx);
-    }
-
-    public function onNodeExpired(Message $event, Pbjx $pbjx): void
-    {
-        $this->deactivateTeasers($event, $pbjx);
-    }
-
-    public function onNodePublished(Message $event, Pbjx $pbjx): void
-    {
-        $this->activateTeasers($event, $pbjx);
-    }
-
-    public function onNodeScheduled(Message $event, Pbjx $pbjx): void
-    {
-        $this->activateTeasers($event, $pbjx);
-    }
-
-    public function onNodeUnpublished(Message $event, Pbjx $pbjx): void
-    {
-        $this->deactivateTeasers($event, $pbjx);
-    }
-
-    public function onNodeUpdated(Message $event, Pbjx $pbjx): void
-    {
-        $this->syncTeasers($event, $pbjx);
-    }
-
-    protected function activateTeasers(Message $event, Pbjx $pbjx): void
-    {
+        $event = $pbjxEvent->getLastEvent();
+        $pbjx = $pbjxEvent::getPbjx();
         if ($event->isReplay()) {
-            return;
-        }
-
-        /** @var NodeRef $targetRef */
-        $targetRef = $event->get('node_ref');
-        if (!$this->isNodeRefSupported($targetRef)) {
             return;
         }
 
@@ -92,17 +54,10 @@ class TeaserableWatcher implements EventSubscriber
             return;
         }
 
-        static $class = null;
-        if (null === $class) {
-            $class = MessageResolver::resolveCurie(
-                SchemaCurie::fromString("{$targetRef->getVendor()}:curator:command:publish-teaser")
-            );
-        }
-
+        $targetRef = $pbjxEvent->getNode()->generateNodeRef();
         foreach ($this->getTeasers($targetRef, NodeStatus::DRAFT())['sync'] as $index => $teaser) {
             $teaserRef = NodeRef::fromNode($teaser);
-            /** @var Message $command */
-            $command = $class::create()
+            $command = PublishNodeV1::create()
                 ->set('node_ref', $teaserRef)
                 ->set('publish_at', $event->get('published_at', $event->get('publish_at')));
             $pbjx->copyContext($event, $command);
@@ -114,15 +69,11 @@ class TeaserableWatcher implements EventSubscriber
         }
     }
 
-    protected function deactivateTeasers(Message $event, Pbjx $pbjx): void
+    public function deactivateTeasers(NodeProjectedEvent $pbjxEvent): void
     {
+        $event = $pbjxEvent->getLastEvent();
+        $pbjx = $pbjxEvent::getPbjx();
         if ($event->isReplay()) {
-            return;
-        }
-
-        /** @var NodeRef $targetRef */
-        $targetRef = $event->get('node_ref');
-        if (!$this->isNodeRefSupported($targetRef)) {
             return;
         }
 
@@ -130,28 +81,23 @@ class TeaserableWatcher implements EventSubscriber
             return;
         }
 
-        if ($event::schema()->hasMixin('gdbots:ncr:mixin:node-deleted')) {
+        $eventType = $event::schema()->getCurie()->getMessage();
+        if (str_ends_with($eventType, '-deleted')) {
             $operation = 'delete';
-        } else if ($event::schema()->hasMixin('gdbots:ncr:mixin:node-expired')) {
+            $class = DeleteNodeV1::class;
+        } else if (str_ends_with($eventType, '-expired')) {
             $operation = 'expire';
+            $class = ExpireNodeV1::class;
         } else {
             $operation = 'unpublish';
+            $class = UnpublishNodeV1::class;
         }
 
-        static $classes = null;
-        if (null === $classes) {
-            $vendor = $targetRef->getVendor();
-            $classes = [
-                'delete'    => MessageResolver::resolveCurie(SchemaCurie::fromString("{$vendor}:curator:command:delete-teaser")),
-                'expire'    => MessageResolver::resolveCurie(SchemaCurie::fromString("{$vendor}:curator:command:expire-teaser")),
-                'unpublish' => MessageResolver::resolveCurie(SchemaCurie::fromString("{$vendor}:curator:command:unpublish-teaser")),
-            ];
-        }
-
+        $targetRef = $pbjxEvent->getNode()->generateNodeRef();
         foreach ($this->getTeasers($targetRef, NodeStatus::PUBLISHED())['all'] as $index => $teaser) {
             $teaserRef = NodeRef::fromNode($teaser);
-            /** @var Message $command */
-            $command = $classes[$operation]::create()->set('node_ref', $teaserRef);
+            /** @var Message $class */
+            $command = $class::create()->set('node_ref', $teaserRef);
             $pbjx->copyContext($event, $command);
             $command
                 ->set('ctx_correlator_ref', $event->generateMessageRef())
@@ -161,18 +107,11 @@ class TeaserableWatcher implements EventSubscriber
         }
     }
 
-    protected function syncTeasers(Message $event, Pbjx $pbjx): void
+    public function syncTeasers(NodeProjectedEvent $pbjxEvent): void
     {
+        $event = $pbjxEvent->getLastEvent();
+        $pbjx = $pbjxEvent::getPbjx();
         if ($event->isReplay()) {
-            return;
-        }
-
-        /** @var NodeRef $targetRef */
-        $targetRef = $event->has('node')
-            ? NodeRef::fromNode($event->get('node'))
-            : $event->get('node_ref');
-
-        if (!$this->isNodeRefSupported($targetRef)) {
             return;
         }
 
@@ -180,6 +119,7 @@ class TeaserableWatcher implements EventSubscriber
             return;
         }
 
+        $targetRef = $pbjxEvent->getNode()->generateNodeRef();
         $command = SyncTeaserV1::create()->set('target_ref', $targetRef);
         $pbjx->copyContext($event, $command);
         $command
@@ -187,20 +127,6 @@ class TeaserableWatcher implements EventSubscriber
             ->clear('ctx_app');
 
         $pbjx->sendAt($command, strtotime('+3 seconds'), "{$targetRef}.sync-teasers");
-    }
-
-    protected function isNodeRefSupported(NodeRef $targetRef): bool
-    {
-        static $validQNames = null;
-        if (null === $validQNames) {
-            $validQNames = [];
-            foreach (MessageResolver::findAllUsingMixin('triniti:curator:mixin:teaserable:v1', false) as $curie) {
-                $qname = SchemaCurie::fromString($curie)->getQName();
-                $validQNames[$qname->getMessage()] = $qname;
-            }
-        }
-
-        return isset($validQNames[$targetRef->getQName()->getMessage()]);
     }
 
     protected function shouldSyncTeasers(Message $event): bool
