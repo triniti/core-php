@@ -10,7 +10,6 @@ use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Pbjx\Util\ShardUtil;
 use Gdbots\Schemas\Pbjx\StreamId;
-use Triniti\Schemas\Apollo\Event\VoteCastedV1;
 
 class CastVoteHandler implements CommandHandler
 {

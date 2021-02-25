@@ -36,10 +36,10 @@ class RemoveTeaserSlottingHandler implements CommandHandler
             $query[] = "slotting.{$key}:{$value}";
         }
 
-        $request = $this->createSearchTeasersRequest($command, $pbjx)
+        $request = SearchTeasersRequestV1::create()
             ->set('q', implode(' OR ', $query))
             ->set('status', NodeStatus::PUBLISHED());
-        $response = $pbjx->request($request);
+        $response = $pbjx->copyContext($command, $request)->request($request);
 
         /** @var Message $node */
         foreach ($response->get('nodes', []) as $node) {
@@ -53,14 +53,7 @@ class RemoveTeaserSlottingHandler implements CommandHandler
             $aggregate = AggregateResolver::resolve($nodeRef->getQName())::fromNode($node, $pbjx);
             $aggregate->sync($context);
             $aggregate->removeTeaserSlotting($command);
-            $aggregate->commit();
+            $aggregate->commit($context);
         }
-    }
-
-    protected function createSearchTeasersRequest(Message $command, Pbjx $pbjx): Message
-    {
-        $request = SearchTeasersRequestV1::create();
-        $pbjx->copyContext($command, $request);
-        return $request;
     }
 }

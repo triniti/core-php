@@ -7,16 +7,16 @@ use Gdbots\Ncr\Aggregate;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
 use Gdbots\Schemas\Ncr\Event\NodeUpdatedV1;
-use Triniti\Schemas\Curator\Event\TeaserSlottingRemovedV1;
 
 class TeaserAggregate extends Aggregate
 {
     public function removeTeaserSlotting(Message $command): void
     {
-        $event = $this->createTeaserSlottingRemoved($command);
-        $event->set('node_ref', $this->nodeRef);
-        $slottingKeys = [];
+        if (!$command->has('slotting')) {
+            return;
+        }
 
+        $slottingKeys = [];
         foreach ($command->get('slotting') as $key => $value) {
             $currentSlot = $this->node->getFromMap('slotting', $key, 0);
             if ($currentSlot === $value) {
@@ -28,6 +28,9 @@ class TeaserAggregate extends Aggregate
             return;
         }
 
+        $event = $this->createTeaserSlottingRemoved($command);
+        $this->copyContext($command, $event);
+        $event->set('node_ref', $this->nodeRef);
         $event->addToSet('slotting_keys', $slottingKeys);
         $this->recordEvent($event);
     }
@@ -50,13 +53,6 @@ class TeaserAggregate extends Aggregate
         $this->recordEvent($event);
     }
 
-    protected function createTeaserSlottingRemoved(Message $command): Message
-    {
-        $event = TeaserSlottingRemovedV1::create();
-        $this->pbjx->copyContext($command, $event);
-        return $event;
-    }
-
     /**
      * This is for legacy uses of command/event mixins for common
      * ncr operations. It will be removed in 3.x.
@@ -72,6 +68,21 @@ class TeaserAggregate extends Aggregate
         if ($newName !== $name && is_callable([$this, $newName])) {
             return $this->$newName(...$arguments);
         }
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createTeaserSlottingRemoved(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:curator:event:teaser-slotting-removed:v1')::create();
     }
 
     /**
