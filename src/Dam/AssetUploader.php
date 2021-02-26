@@ -7,7 +7,7 @@ use Aws\S3\S3Client;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\ClientInterface as GuzzleClientInterface;
 use Triniti\Dam\Exception\InvalidArgumentException;
-use Triniti\Dam\Util\MimeTypeUtils;
+use Triniti\Dam\Util\MimeTypeUtil;
 use Triniti\Schemas\Dam\AssetId;
 
 class AssetUploader
@@ -50,7 +50,7 @@ class AssetUploader
 
     protected function uploadToS3(AssetId $assetId, string $filename, array $options = []): void
     {
-        $mimeType = $options['mimeType'] ?? MimeTypeUtils::mimeTypeFromExtension($assetId->getExt());
+        $mimeType = $options['mimeType'] ?? MimeTypeUtil::mimeTypeFromExtension($assetId->getExt());
         $version = $options['version'] ?? 'o';
         $quality = $options['quality'] ?? null;
 

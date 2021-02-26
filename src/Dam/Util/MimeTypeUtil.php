@@ -5,29 +5,18 @@ namespace Triniti\Dam\Util;
 
 use GuzzleHttp\Psr7;
 
-class MimeTypeUtils
+class MimeTypeUtil
 {
-    /** @var string */
-    private static $mimeTypeToResolve;
+    private static ?string $mimeTypeToResolve = null;
 
-    /**
-     * @param string $filename
-     *
-     * @return string
-     */
     public static function mimeTypeFromFilename(string $filename): ?string
     {
         return self::mimeTypeFromExtension(pathinfo($filename, PATHINFO_EXTENSION));
     }
 
-    /**
-     * @param string $extension
-     *
-     * @return string
-     */
     public static function mimeTypeFromExtension(string $extension): ?string
     {
-        switch($extension) {
+        switch ($extension) {
             case 'mxf':
                 return 'application/mxf';
             case 'srt':
@@ -39,11 +28,6 @@ class MimeTypeUtils
         }
     }
 
-    /**
-     * @param string $mimeType
-     *
-     * @return string
-     */
     public static function assetTypeFromMimeType(?string $mimeType = null): string
     {
         if (null === $mimeType) {

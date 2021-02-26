@@ -10,7 +10,7 @@ use Gdbots\Pbjx\Pbjx;
 use Gdbots\Pbjx\RequestHandler;
 use Triniti\Dam\Exception\AssetTypeNotSupported;
 use Triniti\Dam\Exception\InvalidArgumentException;
-use Triniti\Dam\Util\MimeTypeUtils;
+use Triniti\Dam\Util\MimeTypeUtil;
 use Triniti\Schemas\Dam\AssetId;
 use Triniti\Schemas\Dam\Request\GetUploadUrlsResponseV1;
 
@@ -28,7 +28,7 @@ final class GetUploadUrlsRequestHandler implements RequestHandler
     public static function handlesCuries(): array
     {
         // deprecated mixins, will be removed in 3.x
-        $curies = MessageResolver::findAllUsingMixin('triniti:dam:mixin:get-upload-urls-request', false);
+        $curies = MessageResolver::findAllUsingMixin('triniti:dam:mixin:get-upload-urls-request:v1', false);
         $curies[] = 'triniti:dam:request:get-upload-urls-request';
         return $curies;
     }
@@ -61,8 +61,8 @@ final class GetUploadUrlsRequestHandler implements RequestHandler
                     throw new AssetTypeNotSupported("The file '{$filename}' has no extension.");
                 }
 
-                $mimeType = MimeTypeUtils::mimeTypeFromFilename($filename);
-                $type = MimeTypeUtils::assetTypeFromMimeType($mimeType);
+                $mimeType = MimeTypeUtil::mimeTypeFromFilename($filename);
+                $type = MimeTypeUtil::assetTypeFromMimeType($mimeType);
                 $date = $request->get('occurred_at')->toDateTime();
                 $assetId = $request->get('asset_id', AssetId::create($type, $extension, $date));
 
@@ -70,11 +70,7 @@ final class GetUploadUrlsRequestHandler implements RequestHandler
                     throw new AssetTypeNotSupported("The file '{$filename}' type does not match the provided asset id '{$assetId}'");
                 }
 
-                static $vendor = null;
-                if (null === $vendor) {
-                    $vendor = MessageResolver::getDefaultVendor();
-                }
-
+                $vendor = MessageResolver::getDefaultVendor();
                 $command = $this->s3Client->getCommand('PutObject', [
                     'Bucket'       => $this->bucket,
                     'Key'          => $assetId->toFilePath($version, $quality),
