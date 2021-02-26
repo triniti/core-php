@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Triniti\News;
 
+use Gdbots\Ncr\Aggregate;
+use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Ncr\NcrSearch;
@@ -12,115 +14,76 @@ use Gdbots\Pbj\WellKnown\Microtime;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\DependencyInjection\PbjxProjector;
 use Gdbots\Pbjx\EventSubscriber;
-use Gdbots\Pbjx\EventSubscriberTrait;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Triniti\Schemas\News\Command\CollectArticleStatsV1;
-use Triniti\Schemas\News\Mixin\ArticleStats\ArticleStatsV1Mixin;
 
 class NcrArticleStatsProjector implements EventSubscriber, PbjxProjector
 {
-    use EventSubscriberTrait;
-
     protected Ncr $ncr;
     protected NcrSearch $ncrSearch;
-    protected bool $indexOnReplay = false;
+    protected bool $enabled;
 
-    public function __construct(Ncr $ncr, NcrSearch $ncrSearch, bool $indexOnReplay = false)
-    {
-        $this->ncr = $ncr;
-        $this->ncrSearch = $ncrSearch;
-        $this->indexOnReplay = $indexOnReplay;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public static function getSubscribedEvents()
     {
-        $vendor = MessageResolver::getDefaultVendor();
         return [
-            "{$vendor}:news:event:*" => 'onEvent',
+            'triniti:news:mixin:article.projected'       => 'onArticleProjected',
+            'triniti:news:event:article-stats-collected' => 'onArticleStatsCollected',
+
+            // deprecated mixins, will be removed in 3.x
+            'triniti:news:mixin:article-stats-collected' => 'onArticleStatsCollected',
         ];
     }
 
-    public function onArticleCreated(Message $event, Pbjx $pbjx): void
+    public function __construct(Ncr $ncr, NcrSearch $ncrSearch, bool $enabled = true)
     {
-        /** @var Message $article */
-        $article = $event->get('node');
-        $stats = $this->getOrCreateStats($article->generateNodeRef(), $event, $pbjx);
-        $this->mergeArticle($article, $stats);
-        $this->updateAndIndexStats($stats, $event, $pbjx);
+        $this->ncr = $ncr;
+        $this->ncrSearch = $ncrSearch;
+        $this->enabled = $enabled;
     }
 
-    public function onArticleDeleted(Message $event, Pbjx $pbjx): void
+    public function onArticleProjected(NodeProjectedEvent $pbjxEvent): void
     {
-        $statsRef = $this->createStatsRef($event->get('node_ref'));
-        $this->ncr->deleteNode($statsRef, $this->createNcrContext($event));
-        $this->ncrSearch->deleteNodes([$statsRef], $this->createNcrSearchContext($event));
-
-        if ($event->isReplay()) {
+        if (!$this->enabled) {
             return;
         }
 
-        $pbjx->cancelJobs(["{$statsRef}.collect"]);
-    }
+        $pbjx = $pbjxEvent::getPbjx();
+        $article = $pbjxEvent->getNode();
+        $articleRef = $article->generateNodeRef();
+        $lastEvent = $pbjxEvent->getLastEvent();
 
-    public function onArticleExpired(Message $event, Pbjx $pbjx): void
-    {
-        $stats = $this->getOrCreateStats($event->get('node_ref'), $event, $pbjx);
-        $stats->set('status', NodeStatus::EXPIRED());
-        $this->updateAndIndexStats($stats, $event, $pbjx);
-    }
+        if (NodeStatus::DELETED === $article->fget('status')) {
+            $context = ['causator' => $lastEvent];
+            $statsRef = $this->createStatsRef($articleRef);
+            $this->ncr->deleteNode($statsRef, $context);
+            $this->ncrSearch->deleteNodes([$statsRef], $context);
 
-    public function onArticleLocked(Message $event, Pbjx $pbjx): void
-    {
-        $stats = $this->getOrCreateStats($event->get('node_ref'), $event, $pbjx);
-        $stats->set('status', NodeStatus::PENDING());
-        $this->updateAndIndexStats($stats, $event, $pbjx);
-    }
+            if (!$lastEvent->isReplay()) {
+                $pbjx->cancelJobs(["{$statsRef}.collect", "{$statsRef}.collect-now"]);
+            }
+            return;
+        }
 
-    public function onArticleMarkedAsDraft(Message $event, Pbjx $pbjx): void
-    {
-        $stats = $this->getOrCreateStats($event->get('node_ref'), $event, $pbjx);
-        $stats->set('status', NodeStatus::DRAFT());
-        $this->updateAndIndexStats($stats, $event, $pbjx);
-    }
-
-    public function onArticleMarkedAsPending(Message $event, Pbjx $pbjx): void
-    {
-        $stats = $this->getOrCreateStats($event->get('node_ref'), $event, $pbjx);
-        $stats->set('status', NodeStatus::PENDING());
-        $this->updateAndIndexStats($stats, $event, $pbjx);
-    }
-
-    public function onArticlePublished(Message $event, Pbjx $pbjx): void
-    {
-        $stats = $this->getOrCreateStats($event->get('node_ref'), $event, $pbjx);
-        $stats
-            ->set('status', NodeStatus::PUBLISHED())
-            ->set('created_at', Microtime::fromDateTime($event->get('published_at')));
-        $this->updateAndIndexStats($stats, $event, $pbjx);
-    }
-
-    public function onArticleScheduled(Message $event, Pbjx $pbjx): void
-    {
-        $stats = $this->getOrCreateStats($event->get('node_ref'), $event, $pbjx);
-        $stats
-            ->set('status', NodeStatus::SCHEDULED())
-            ->set('created_at', Microtime::fromDateTime($event->get('publish_at')));
-        $this->updateAndIndexStats($stats, $event, $pbjx);
+        $stats = $this->getOrCreateStats($articleRef, $lastEvent);
+        $this->mergeArticle($article, $stats);
+        $this->projectNode($stats, $lastEvent, $pbjxEvent::getPbjx());
     }
 
     public function onArticleStatsCollected(Message $event, Pbjx $pbjx): void
     {
+        if (!$this->enabled) {
+            return;
+        }
+
         if (!$event->has('stats')) {
             return;
         }
 
         /** @var NodeRef $statsRef */
         $statsRef = $event->get('node_ref');
-        $stats = $this->ncr->getNode($statsRef, true, $this->createNcrContext($event));
+
+        $stats = $this->ncr->getNode($statsRef, true, ['causator' => $event]);
 
         foreach ($event->get('stats') as $name => $value) {
             if ($stats->has($name)) {
@@ -128,66 +91,62 @@ class NcrArticleStatsProjector implements EventSubscriber, PbjxProjector
             }
         }
 
-        $this->updateAndIndexStats($stats, $event, $pbjx);
+        $this->projectNode($stats, $event, $pbjx);
     }
 
-    public function onArticleUnlocked(Message $event, Pbjx $pbjx): void
+    protected function getOrCreateStats(NodeRef $articleRef, Message $event): Message
     {
-        $stats = $this->getOrCreateStats($event->get('node_ref'), $event, $pbjx);
-        $stats->set('status', NodeStatus::PENDING());
-        $this->updateAndIndexStats($stats, $event, $pbjx);
+        static $class = null;
+        if (null === $class) {
+            $class = MessageResolver::resolveCurie('*:news:node:article-stats:v1');
+        }
+
+        try {
+            $statsRef = $this->createStatsRef($articleRef);
+            $stats = $this->ncr->getNode($statsRef, true, ['causator' => $event]);
+        } catch (NodeNotFound $nf) {
+            $stats = $class::fromArray(['_id' => $articleRef->getId()]);
+        } catch (\Throwable $e) {
+            throw $e;
+        }
+
+        return $stats;
     }
 
-    public function onArticleUnpublished(Message $event, Pbjx $pbjx): void
+    protected function createStatsRef(NodeRef $articleRef): NodeRef
     {
-        $stats = $this->getOrCreateStats($event->get('node_ref'), $event, $pbjx);
-        $stats->set('status', NodeStatus::DRAFT());
-        $this->updateAndIndexStats($stats, $event, $pbjx);
+        return NodeRef::fromString(str_replace('article:', 'article-stats:', $articleRef->toString()));
     }
 
-    public function onArticleUpdated(Message $event, Pbjx $pbjx): void
+    protected function mergeArticle(Message $article, Message $stats): void
     {
-        $stats = $this->getOrCreateStats($event->get('node_ref'), $event, $pbjx);
-        $this->mergeArticle($event->get('new_node'), $stats);
-        $this->updateAndIndexStats($stats, $event, $pbjx);
+        $stats
+            ->set('_id', $article->get('_id'))
+            ->set('status', $article->get('status'))
+            ->set('title', $article->get('title'));
+
+        if ($article->has('published_at')) {
+            $createdAt = Microtime::fromDateTime($article->get('published_at'));
+        } else {
+            $createdAt = $article->get('created_at');
+        }
+
+        $stats->set('created_at', $createdAt);
     }
 
-    protected function updateAndIndexStats(Message $stats, Message $event, Pbjx $pbjx): void
+    protected function projectNode(Message $stats, Message $event, Pbjx $pbjx): void
     {
-        $expectedEtag = $stats->get('etag');
+        $context = ['causator' => $event];
         $stats
             ->set('updated_at', $event->get('occurred_at'))
             ->set('updater_ref', $event->get('ctx_user_ref'))
             ->set('last_event_ref', $event->generateMessageRef())
-            ->set('etag', $stats->generateEtag([
-                'etag',
-                'updated_at',
-                'updater_ref',
-                'last_event_ref',
-            ]));
+            ->set('etag', Aggregate::generateEtag($stats));
 
-        /** @var Message $stats */
-        $this->ncr->putNode($stats, $expectedEtag, $this->createNcrContext($event));
-        $this->indexStats($stats, $event, $pbjx);
+        $this->ncr->putNode($stats, null, $context);
+        $this->ncrSearch->indexNodes([$stats], $context);
+        $pbjx->trigger($stats, 'projected', new NodeProjectedEvent($stats, $event), false);
         $this->cancelOrCreateCollectArticleStatsJob($stats, $event, $pbjx);
-    }
-
-    protected function indexStats(Message $stats, Message $event, Pbjx $pbjx): void
-    {
-        if (!$stats::schema()->hasMixin('gdbots:ncr:mixin:indexed')) {
-            return;
-        }
-
-        if ($event->isReplay() && !$this->indexOnReplay) {
-            return;
-        }
-
-        $this->ncrSearch->indexNodes([$stats], $this->createNcrSearchContext($event));
-    }
-
-    protected function createCollectArticleStats(Message $stats, Message $event, Pbjx $pbjx): Message
-    {
-        return CollectArticleStatsV1::create();
     }
 
     protected function cancelOrCreateCollectArticleStatsJob(Message $stats, Message $event, Pbjx $pbjx): void
@@ -196,11 +155,10 @@ class NcrArticleStatsProjector implements EventSubscriber, PbjxProjector
             return;
         }
 
-        /** @var Message $stats */
-        $statsRef = NodeRef::fromNode($stats);
+        $statsRef = $stats->generateNodeRef();
 
-        if (!NodeStatus::PUBLISHED()->equals($stats->get('status'))) {
-            $pbjx->cancelJobs(["{$statsRef}.collect"]);
+        if (NodeStatus::PUBLISHED !== $stats->fget('status')) {
+            $pbjx->cancelJobs(["{$statsRef}.collect", "{$statsRef}.collect-now"]);
             return;
         }
 
@@ -208,20 +166,18 @@ class NcrArticleStatsProjector implements EventSubscriber, PbjxProjector
             return;
         }
 
-        /** @var Message $command */
-        $command = $this->createCollectArticleStats($stats, $event, $pbjx)->set('node_ref', $statsRef);
+        $command = CollectArticleStatsV1::create()->set('node_ref', $statsRef);
         $pbjx->copyContext($event, $command);
-        $command->clear('ctx_app');
 
         /** @var Microtime $createdAt */
         $createdAt = $stats->get('created_at');
         $publishedAt = $createdAt->toDateTime()->getTimestamp();
+        $schema = $event::schema();
 
-        if ($event::schema()->hasMixin('gdbots:ncr:mixin:node-updated')) {
-            try {
-                $pbjx->send($command);
-            } catch (\Throwable $e) {
-            }
+        if ($schema->hasMixin('gdbots:ncr:mixin:node-updated')
+            || $schema->usesCurie('gdbots:ncr:event:node-updated')
+        ) {
+            $pbjx->sendAt($command, strtotime('+5 seconds'), "{$statsRef}.collect-now");
         }
 
         if ($publishedAt >= strtotime('-1 hour')) {
@@ -255,40 +211,5 @@ class NcrArticleStatsProjector implements EventSubscriber, PbjxProjector
     {
         // override to implement your own check
         return true;
-    }
-
-    protected function getOrCreateStats(NodeRef $articleRef, Message $event, Pbjx $pbjx): Message
-    {
-        try {
-            $statsRef = $this->createStatsRef($articleRef);
-            $stats = $this->ncr->getNode($statsRef, true, $this->createNcrContext($event));
-        } catch (NodeNotFound $nf) {
-            $stats = ArticleStatsV1Mixin::findOne()->createMessage(['_id' => $articleRef->getId()]);
-        } catch (\Throwable $e) {
-            throw $e;
-        }
-
-        return $stats;
-    }
-
-    protected function createStatsRef(NodeRef $articleRef): NodeRef
-    {
-        return NodeRef::fromString(str_replace('article:', 'article-stats:', $articleRef->toString()));
-    }
-
-    protected function mergeArticle(Message $article, Message $stats): void
-    {
-        $stats
-            ->set('_id', $article->get('_id'))
-            ->set('status', $article->get('status'))
-            ->set('title', $article->get('title'));
-
-        if ($article->has('published_at')) {
-            $createdAt = Microtime::fromDateTime($article->get('published_at'));
-        } else {
-            $createdAt = $article->get('created_at');
-        }
-
-        $stats->set('created_at', $createdAt);
     }
 }
