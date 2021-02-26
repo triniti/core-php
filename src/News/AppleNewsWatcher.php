@@ -3,77 +3,76 @@ declare(strict_types=1);
 
 namespace Triniti\News;
 
-use Gdbots\Ncr\Exception\NodeNotFound;
+use Gdbots\Ncr\AggregateResolver;
+use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
-use Gdbots\Pbj\SchemaCurie;
-use Gdbots\Pbj\Util\StringUtil;
 use Gdbots\Pbj\WellKnown\NodeRef;
-use Gdbots\Pbj\WellKnown\UuidIdentifier;
 use Gdbots\Pbjx\EventSubscriber;
-use Gdbots\Pbjx\EventSubscriberTrait;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Iam\Request\SearchAppsRequestV1;
+use Gdbots\Schemas\Ncr\Command\CreateNodeV1;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Gdbots\Schemas\Pbjx\Enum\Code;
-use Gdbots\Schemas\Pbjx\StreamId;
-use Triniti\Schemas\News\Event\AppleNewsArticleSyncedV1;
-use Triniti\Schemas\Notify\Mixin\AppleNewsNotification\AppleNewsNotificationV1Mixin;
 
 class AppleNewsWatcher implements EventSubscriber
 {
-    use EventSubscriberTrait;
-
     protected Ncr $ncr;
+
+    public static function getSubscribedEvents()
+    {
+        return [
+            'triniti:news:mixin:article.deleted'                               => 'onArticleRemoval',
+            'triniti:news:mixin:article.expired'                               => 'onArticleRemoval',
+            'triniti:news:mixin:article.published'                             => 'onArticlePublished',
+            'triniti:news:mixin:article.renamed'                               => 'onArticleRenamed',
+            'triniti:news:mixin:article.unpublished'                           => 'onArticleRemoval',
+            'triniti:notify:mixin:apple-news-notification.notification-failed' => 'onNotificationFailed',
+            'triniti:notify:mixin:apple-news-notification.notification-sent'   => 'onNotificationSent',
+        ];
+    }
 
     public function __construct(Ncr $ncr)
     {
         $this->ncr = $ncr;
     }
 
-    public static function getSubscribedEvents()
+    public function onArticlePublished(NodeProjectedEvent $pbjxEvent): void
     {
-        $vendor = MessageResolver::getDefaultVendor();
-        return [
-            // run later than NcrArticleProjector to ensure we get latest node
-            "{$vendor}:news:event:*"                   => ['onEvent', -100],
-            'triniti:notify:mixin:notification-failed' => 'onNotificationFailed',
-            'triniti:notify:mixin:notification-sent'   => 'onNotificationSent',
-        ];
+        $pbjx = $pbjxEvent::getPbjx();
+        $event = $pbjxEvent->getLastEvent();
+        $node = $pbjxEvent->getNode();
+        $this->notifyAppleNews($event, $node, $pbjx, 'create');
     }
 
-    public function onArticleDeleted(Message $event, Pbjx $pbjx): void
+    public function onArticleRemoval(NodeProjectedEvent $pbjxEvent): void
     {
-        $this->notifyAppleNews($event, $event->get('node_ref'), $pbjx, 'delete');
+        $pbjx = $pbjxEvent::getPbjx();
+        $event = $pbjxEvent->getLastEvent();
+        $node = $pbjxEvent->getNode();
+        $this->notifyAppleNews($event, $node, $pbjx, 'delete');
     }
 
-    public function onArticleExpired(Message $event, Pbjx $pbjx): void
+    public function onArticleRenamed(NodeProjectedEvent $pbjxEvent): void
     {
-        $this->notifyAppleNews($event, $event->get('node_ref'), $pbjx, 'delete');
-    }
+        $pbjx = $pbjxEvent::getPbjx();
+        $event = $pbjxEvent->getLastEvent();
+        $node = $pbjxEvent->getNode();
 
-    public function onArticlePublished(Message $event, Pbjx $pbjx): void
-    {
-        $this->notifyAppleNews($event, $event->get('node_ref'), $pbjx, 'create');
-    }
-
-    public function onArticleRenamed(Message $event, Pbjx $pbjx): void
-    {
-        if (!NodeStatus::PUBLISHED()->equals($event->get('node_status'))) {
+        if (NodeStatus::PUBLISHED !== $node->fget('status')) {
             return;
         }
 
-        $this->notifyAppleNews($event, $event->get('node_ref'), $pbjx, 'update');
+        $this->notifyAppleNews($event, $node, $pbjx, 'update');
     }
 
-    public function onArticleUnpublished(Message $event, Pbjx $pbjx): void
+    public function onArticleUpdated(NodeProjectedEvent $pbjxEvent): void
     {
-        $this->notifyAppleNews($event, $event->get('node_ref'), $pbjx, 'delete');
-    }
+        $pbjx = $pbjxEvent::getPbjx();
+        $event = $pbjxEvent->getLastEvent();
+        $node = $pbjxEvent->getNode();
 
-    public function onArticleUpdated(Message $event, Pbjx $pbjx): void
-    {
         if ($event->isReplay()) {
             return;
         }
@@ -83,9 +82,9 @@ class AppleNewsWatcher implements EventSubscriber
         }
 
         $oldNode = $event->get('old_node');
-        $newNode = $event->get('new_node');
+        $newNode = $node;
 
-        if (!NodeStatus::PUBLISHED()->equals($newNode->get('status'))) {
+        if (NodeStatus::PUBLISHED !== $newNode->fget('status')) {
             if ($newNode->has('apple_news_id')) {
                 $operation = 'delete';
             } else {
@@ -110,90 +109,45 @@ class AppleNewsWatcher implements EventSubscriber
         $this->notifyAppleNews($event, $newNode, $pbjx, $operation);
     }
 
-    public function onNotificationFailed(Message $event, Pbjx $pbjx): void
+    public function onNotificationFailed(NodeProjectedEvent $pbjxEvent): void
     {
-        if ($event->isReplay()) {
-            return;
-        }
-
-        $notificationRef = $event->get('node_ref');
-        if ('apple-news-notification' !== $notificationRef->getLabel()) {
-            return;
-        }
         // todo: check why it failed and determine if a re-try is valid.
     }
 
-    public function onNotificationSent(Message $event, Pbjx $pbjx): void
+    public function onNotificationSent(NodeProjectedEvent $pbjxEvent): void
     {
+        $pbjx = $pbjxEvent::getPbjx();
+        $event = $pbjxEvent->getLastEvent();
+        $notification = $pbjxEvent->getNode();
+
         if ($event->isReplay()) {
             return;
         }
 
-        $notificationRef = $event->get('node_ref');
-        if ('apple-news-notification' !== $notificationRef->getLabel()) {
+        if (!$notification->has('content_ref')) {
             return;
         }
 
-        $result = $event->get('notifier_result');
-        $operation = $result->getFromMap('tags', 'apple_news_operation');
-        if ('notification' === $operation) {
-            return;
-        }
+        /** @var NodeRef $articleRef */
+        $articleRef = $notification->get('content_ref');
 
-        try {
-            $notification = $this->ncr->getNode($notificationRef, false);
-            if (!$notification->has('content_ref')) {
-                return;
-            }
-        } catch (NodeNotFound $nf) {
-            return;
-        } catch (\Throwable $e) {
-            throw $e;
-        }
+        $context = ['causator' => $event];
+        $article = $this->ncr->getNode($articleRef, true, $context);
 
-        $contentRef = $notification->get('content_ref');
-
-        $syncedEvent = $this->createAppleNewsArticleSynced($event, $pbjx)
-            ->set('node_ref', $contentRef)
-            ->set('notification_ref', $notificationRef)
-            ->set('apple_news_operation', $operation);
-
-        if ('delete' !== $operation) {
-            $id = UuidIdentifier::fromString($result->getFromMap('tags', 'apple_news_id'));
-            $revision = $result->getFromMap('tags', 'apple_news_revision', '');
-            $shareUrl = $result->getFromMap('tags', 'apple_news_share_url');
-            $syncedEvent
-                ->set('apple_news_id', $id)
-                ->set('apple_news_revision', StringUtil::urlsafeB64Decode($revision))
-                ->set('apple_news_share_url', $shareUrl);
-        }
-
-        static $vendor = null;
-        if ($vendor === null) {
-            $vendor = MessageResolver::getDefaultVendor();
-        }
-
-        $streamId = StreamId::fromString(sprintf('%s:%s:%s', $vendor, $contentRef->getLabel(), $contentRef->getId()));
-        $pbjx->getEventStore()->putEvents(
-            $streamId, [$syncedEvent], null
-        );
-    }
-
-    protected function createAppleNewsArticleSynced(Message $event, Pbjx $pbjx): Message
-    {
-        $syncedEvent = AppleNewsArticleSyncedV1::create();
-        $pbjx->copyContext($event, $syncedEvent);
-        return $syncedEvent;
+        /** @var ArticleAggregate $aggregate */
+        $aggregate = AggregateResolver::resolve($articleRef->getQName())::fromNode($article, $pbjx);
+        $aggregate->sync($context);
+        $aggregate->onAppleNewsNotificationSent($event, $notification);
+        $aggregate->commit($context);
     }
 
     protected function createAppleNewsNotification(Message $event, Message $article, Pbjx $pbjx): Message
     {
         $date = $event->get('occurred_at')->toDateTime();
-
-        return AppleNewsNotificationV1Mixin::findOne()->createMessage()
+        return MessageResolver::resolveCurie('*:notify:node:apple-news-notification:v1')::create()
             ->set('title', $article->get('title') . ' ' . $date->format('Y-m-d\TH:i:s\Z'))
             ->set('send_at', $date)
-            ->set('content_ref', NodeRef::fromNode($article))
+            ->set('content_ref', $article->generateNodeRef())
             ->set('apple_news_id', $article->get('apple_news_id'))
             ->set('apple_news_revision', $article->get('apple_news_revision'));
     }
@@ -202,11 +156,12 @@ class AppleNewsWatcher implements EventSubscriber
     {
         $request = SearchAppsRequestV1::create();
         $response = $pbjx->copyContext($event, $request)->request($request);
-        $published = NodeStatus::PUBLISHED();
 
         /** @var Message $node */
         foreach ($response->get('nodes', []) as $node) {
-            if ($node instanceof AppleNewsApp && $published->equals($node->get('status'))) {
+            if ($node::schema()->hasMixin('gdbots:iam:mixin:apple-news-app')
+                && NodeStatus::PUBLISHED === $node->fget('status')
+            ) {
                 return $node;
             }
         }
@@ -214,23 +169,9 @@ class AppleNewsWatcher implements EventSubscriber
         return null;
     }
 
-    protected function notifyAppleNews(Message $event, $article, Pbjx $pbjx, string $operation): void
+    protected function notifyAppleNews(Message $event, Message $article, Pbjx $pbjx, string $operation): void
     {
         if ($event->isReplay()) {
-            return;
-        }
-
-        if ($article instanceof NodeRef) {
-            try {
-                $article = $this->ncr->getNode($article, false);
-            } catch (NodeNotFound $nf) {
-                return;
-            } catch (\Throwable $e) {
-                throw $e;
-            }
-        }
-
-        if (!$article instanceof Message) {
             return;
         }
 
@@ -252,7 +193,7 @@ class AppleNewsWatcher implements EventSubscriber
         }
 
         $notification = $this->createAppleNewsNotification($event, $article, $pbjx)
-            ->set('app_ref', NodeRef::fromNode($app))
+            ->set('app_ref', $app->generateNodeRef())
             ->set('apple_news_operation', $operation);
 
         if ('update' === $operation && !$article->has('apple_news_id')) {
@@ -262,37 +203,29 @@ class AppleNewsWatcher implements EventSubscriber
                 ->clear('apple_news_revision');
         }
 
-        $curie = $notification::schema()->getCurie();
-        $curie = "{$curie->getVendor()}:{$curie->getPackage()}:command:create-notification";
-
-        $class = MessageResolver::resolveCurie(SchemaCurie::fromString($curie));
-        $command = $class::create()->set('node', $notification);
-
+        $command = CreateNodeV1::create()->set('node', $notification);
         $pbjx->copyContext($event, $command);
 
         $operation = $notification->get('apple_news_operation');
-        if ('create' === $operation) {
-            try {
-                $pbjx->send($command);
-            } catch (\Throwable $e) {
-                if ($e->getCode() !== Code::ALREADY_EXISTS) {
-                    throw $e;
-                }
-            }
+        $nodeRef = $article->generateNodeRef();
 
-            return;
+        if ('create' === $operation) {
+            $timestamp = strtotime('+5 seconds');
+            $jobId = "{$nodeRef}.create-apple-news";
+        } else {
+            $timestamp = strtotime('+180 seconds');
+            $jobId = "{$nodeRef}.sync-apple-news";
         }
 
-        $nodeRef = NodeRef::fromNode($article);
-        $pbjx->sendAt($command, strtotime('+180 seconds'), "{$nodeRef}.sync-apple-news");
+        try {
+            $pbjx->sendAt($command, $timestamp, $jobId);
+        } catch (\Throwable $e) {
+            if ($e->getCode() !== Code::ALREADY_EXISTS) {
+                throw $e;
+            }
+        }
     }
 
-    /**
-     * @param Message $event
-     * @param Message $article
-     *
-     * @return bool
-     */
     protected function shouldNotifyAppleNews(Message $event, Message $article): bool
     {
         // override to implement your own check to block apple news updates

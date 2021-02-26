@@ -6,9 +6,48 @@ namespace Triniti\News;
 use Gdbots\Ncr\Aggregate;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
+use Gdbots\Pbj\Util\StringUtil;
+use Gdbots\Pbj\WellKnown\NodeRef;
+use Gdbots\Pbj\WellKnown\UuidIdentifier;
 
 class ArticleAggregate extends Aggregate
 {
+    public function onAppleNewsNotificationSent(Message $event, Message $notification): void
+    {
+        if (!$notification->has('content_ref') || !$event->has('notifier_result')) {
+            return;
+        }
+
+        /** @var Message $result */
+        $result = $event->get('notifier_result');
+        $operation = $result->getFromMap('tags', 'apple_news_operation');
+        if ('notification' === $operation) {
+            return;
+        }
+
+        /** @var NodeRef $contentRef */
+        $contentRef = $notification->get('content_ref');
+        $this->assertNodeRefMatches($contentRef);
+
+        $syncedEvent = $this->createAppleNewsArticleSynced($event)
+            ->set('node_ref', $this->nodeRef)
+            ->set('notification_ref', $notification->generateNodeRef())
+            ->set('apple_news_operation', $operation);
+
+        if ('delete' !== $operation) {
+            $id = UuidIdentifier::fromString($result->getFromMap('tags', 'apple_news_id'));
+            $revision = $result->getFromMap('tags', 'apple_news_revision', '');
+            $shareUrl = $result->getFromMap('tags', 'apple_news_share_url');
+            $syncedEvent
+                ->set('apple_news_id', $id)
+                ->set('apple_news_revision', StringUtil::urlsafeB64Decode($revision))
+                ->set('apple_news_share_url', $shareUrl);
+        }
+
+        $this->copyContext($event, $syncedEvent);
+        $this->recordEvent($syncedEvent);
+    }
+
     public function removeArticleSlotting(Message $command): void
     {
         if (!$command->has('slotting')) {
@@ -105,13 +144,13 @@ class ArticleAggregate extends Aggregate
      * This is for legacy uses of command/event mixins for common
      * ncr operations. It will be removed in 3.x.
      *
-     * @param Message $command
+     * @param Message $event
      *
      * @return Message
      *
      * @deprecated Will be removed in 3.x.
      */
-    protected function createAppleNewsArticleSynced(Message $command): Message
+    protected function createAppleNewsArticleSynced(Message $event): Message
     {
         return MessageResolver::resolveCurie('*:news:event:apple-news-article-synced:v1')::create();
     }
