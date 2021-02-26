@@ -20,7 +20,6 @@ use Gdbots\Schemas\Common\Enum\Trinary;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Psr\Cache\CacheItemPoolInterface;
 use Triniti\Schemas\News\Enum\SearchArticlesSort;
-use Triniti\Schemas\News\Request\SearchArticlesResponseV1;
 
 class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
 {
@@ -30,24 +29,19 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
     protected Ncr $ncr;
     protected CacheItemPoolInterface $cache;
 
-    /**
-     * @param NcrSearch              $ncrSearch
-     * @param Ncr                    $ncr
-     * @param CacheItemPoolInterface $cache
-     */
-    public function __construct(NcrSearch $ncrSearch, Ncr $ncr, CacheItemPoolInterface $cache)
-    {
-        parent::__construct($ncrSearch);
-        $this->ncr = $ncr;
-        $this->cache = $cache;
-    }
-
     public static function handlesCuries(): array
     {
         // deprecated mixins, will be removed in 3.x
         $curies = MessageResolver::findAllUsingMixin('triniti:news:mixin:search-articles-request:v1', false);
         $curies[] = 'triniti:news:request:search-articles-request';
         return $curies;
+    }
+
+    public function __construct(NcrSearch $ncrSearch, Ncr $ncr, CacheItemPoolInterface $cache)
+    {
+        parent::__construct($ncrSearch);
+        $this->ncr = $ncr;
+        $this->cache = $cache;
     }
 
     public function handleRequest(Message $request, Pbjx $pbjx): Message
@@ -74,7 +68,7 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
 
         $slottedIds = [];
         foreach ($slottedNodes as $slottedNode) {
-            $slottedIds[(string)$slottedNode->get('_id')] = true;
+            $slottedIds[$slottedNode->fget('_id')] = true;
         }
 
         /** @var Message[] $unslottedNodes */
@@ -96,7 +90,7 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
 
             do {
                 $node = array_shift($unslottedNodes);
-                if (!isset($slottedIds[(string)$node->get('_id')])) {
+                if (!isset($slottedIds[$node->fget('_id')])) {
                     $finalNodes[] = $node;
                     break;
                 }
@@ -109,7 +103,7 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
                 break;
             }
 
-            if (!isset($slottedIds[(string)$node->get('_id')])) {
+            if (!isset($slottedIds[$node->fget('_id')])) {
                 $finalNodes[] = $node;
             }
         }
@@ -128,9 +122,7 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
      */
     protected function getSlottedNodes(Message $request, Pbjx $pbjx): array
     {
-        if (!$request->has('slotting_key')
-            || !NodeStatus::PUBLISHED()->equals($request->get('status'))
-        ) {
+        if (!$request->has('slotting_key') || NodeStatus::PUBLISHED !== $request->fget('status')) {
             return [];
         }
 
@@ -148,13 +140,12 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
 
                 /** @var Message[] $slots */
                 $slots = [];
-                $nodes = $this->ncr->getNodes($nodeRefs);
+                $nodes = $this->ncr->getNodes($nodeRefs, false, ['causator' => $request]);
 
                 foreach ($nodes as $node) {
                     if (
-                        !NodeStatus::PUBLISHED()->equals($node->get('status'))
+                        NodeStatus::PUBLISHED !== $node->fget('status')
                         || $node->get('is_unlisted', false)
-                        || $node->get('is_locked', false)
                         || !$node->isInMap('slotting', $slottingKey)
                     ) {
                         continue;
@@ -176,7 +167,6 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
         $query = "+slotting.{$slottingKey}:[1..{$slottingMax}]";
         $parsedQuery = (new QueryParser())->parse($query);
 
-        /** @var Message $slotRequest */
         $slotRequest = $request::schema()->createMessage();
         $slotRequest
             ->set('q', $query)
@@ -188,15 +178,16 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
             ->set('is_unlisted', Trinary::FALSE_VAL)
             ->set('is_locked', Trinary::FALSE_VAL);
 
-        $vendor = $request::schema()->getQName()->getVendor();
         $response = $this->createSearchNodesResponse($slotRequest, $pbjx);
         $this->beforeSearchNodes($slotRequest, $parsedQuery);
+        $qnames = $this->createQNamesForSearchNodes($request, $parsedQuery);
 
         $this->ncrSearch->searchNodes(
             $slotRequest,
             $parsedQuery,
             $response,
-            [SchemaQName::fromString("{$vendor}:article")]
+            $qnames,
+            ['causator' => $request]
         );
 
         $slots = [];
@@ -227,14 +218,13 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
      * with 5-10 articles.  On top of that, we usually want recent popularity
      * and not all time popularity.
      *
-     * @param SearchNodesRequest $request
-     * @param Pbjx               $pbjx
+     * @param Message $request
+     * @param Pbjx    $pbjx
      *
      * @return Message
      */
     protected function handleUsingStats(Message $request, Pbjx $pbjx): Message
     {
-        /** @var Message $statsRequest */
         $statsRequest = $request::schema()->createMessage();
         $statsRequest
             ->set('status', NodeStatus::PUBLISHED())
@@ -245,14 +235,15 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
             ->set('count', $request->get('count'))
             ->set('sort', $request->get('sort'));
 
-        $vendor = $request::schema()->getQName()->getVendor();
+        $vendor = MessageResolver::getDefaultVendor();
         $response = $this->createSearchNodesResponse($statsRequest, $pbjx);
 
         $this->ncrSearch->searchNodes(
             $statsRequest,
             new ParsedQuery(),
             $response,
-            [SchemaQName::fromString("{$vendor}:article-stats")]
+            [SchemaQName::fromString("{$vendor}:article-stats")],
+            ['causator' => $request]
         );
 
         if (!$response->has('nodes')) {
@@ -269,12 +260,12 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
         /** @var NodeRef[] $nodeRefs */
         $nodeRefs = [];
         foreach ($statNodes as $statNode) {
-            $nodeRefs[] = NodeRef::fromString("{$vendor}:article:{$statNode->get('_id')}");;
+            $nodeRefs[] = NodeRef::fromString("{$vendor}:article:{$statNode->fget('_id')}");;
         }
 
         /** @var Message[] $finalNodes */
         $finalNodes = [];
-        $nodes = $this->ncr->getNodes($nodeRefs);
+        $nodes = $this->ncr->getNodes($nodeRefs, false, ['causator' => $request]);
 
         foreach ($nodeRefs as $nodeRef) {
             $key = $nodeRef->toString();
@@ -355,6 +346,6 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
 
     protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
     {
-        return SearchArticlesResponseV1::create();
+        return MessageResolver::resolveCurie('*:news:request:search-articles-response:v1')::create();
     }
 }

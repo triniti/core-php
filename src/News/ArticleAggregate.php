@@ -6,17 +6,16 @@ namespace Triniti\News;
 use Gdbots\Ncr\Aggregate;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
-use Triniti\Schemas\News\Event\ArticleSlottingRemovedV1;
 
 class ArticleAggregate extends Aggregate
 {
     public function removeArticleSlotting(Message $command): void
     {
-        $event = ArticleSlottingRemovedV1::create();
-        $this->pbjx->copyContext($command, $event);
-        $event->set('node_ref', $this->nodeRef);
-        $slottingKeys = [];
+        if (!$command->has('slotting')) {
+            return;
+        }
 
+        $slottingKeys = [];
         foreach ($command->get('slotting') as $key => $value) {
             $currentSlot = $this->node->getFromMap('slotting', $key, 0);
             if ($currentSlot === $value) {
@@ -28,11 +27,35 @@ class ArticleAggregate extends Aggregate
             return;
         }
 
+        $event = $this->createArticleSlottingRemoved($command);
+        $this->copyContext($command, $event);
+        $event->set('node_ref', $this->nodeRef);
         $event->addToSet('slotting_keys', $slottingKeys);
         $this->recordEvent($event);
     }
 
-    public function applyArticleSlottingRemoved(Message $event): void
+    protected function applyAppleNewsArticleSynced(Message $event): void
+    {
+        if ('delete' === $event->get('apple_news_operation')) {
+            $this->node
+                ->clear('apple_news_id')
+                ->clear('apple_news_revision')
+                ->clear('apple_news_share_url')
+                ->clear('apple_news_updated_at')
+                ->set('apple_news_enabled', false);
+            return;
+        }
+
+        /** @var \DateTime $occurredAt */
+        $occurredAt = $event->get('occurred_at')->toDateTime();
+        $this->node
+            ->set('apple_news_id', $event->get('apple_news_id'))
+            ->set('apple_news_revision', $event->get('apple_news_revision'))
+            ->set('apple_news_share_url', $event->get('apple_news_share_url'))
+            ->set('apple_news_updated_at', $occurredAt->getTimestamp());
+    }
+
+    protected function applyArticleSlottingRemoved(Message $event): void
     {
         foreach ($event->get('slotting_keys', []) as $key) {
             $this->node->removeFromMap('slotting', $key);
@@ -41,23 +64,24 @@ class ArticleAggregate extends Aggregate
 
     protected function enrichNodeUpdated(Message $event): void
     {
-        parent::enrichNodeUpdated($event);
-
+        /** @var Message $oldNode */
         $oldNode = $event->get('old_node');
+
+        /** @var Message $newNode */
         $newNode = $event->get('new_node');
 
         // some apple news fields should NOT change during an update
         $newNode->set('apple_news_updated_at', $oldNode->get('apple_news_updated_at'));
 
-        if (!$event->has('paths')) {
-            return;
-        }
-
-        foreach (['apple_news_id', 'apple_news_revision', 'apple_news_share_url'] as $path) {
-            if  (!$event->isInSet('paths', $path)) {
-                $newNode->set($path, $oldNode->get($path));
+        if ($event->has('paths')) {
+            foreach (['apple_news_id', 'apple_news_revision', 'apple_news_share_url'] as $path) {
+                if (!$event->isInSet('paths', $path)) {
+                    $newNode->set($path, $oldNode->get($path));
+                }
             }
         }
+
+        parent::enrichNodeUpdated($event);
     }
 
     /**
@@ -77,6 +101,65 @@ class ArticleAggregate extends Aggregate
         }
     }
 
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createAppleNewsArticleSynced(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:news:event:apple-news-article-synced:v1')::create();
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createArticleSlottingRemoved(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:news:event:article-slotting-removed:v1')::create();
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createNodeCreatedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:news:event:article-created:v1')::create();
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createNodeDeletedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:news:event:article-deleted:v1')::create();
+    }
 
     /**
      * This is for legacy uses of command/event mixins for common

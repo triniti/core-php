@@ -34,6 +34,13 @@ class TeaserAggregate extends Aggregate
         $this->recordEvent($event);
     }
 
+    protected function applyTeaserSlottingRemoved(Message $event): void
+    {
+        foreach ($event->get('slotting_keys', []) as $key) {
+            $this->node->removeFromMap('slotting', $key);
+        }
+    }
+
     /**
      * This is for legacy uses of command/event mixins for common
      * ncr operations. It will be removed in 3.x.

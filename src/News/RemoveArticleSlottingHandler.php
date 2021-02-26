@@ -6,6 +6,7 @@ namespace Triniti\News;
 use Gdbots\Ncr\AggregateResolver;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
+use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
@@ -27,7 +28,9 @@ class RemoveArticleSlottingHandler implements CommandHandler
             return;
         }
 
+        /** @var NodeRef $exceptRef */
         $exceptRef = $command->get('except_ref');
+
         $query = [];
         foreach ($command->get('slotting') as $key => $value) {
             $query[] = "slotting.{$key}:{$value}";
@@ -36,9 +39,8 @@ class RemoveArticleSlottingHandler implements CommandHandler
         $request = SearchArticlesRequestV1::create()
             ->set('q', implode(' OR ', $query))
             ->set('status', NodeStatus::PUBLISHED());
-        $pbjx->copyContext($command, $request);
+        $response = $pbjx->copyContext($command, $request)->request($request);
 
-        $response = $pbjx->request($request);
         /** @var Message $node */
         foreach ($response->get('nodes', []) as $node) {
             $nodeRef = $node->generateNodeRef();
@@ -46,11 +48,12 @@ class RemoveArticleSlottingHandler implements CommandHandler
                 continue;
             }
 
+            $context = ['causator' => $command];
             /** @var ArticleAggregate $aggregate */
             $aggregate = AggregateResolver::resolve($nodeRef->getQName())::fromNode($node, $pbjx);
-            $aggregate->sync(['causator' => $command]);
+            $aggregate->sync($context);
             $aggregate->removeArticleSlotting($command);
-            $aggregate->commit();
+            $aggregate->commit($context);
         }
     }
 }

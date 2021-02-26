@@ -33,11 +33,6 @@ class GalleryAggregate extends Aggregate
         $this->node->set('image_count', $event->get('image_count'));
     }
 
-    protected function createGalleryImageCountUpdated(Message $command): Message
-    {
-        return MessageResolver::resolveCurie('*:curator:event:gallery-image-count-updated:v1')::create();
-    }
-
     /**
      * This is for legacy uses of command/event mixins for common
      * ncr operations. It will be removed in 3.x.
@@ -53,6 +48,21 @@ class GalleryAggregate extends Aggregate
         if ($newName !== $name && is_callable([$this, $newName])) {
             return $this->$newName(...$arguments);
         }
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createGalleryImageCountUpdated(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:curator:event:gallery-image-count-updated:v1')::create();
     }
 
     /**
