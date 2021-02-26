@@ -269,9 +269,6 @@ class AppleNewsWatcher implements EventSubscriber
         $command = $class::create()->set('node', $notification);
 
         $pbjx->copyContext($event, $command);
-        $command
-            ->set('ctx_correlator_ref', $event->generateMessageRef())
-            ->clear('ctx_app');
 
         $operation = $notification->get('apple_news_operation');
         if ('create' === $operation) {

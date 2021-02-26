@@ -61,9 +61,6 @@ class TeaserableWatcher implements EventSubscriber
                 ->set('node_ref', $teaserRef)
                 ->set('publish_at', $event->get('published_at', $event->get('publish_at')));
             $pbjx->copyContext($event, $command);
-            $command
-                ->set('ctx_correlator_ref', $event->generateMessageRef())
-                ->clear('ctx_app');
             $timestamp = strtotime(sprintf('+%d seconds', (5 + $index)));
             $pbjx->sendAt($command, $timestamp, "{$teaserRef}.publish");
         }
@@ -99,9 +96,6 @@ class TeaserableWatcher implements EventSubscriber
             /** @var Message $class */
             $command = $class::create()->set('node_ref', $teaserRef);
             $pbjx->copyContext($event, $command);
-            $command
-                ->set('ctx_correlator_ref', $event->generateMessageRef())
-                ->clear('ctx_app');
             $timestamp = strtotime(sprintf('+%d seconds', (5 + $index)));
             $pbjx->sendAt($command, $timestamp, "{$teaserRef}.{$operation}");
         }
@@ -122,10 +116,6 @@ class TeaserableWatcher implements EventSubscriber
         $targetRef = $pbjxEvent->getNode()->generateNodeRef();
         $command = SyncTeaserV1::create()->set('target_ref', $targetRef);
         $pbjx->copyContext($event, $command);
-        $command
-            ->set('ctx_correlator_ref', $event->generateMessageRef())
-            ->clear('ctx_app');
-
         $pbjx->sendAt($command, strtotime('+3 seconds'), "{$targetRef}.sync-teasers");
     }
 

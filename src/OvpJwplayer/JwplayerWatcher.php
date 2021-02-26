@@ -130,9 +130,6 @@ class JwplayerWatcher implements EventSubscriber
             ->set('node_ref', $nodeRef)
             ->addToSet('fields', $fields);
         $pbjx->copyContext($event, $command);
-        $command
-            ->set('ctx_correlator_ref', $event->generateMessageRef())
-            ->clear('ctx_app');
         $pbjx->sendAt($command, strtotime('+5 seconds'), "{$nodeRef}.sync-jwplayer-media");
     }
 }

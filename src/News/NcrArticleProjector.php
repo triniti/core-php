@@ -84,7 +84,6 @@ class NcrArticleProjector extends NcrProjector
         }
 
         $pbjx->copyContext($event, $command);
-        $command->clear('ctx_app');
         $pbjx->sendAt($command, strtotime('+5 seconds'));
     }
 
@@ -138,7 +137,6 @@ class NcrArticleProjector extends NcrProjector
         }
 
         $pbjx->copyContext($event, $command);
-        $command->clear('ctx_app');
         $pbjx->sendAt($command, strtotime('+5 seconds'));
     }
 }

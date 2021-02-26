@@ -73,10 +73,6 @@ class NcrGalleryProjector extends NcrProjector
         $jobs[$nodeRef->toString()] = true;
         $command = UpdateGalleryImageCountV1::create()->set('node_ref', $nodeRef);
         $pbjx->copyContext($event, $command);
-        $command
-            ->set('ctx_correlator_ref', $event->generateMessageRef())
-            ->clear('ctx_app');
-
         $pbjx->sendAt($command, strtotime('+300 seconds'), "{$nodeRef}.update-gallery-image-count");
     }
 }
