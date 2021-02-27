@@ -6,11 +6,14 @@ namespace Triniti\Tests\News;
 use Acme\Schemas\News\Node\ArticleV1;
 use Acme\Schemas\Notify\Event\NotificationSentV1;
 use Acme\Schemas\Notify\Node\AppleNewsNotificationV1;
+use Gdbots\Ncr\AggregateResolver;
+use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Pbj\Util\StringUtil;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Schemas\Pbjx\StreamId;
 use Triniti\News\AppleNewsWatcher;
+use Triniti\News\ArticleAggregate;
 use Triniti\Schemas\Notify\NotifierResultV1;
 use Triniti\Tests\AbstractPbjxTest;
 
@@ -22,6 +25,7 @@ final class AppleNewsWatcherTest extends AbstractPbjxTest
     {
         parent::setup();
         $this->ncr = new InMemoryNcr();
+        AggregateResolver::register(['acme:article' => ArticleAggregate::class]);
     }
 
     public function testOnNotificationSent(): void
@@ -46,10 +50,10 @@ final class AppleNewsWatcherTest extends AbstractPbjxTest
             ->set('node_ref', NodeRef::fromNode($notification))
             ->set('notifier_result', $result);
 
+        $this->ncr->putNode($article);
         $this->ncr->putNode($notification);
-
         $watcher = new AppleNewsWatcher($this->ncr);
-        $watcher->onNotificationSent($notificationSent, $this->pbjx);
+        $watcher->onNotificationSent(new NodeProjectedEvent($notification, $notificationSent));
 
         $streamId = StreamId::fromString(sprintf('acme:%s:%s', $articleRef->getLabel(), $articleRef->getId()));
         $slice = $this->pbjx->getEventStore()->getStreamSlice($streamId);

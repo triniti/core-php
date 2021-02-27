@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Triniti\Tests;
 
-use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Pbjx\EventStore\InMemoryEventStore;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Pbjx\RegisteringServiceLocator;

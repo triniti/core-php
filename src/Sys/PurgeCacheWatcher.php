@@ -3,10 +3,9 @@ declare(strict_types=1);
 
 namespace Triniti\Sys;
 
-use Gdbots\Pbj\Message;
+use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\EventSubscriber;
-use Gdbots\Pbjx\Pbjx;
 use Gdbots\UriTemplate\UriTemplateService;
 use Triniti\Schemas\Sys\Command\PurgeCacheV1;
 
@@ -15,22 +14,24 @@ class PurgeCacheWatcher implements EventSubscriber
     public static function getSubscribedEvents()
     {
         return [
-            'gdbots:ncr:mixin:node-deleted'     => 'onEvent',
-            'gdbots:ncr:mixin:node-expired'     => 'onEvent',
-            'gdbots:ncr:mixin:node-published'   => 'onEvent',
-            'gdbots:ncr:mixin:node-updated'     => 'onEvent',
-            'gdbots:ncr:mixin:node-unpublished' => 'onEvent',
+            'gdbots:ncr:mixin:node.deleted'     => 'onNodeProjected',
+            'gdbots:ncr:mixin:node.expired'     => 'onNodeProjected',
+            'gdbots:ncr:mixin:node.published'   => 'onNodeProjected',
+            'gdbots:ncr:mixin:node.updated'     => 'onNodeProjected',
+            'gdbots:ncr:mixin:node.unpublished' => 'onNodeProjected',
         ];
     }
 
-    public function onEvent(Message $event, Pbjx $pbjx): void
+    public function onNodeProjected(NodeProjectedEvent $pbjxEvent): void
     {
+        $event = $pbjxEvent->getLastEvent();
         if ($event->isReplay()) {
             return;
         }
 
-        /** @var NodeRef $nodeRef */
-        $nodeRef = $event->get('node_ref');
+        $pbjx = $pbjxEvent::getPbjx();
+        $node = $pbjxEvent->getNode();
+        $nodeRef = $node->generateNodeRef();
         if (!$this->isNodeSupported($nodeRef)) {
             return;
         }

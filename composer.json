@@ -5,6 +5,7 @@
   "license": "Apache-2.0",
   "require": {
     "php": ">=8.0",
+    "ext-openssl": "*",
     "aws/aws-sdk-php-symfony": "^2.2",
     "gdbots/app-bundle": "^2.1",
     "gdbots/crypto-bundle": "^2.0",

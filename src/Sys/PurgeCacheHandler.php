@@ -17,17 +17,17 @@ class PurgeCacheHandler implements CommandHandler
     protected Ncr $ncr;
     protected array $config;
 
-    public function __construct(Ncr $ncr, array $config = [])
-    {
-        $this->ncr = $ncr;
-        $this->config = $config;
-    }
-
     public static function handlesCuries(): array
     {
         return [
             'triniti:sys:command:purge-cache',
         ];
+    }
+
+    public function __construct(Ncr $ncr, array $config = [])
+    {
+        $this->ncr = $ncr;
+        $this->config = $config;
     }
 
     public function handleCommand(Message $command, Pbjx $pbjx): void
@@ -36,11 +36,16 @@ class PurgeCacheHandler implements CommandHandler
         $nodeRef = $command->get('node_ref');
 
         try {
-            $node = $this->ncr->getNode($nodeRef);
+            $node = $this->ncr->getNode($nodeRef, false, ['causator' => $command]);
         } catch (\Throwable $e) {
             return;
         }
 
+        $this->purgeCache($node, $command, $pbjx);
+    }
+
+    protected function purgeCache(Message $node, Message $command, Pbjx $pbjx): void
+    {
         $this->purgeGoogleAmpCache($node);
     }
 
@@ -86,7 +91,6 @@ class PurgeCacheHandler implements CommandHandler
             throw new \InvalidArgumentException(__CLASS__ . ':: Failed to sign ' . $string);
         }
 
-        openssl_free_key($resource);
         return StringUtil::urlsafeB64Encode($signature);
     }
 }
