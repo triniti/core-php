@@ -8,7 +8,6 @@ use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Schemas\Common\Enum\Trinary;
-use Triniti\Schemas\Sys\FlagsetId;
 
 class Flags
 {
@@ -72,11 +71,9 @@ class Flags
         try {
             $this->flagset = $this->ncr->getNode($this->flagsetRef);
         } catch (\Throwable $e) {
-            static $flagSetClass = null;
-            if (null === $flagSetClass){
-                $flagSetClass = MessageResolver::resolveCurie('*:sys:node:flagset');
-            }
-            $this->flagset = $flagSetClass::create()->set('_id', FlagsetId::fromString($this->flagsetRef->getId()));
+            $this->flagset = MessageResolver::resolveCurie('*:sys:node:flagset:v1')::fromArray([
+                '_id' => $this->flagsetRef->getId(),
+            ]);
         }
 
         $this->flagset->freeze();
