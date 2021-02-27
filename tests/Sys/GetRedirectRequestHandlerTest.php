@@ -6,9 +6,9 @@ namespace Triniti\Tests\Sys;
 use Acme\Schemas\Canvas\Node\PageV1;
 use Acme\Schemas\Sys\Node\RedirectV1;
 use Acme\Schemas\Sys\Request\GetRedirectRequestV1;
-use Acme\Schemas\Sys\Request\GetRedirectResponseV1;
 use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Ncr\Repository\InMemoryNcr;
+use Gdbots\Pbj\Message;
 use Gdbots\Pbj\SchemaCurie;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\UriTemplate\UriTemplateService;
@@ -44,9 +44,8 @@ final class GetRedirectRequestHandlerTest extends AbstractPbjxTest
 
         $request = GetRedirectRequestV1::create()->set('node_ref', NodeRef::fromNode($node));
         $handler = new GetRedirectRequestHandler($this->ncr);
-        /** @var GetRedirectResponseV1 $response */
         $response = $handler->handleRequest($request, $this->pbjx);
-        /** @var RedirectV1 $actualNode */
+        /** @var Message $actualNode */
         $actualNode = $response->get('node');
         $this->assertTrue($actualNode->equals($node));
     }
@@ -68,7 +67,7 @@ final class GetRedirectRequestHandlerTest extends AbstractPbjxTest
         $page = PageV1::create()->set('slug', 'foo-bar');
         $ncrSearch->indexNodes([$page]);
         $this->locator->registerRequestHandler(
-            SchemaCurie::fromString('acme:canvas:request:search-pages-request'),
+            SchemaCurie::fromString('triniti:canvas:request:search-pages-request'),
             new MockSearchNodesRequestHandler($ncrSearch)
         );
 
@@ -76,9 +75,8 @@ final class GetRedirectRequestHandlerTest extends AbstractPbjxTest
 
         $request = GetRedirectRequestV1::create()->set('node_ref', NodeRef::fromNode($node));
         $handler = new GetRedirectRequestHandler($this->ncr);
-        /** @var GetRedirectResponseV1 $response */
         $response = $handler->handleRequest($request, $this->pbjx);
-        /** @var RedirectV1 $actualNode */
+        /** @var Message $actualNode */
         $actualNode = $response->get('node');
         $this->assertTrue($actualNode->equals($node));
 

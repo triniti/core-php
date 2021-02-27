@@ -11,8 +11,6 @@ use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Gdbots\UriTemplate\UriTemplateService;
-use Throwable;
-use Triniti\Schemas\Sys\Request\GetRedirectResponseV1;
 
 class GetRedirectRequestHandler extends GetNodeRequestHandler
 {
@@ -49,10 +47,10 @@ class GetRedirectRequestHandler extends GetNodeRequestHandler
         return $response;
     }
 
-    protected function resolveVanityUrl(SchemaCurie $schemaCurie, Message $redirect, Message $request, Pbjx $pbjx): ?string
+    protected function resolveVanityUrl(SchemaCurie $nodeCurie, Message $redirect, Message $request, Pbjx $pbjx): ?string
     {
         // todo: use an inflector
-        switch ($schemaCurie->getMessage()) {
+        switch ($nodeCurie->getMessage()) {
             case 'category':
                 $message = 'search-categories-request';
                 break;
@@ -66,11 +64,11 @@ class GetRedirectRequestHandler extends GetNodeRequestHandler
                 break;
 
             default:
-                $message = "search-{$schemaCurie->getMessage()}s-request";
+                $message = "search-{$nodeCurie->getMessage()}s-request";
                 break;
         }
 
-        $searchCurie = implode(':', [$schemaCurie->getVendor(), $schemaCurie->getPackage(), 'request', $message]);
+        $searchCurie = "triniti:{$nodeCurie->getPackage()}:request:{$message}:v1";
 
         try {
             $searchRequest = MessageResolver::resolveCurie($searchCurie)::fromArray([
@@ -88,7 +86,7 @@ class GetRedirectRequestHandler extends GetNodeRequestHandler
                     "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
                 );
             }
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
         }
 
         return null;
@@ -96,6 +94,6 @@ class GetRedirectRequestHandler extends GetNodeRequestHandler
 
     protected function createGetNodeResponse(Message $request, Pbjx $pbjx): Message
     {
-        return GetRedirectResponseV1::create();
+        return MessageResolver::resolveCurie('*:sys:request:get-redirect-response:v1')::create();
     }
 }

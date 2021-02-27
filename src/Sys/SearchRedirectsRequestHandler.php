@@ -7,7 +7,6 @@ use Gdbots\Ncr\AbstractSearchNodesRequestHandler;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbjx\Pbjx;
-use Triniti\Schemas\Sys\Request\SearchRedirectsResponseV1;
 
 class SearchRedirectsRequestHandler extends AbstractSearchNodesRequestHandler
 {
@@ -21,6 +20,6 @@ class SearchRedirectsRequestHandler extends AbstractSearchNodesRequestHandler
 
     protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
     {
-        return SearchRedirectsResponseV1::create();
+        return MessageResolver::resolveCurie('*:sys:request:search-redirects-response:v1')::create();
     }
 }
