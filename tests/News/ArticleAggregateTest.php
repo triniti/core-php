@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Triniti\Tests\News;
 
-use Acme\Schemas\Canvas\Block\TextBlockV1;
 use Acme\Schemas\News\Command\CreateArticleV1;
 use Acme\Schemas\News\Command\RemoveArticleSlottingV1;
 use Acme\Schemas\News\Command\UpdateArticleV1;
