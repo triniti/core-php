@@ -3,26 +3,25 @@ declare(strict_types=1);
 
 namespace Triniti\Sys;
 
-use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
-use Gdbots\Pbj\SchemaQName;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Pbjx\RequestHandler;
-use Triniti\Schemas\Sys\Mixin\Picklist\PicklistV1Mixin;
 use Triniti\Schemas\Sys\Request\SearchPicklistsRequestV1;
 
+/**
+ * @deprecated will be removed in 3.x
+ */
 class ListAllPicklistsRequestHandler implements RequestHandler
 {
-    protected Ncr $ncr;
-    public function __construct(Ncr $ncr)
+    public static function handlesCuries(): array
     {
-        $this->ncr = $ncr;
+        return MessageResolver::findAllUsingMixin('triniti:sys:mixin:list-all-picklists-request:v1', false);
     }
 
     public function handleRequest(Message $request, Pbjx $pbjx): Message
     {
-        $response = $this->createListAllPicklistsResponse();
+        $response = $this->createListAllPicklistsResponse($request, $pbjx);
         $searchRequest = SearchPicklistsRequestV1::create();
 
         try {
@@ -31,25 +30,14 @@ class ListAllPicklistsRequestHandler implements RequestHandler
             return $response;
         }
 
-        $picklists = $searchResponse->get('nodes', []);
-        $refs = array_map(fn(Message $picklist) => $picklist->generateNodeRef(), $picklists);
+        $nodes = $searchResponse->get('nodes', []);
+        $refs = array_map(fn(Message $node) => $node->generateNodeRef(), $nodes);
+
         return $response->addToSet('picklists', $refs);
     }
 
-    protected function createListAllPicklistsResponse(): Message
+    protected function createListAllPicklistsResponse(Message $request, Pbjx $pbjx): Message
     {
-        static $listAllPicklistsResponseClass = null;
-        if (null === $listAllPicklistsResponseClass){
-            $listAllPicklistsResponseClass = MessageResolver::resolveCurie('*:sys:request:list-all-picklists-response');
-        }
-        return $listAllPicklistsResponseClass::create();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public static function handlesCuries(): array
-    {
-        return MessageResolver::findAllUsingMixin('triniti:sys:mixin:list-all-picklists-request:v1');
+        return MessageResolver::resolveCurie('*:sys:request:list-all-picklists-response:v1')::create();
     }
 }

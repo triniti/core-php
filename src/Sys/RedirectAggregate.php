@@ -14,30 +14,27 @@ class RedirectAggregate extends Aggregate
     protected function __construct(Message $node, Pbjx $pbjx, bool $syncAllEvents = false)
     {
         parent::__construct($node, $pbjx, $syncAllEvents);
-        $this->enforceRedirectRules($this->node);
+        $this->enforceNodeRules($this->node);
     }
 
     protected function enrichNodeCreated(Message $event): void
     {
-        $this->enforceRedirectRules($event->get('node'));
+        $this->enforceNodeRules($event->get('node'));
         parent::enrichNodeCreated($event);
     }
 
     protected function enrichNodeUpdated(Message $event): void
     {
-        $this->enforceRedirectRules($event->get('new_node'));
+        $this->enforceNodeRules($event->get('new_node'));
         parent::enrichNodeUpdated($event);
     }
 
-    protected function enforceRedirectRules(Message $node): void
+    protected function enforceNodeRules(Message $node): void
     {
-        $node
-            /**
-             * a redirect can only be "published". if it gets deleted
-             * and later updated then it will be published again.
-             */
-            ->set('status', NodeStatus::PUBLISHED())
-            ->set('title', $node->get('_id')->toUri());
+        $node->set('title', $node->get('_id')->toUri());
+        if (NodeStatus::DELETED !== $node->fget('status')) {
+            $node->set('status', NodeStatus::PUBLISHED());
+        }
     }
 
     /**
@@ -57,6 +54,35 @@ class RedirectAggregate extends Aggregate
         }
     }
 
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createNodeCreatedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:sys:event:redirect-created:v1')::create();
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createNodeDeletedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:sys:event:redirect-deleted:v1')::create();
+    }
 
     /**
      * This is for legacy uses of command/event mixins for common

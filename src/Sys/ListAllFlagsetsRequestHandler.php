@@ -3,28 +3,25 @@ declare(strict_types=1);
 
 namespace Triniti\Sys;
 
-use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
-use Gdbots\Pbj\SchemaQName;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Pbjx\RequestHandler;
-use Triniti\Schemas\Sys\Mixin\Flagset\FlagsetV1Mixin;
 use Triniti\Schemas\Sys\Request\SearchFlagsetsRequestV1;
 
+/**
+ * @deprecated will be removed in 3.x
+ */
 class ListAllFlagsetsRequestHandler implements RequestHandler
 {
-    protected Ncr $ncr;
-
-    public function __construct(Ncr $ncr)
+    public static function handlesCuries(): array
     {
-        $this->ncr = $ncr;
+        return MessageResolver::findAllUsingMixin('triniti:sys:mixin:list-all-flagsets-request:v1', false);
     }
 
     public function handleRequest(Message $request, Pbjx $pbjx): Message
     {
-        $response = $this->createListAllFlagsetsResponse();
-
+        $response = $this->createListAllFlagsetsResponse($request, $pbjx);
         $searchRequest = SearchFlagsetsRequestV1::create();
 
         try {
@@ -33,23 +30,14 @@ class ListAllFlagsetsRequestHandler implements RequestHandler
             return $response;
         }
 
-        $flagsets = $searchResponse->get('nodes', []);
-        $refs = array_map(fn(Message $flagset) => $flagset->generateNodeRef(), $flagsets);
+        $nodes = $searchResponse->get('nodes', []);
+        $refs = array_map(fn(Message $node) => $node->generateNodeRef(), $nodes);
 
         return $response->addToSet('flagsets', $refs);
     }
 
-    protected function createListAllFlagsetsResponse(): Message
+    protected function createListAllFlagsetsResponse(Message $request, Pbjx $pbjx): Message
     {
-        static $listAllFlagsetsResponseClass = null;
-        if (null === $listAllFlagsetsResponseClass) {
-            $listAllFlagsetsResponseClass = MessageResolver::resolveCurie('*:sys:request:list-all-flagsets-response');
-        }
-        return $listAllFlagsetsResponseClass::create();
-    }
-
-    public static function handlesCuries(): array
-    {
-        return MessageResolver::findAllUsingMixin('triniti:sys:mixin:list-all-flagsets-request:v1');
+        return MessageResolver::resolveCurie('*:sys:request:list-all-flagsets-response:v1')::create();
     }
 }
