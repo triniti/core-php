@@ -6,6 +6,7 @@ namespace Triniti\OvpMediaLive;
 use Aws\Credentials\CredentialsInterface;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
+use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Pbjx\StreamId;
@@ -19,29 +20,31 @@ class StartChannelHandler implements CommandHandler
 
     protected Ncr $ncr;
 
+    public static function handlesCuries(): array
+    {
+        return [
+            'triniti:ovp.medialive:command:start-channel',
+        ];
+    }
+
     public function __construct(Ncr $ncr, CredentialsInterface $credentials)
     {
         $this->ncr = $ncr;
         $this->credentials = $credentials;
     }
 
-    public static function handlesCuries(): array
-    {
-        return [
-            'triniti:ovp.medialive:command:start-channel'
-        ];
-    }
-
     public function handleCommand(Message $command, Pbjx $pbjx): void
     {
+        $context = ['causator' => $command];
+        /** @var NodeRef $nodeRef */
         $nodeRef = $command->get('node_ref');
-        $node = $this->ncr->getNode($nodeRef, true);
+        $node = $this->ncr->getNode($nodeRef, true, $context);
 
         $channelData = $this->getChannelData($node);
         $client = $this->createMediaLiveClient($channelData['region']);
         $description = $client->describeChannel(['ChannelId' => $channelData['channelId']]);
         $retries = $command->get('ctx_retries');
-        $pbjx->cancelJobs(["{$nodeRef}.stop-medialive-channel"]);
+        $pbjx->cancelJobs(["{$nodeRef}.stop-medialive-channel"], $context);
 
         if (ChannelState::RUNNING === $description->get('State')) {
             if ($retries < 1) {
@@ -52,8 +55,13 @@ class StartChannelHandler implements CommandHandler
 
             $event = ChannelStartedV1::create()->set('node_ref', $nodeRef);
             $pbjx->copyContext($command, $event);
-            $streamId = StreamId::fromString(sprintf('%s.medialive-history:%s', $nodeRef->getLabel(), $nodeRef->getId()));
-            $pbjx->getEventStore()->putEvents($streamId, [$event]);
+            $streamId = StreamId::fromString(sprintf(
+                '%s:%s.medialive-history:%s',
+                $nodeRef->getVendor(),
+                $nodeRef->getLabel(),
+                $nodeRef->getId()
+            ));
+            $pbjx->getEventStore()->putEvents($streamId, [$event], null, $context);
             return;
         }
 
@@ -71,7 +79,7 @@ class StartChannelHandler implements CommandHandler
             $timestamp = strtotime('+' . (30 * $retries) . ' seconds');
             $newCommand->set('ctx_retries', $retries);
             $pbjx->copyContext($command, $newCommand);
-            $pbjx->sendAt($newCommand, $timestamp, "{$nodeRef}.start-medialive-channel");
+            $pbjx->sendAt($newCommand, $timestamp, "{$nodeRef}.start-medialive-channel", $context);
             return;
         }
 
