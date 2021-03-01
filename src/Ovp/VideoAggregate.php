@@ -104,8 +104,8 @@ class VideoAggregate extends Aggregate
         $assetId = AssetId::fromString($assetRef->getId());
         $this->node
             ->set('mezzanine_ref', $assetRef)
-            ->set('mezzanine_url', ArtifactUrlService::getManifest($assetId))
-            ->set('kaltura_mp4_url', ArtifactUrlService::getVideo($assetId));
+            ->set('mezzanine_url', ArtifactUrlProvider::getInstance()->getManifest($assetId))
+            ->set('kaltura_mp4_url', ArtifactUrlProvider::getInstance()->getVideo($assetId));
 
         if ($event->isInMap('tags', 'image_asset_ref')) {
             $this->node->set('image_ref', NodeRef::fromString($event->getFromMap('tags', 'image_asset_ref')));

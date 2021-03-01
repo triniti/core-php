@@ -7,7 +7,7 @@ use Acme\Schemas\Dam\Node\VideoAssetV1;
 use Acme\Schemas\Ovp\Node\VideoV1;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Triniti\Dam\UrlService;
-use Triniti\Ovp\ArtifactUrlService;
+use Triniti\Ovp\ArtifactUrlProvider;
 use Triniti\Ovp\VideoAggregate;
 use Triniti\Schemas\Dam\AssetId;
 use Triniti\Schemas\Ovp\Command\UpdateTranscodingStatusV1;
@@ -57,11 +57,11 @@ final class VideoAggregateTest extends AbstractPbjxTest
         $this->assertTrue($imageAssetRef->equals($aggregateNode->get('image_ref')));
 
         $actual = $aggregateNode->get('mezzanine_url');
-        $expected = ArtifactUrlService::getManifest($videoAssetId);
+        $expected = ArtifactUrlProvider::getInstance()->getManifest($videoAssetId);
         $this->assertSame($actual, $expected);
 
         $actual = $aggregateNode->get('kaltura_mp4_url');
-        $expected = ArtifactUrlService::getVideo($videoAssetId);
+        $expected = ArtifactUrlProvider::getInstance()->getVideo($videoAssetId);
         $this->assertSame($actual, $expected);
     }
 

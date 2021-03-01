@@ -45,6 +45,9 @@ final class OvpExtension extends AbstractExtension
             $assetId = AssetId::fromString($id->getId());
         } else if ($id instanceof Message) {
             $assetId = $id->get('_id');
+            if (!$assetId instanceof AssetId) {
+                return null;
+            }
         } else {
             try {
                 $assetId = AssetId::fromString((string)$id);
