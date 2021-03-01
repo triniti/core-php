@@ -28,7 +28,7 @@ final class OvpExtension extends AbstractExtension
 
     /**
      * @param AssetId|NodeRef|Message|string $id
-     * @param string                       $type
+     * @param string                         $type
      *
      * @return string|null
      */
@@ -43,10 +43,10 @@ final class OvpExtension extends AbstractExtension
             $assetId = $id;
         } else if ($id instanceof NodeRef) {
             $assetId = AssetId::fromString($id->getId());
-        } else if ($id instanceof Message && $id::schema()->hasMixin('triniti:dam:mixin:video-asset')) {
+        } else if ($id instanceof Message) {
             $assetId = $id->get('_id');
         } else {
-            try{
+            try {
                 $assetId = AssetId::fromString((string)$id);
             } catch (\Throwable $e) {
                 return null;

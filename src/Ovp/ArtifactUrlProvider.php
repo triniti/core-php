@@ -3,12 +3,35 @@ declare(strict_types=1);
 
 namespace Triniti\Ovp;
 
+use Symfony\Component\HttpKernel\KernelInterface;
 use Triniti\Dam\UrlProvider;
 use Triniti\Schemas\Dam\AssetId;
 
 class ArtifactUrlProvider
 {
     protected UrlProvider $urlProvider;
+
+    private static ?self $instance = null;
+
+    public static function setInstance(self $instance): void
+    {
+        self::$instance = $instance;
+    }
+
+    public static function getInstance(): static
+    {
+        global $kernel;
+
+        if (null === self::$instance) {
+            if ($kernel instanceof KernelInterface) {
+                self::$instance = $kernel->getContainer()->get(self::class);
+            } else {
+                self::$instance = new static(new UrlProvider());
+            }
+        }
+
+        return self::$instance;
+    }
 
     public function __construct(UrlProvider $urlProvider)
     {
