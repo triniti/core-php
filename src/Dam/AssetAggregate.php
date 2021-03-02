@@ -12,11 +12,7 @@ use Triniti\Schemas\Dam\Event\AssetLinkedV1;
 use Triniti\Schemas\Dam\Event\AssetPatchedV1;
 use Triniti\Schemas\Dam\Event\AssetUnlinkedV1;
 use Triniti\Schemas\Dam\Event\GalleryAssetReorderedV1;
-use Triniti\Schemas\Ovp\Enum\TranscodingStatus;
 use Triniti\Schemas\Ovp\Enum\TranscriptionStatus;
-use Triniti\Schemas\Ovp\Event\TranscodingCompletedV1;
-use Triniti\Schemas\Ovp\Event\TranscodingFailedV1;
-use Triniti\Schemas\Ovp\Event\TranscodingStartedV1;
 use Triniti\Schemas\Ovp\Event\TranscriptionCompletedV1;
 use Triniti\Schemas\Ovp\Event\TranscriptionFailedV1;
 use Triniti\Schemas\Ovp\Event\TranscriptionStartedV1;
@@ -115,43 +111,6 @@ class AssetAggregate extends Aggregate
         $this->recordEvent($event);
     }
 
-    public function updateTranscodingStatus(Message $command): void
-    {
-        $nodeRef = $this->nodeRef;
-        if ('video-asset' !== $nodeRef->getLabel()) {
-            return;
-        }
-        $event = null;
-        $transcodingStatus = $command->get('transcoding_status');
-        switch ($transcodingStatus) {
-            case TranscodingStatus::COMPLETED():
-                $event = TranscodingCompletedV1::create();
-                break;
-            case TranscodingStatus::PROCESSING():
-                $event = TranscodingStartedV1::create();
-                break;
-            case TranscodingStatus::CANCELED():
-            case TranscodingStatus::FAILED():
-            case TranscodingStatus::UNKNOWN():
-            default:
-                $event = TranscodingFailedV1::create();
-                foreach (['error_code', 'error_message'] as $field) {
-                    if ($command->has($field)) {
-                        $event->set($field, $command->get($field));
-                    }
-                }
-        }
-        $event->set('node_ref', $this->nodeRef);
-
-        foreach (['mediaconvert_job_arn', 'mediaconvert_queue_arn'] as $field) {
-            if ($command->has($field)) {
-                $event->set($field, $command->get($field));
-            }
-        }
-
-        $this->pbjx->copyContext($command, $event);
-        $this->recordEvent($event);
-    }
 
     public function updateTranscriptionStatus(Message $command, ?string $videoAssetTitle = null): void
     {
@@ -192,46 +151,8 @@ class AssetAggregate extends Aggregate
             $event->addToMap('tags', 'video_asset_title', $videoAssetTitle);
         }
 
-        $this->pbjx->copyContext($command, $event);
+        $this->copyContext($command, $event);
         $this->recordEvent($event);
-    }
-
-    protected function applyTranscodingFailed(Message $event): void
-    {
-        $this->node->set('transcoding_status', TranscodingStatus::FAILED());
-        foreach (['mediaconvert_job_arn', 'mediaconvert_queue_arn'] as $field) {
-            if ($event->has($field)) {
-                $this->node->addToMap('tags', $field, $event->get($field));
-            }
-        }
-        if ($event->has('error_code')) {
-            $this->node->addToMap('tags', 'transcode_error_name', $event->get('error_code')->getName());
-            $this->node->addToMap('tags', 'transcode_error_code', (string)$event->get('error_code')->getValue());
-        }
-    }
-
-    protected function applyTranscodingStarted(Message $event): void
-    {
-        $this->node->set('transcoding_status', TranscodingStatus::PROCESSING());
-        foreach (['mediaconvert_job_arn', 'mediaconvert_queue_arn'] as $field) {
-            if ($event->has($field)) {
-                $this->node->addToMap('tags', $field, $event->get($field));
-            }
-        }
-        if ($event->has('error_code')) {
-            $this->node->addToMap('tags', 'transcode_error_name', $event->get('error_code')->getName());
-            $this->node->addToMap('tags', 'transcode_error_code', (string)$event->get('error_code')->getValue());
-        }
-    }
-
-    protected function applyTranscodingCompleted(Message $event): void
-    {
-        $this->node->set('transcoding_status', TranscodingStatus::COMPLETED());
-        foreach (['mediaconvert_job_arn', 'mediaconvert_queue_arn'] as $field) {
-            if ($event->has($field)) {
-                $this->node->addToMap('tags', $field, $event->get($field));
-            }
-        }
     }
 
     protected function applyTranscriptionCompleted(Message $event): void
