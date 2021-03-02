@@ -5,7 +5,6 @@ namespace Triniti\Tests\Ovp;
 
 use Acme\Schemas\Dam\Node\DocumentAssetV1;
 use Acme\Schemas\Dam\Node\VideoAssetV1;
-use Acme\Schemas\Ovp\Event\VideoUpdatedV1;
 use Acme\Schemas\Ovp\Node\VideoV1;
 use Gdbots\Pbjx\Event\PbjxEvent;
 use PHPUnit\Framework\TestCase;
@@ -16,7 +15,7 @@ use Triniti\Schemas\Dam\AssetId;
 
 final class VideoEnricherTest extends TestCase
 {
-    public function testEnrichVideoUpdated(): void
+    public function testEnrich(): void
     {
         $videoAssetId = AssetId::create('video', 'mxf');
         $videoAsset = VideoAssetV1::fromArray(['_id' => $videoAssetId]);
@@ -26,25 +25,21 @@ final class VideoEnricherTest extends TestCase
         $newNode = (clone $oldNode)
             ->set('mezzanine_ref', $videoAsset->generateNodeRef())
             ->set('caption_ref', $documentAsset->generateNodeRef());
-        $event = VideoUpdatedV1::create()
-            ->set('node_ref', $oldNode->generateNodeRef())
-            ->set('old_node', $oldNode)
-            ->set('new_node', $newNode);
-        $pbjxEvent = new PbjxEvent($event);
+        $pbjxEvent = new PbjxEvent($newNode);
 
         $damUrlProvider = new DamUrlProvider(['default' => 'https://dam.acme.com/']);
         $artifactUrlProvider = new ArtifactUrlProvider($damUrlProvider);
-        (new VideoEnricher($damUrlProvider, $artifactUrlProvider))->enrichVideoUpdated($pbjxEvent);
+        (new VideoEnricher($damUrlProvider, $artifactUrlProvider))->enrich($pbjxEvent);
 
-        $actual = $event->get('new_node')->get('mezzanine_url');
+        $actual = $newNode->get('mezzanine_url');
         $expected = $artifactUrlProvider->getManifest($videoAssetId);
         $this->assertSame($actual, $expected);
 
-        $actual = $event->get('new_node')->get('kaltura_mp4_url');
+        $actual = $newNode->get('kaltura_mp4_url');
         $expected = $artifactUrlProvider->getVideo($videoAssetId);
         $this->assertSame($actual, $expected);
 
-        $actual = $event->get('new_node')->getFromMap('caption_urls', 'en');
+        $actual = $newNode->getFromMap('caption_urls', 'en');
         $expected = $damUrlProvider->getUrl($documentAssetId);
         $this->assertSame($actual, $expected);
     }

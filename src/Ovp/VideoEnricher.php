@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Triniti\Ovp;
 
-use Gdbots\Pbj\MessageResolver;
+use Gdbots\Pbj\Message;
 use Gdbots\Pbjx\DependencyInjection\PbjxEnricher;
 use Gdbots\Pbjx\Event\PbjxEvent;
 use Gdbots\Pbjx\EventSubscriber;
@@ -15,42 +15,49 @@ class VideoEnricher implements EventSubscriber, PbjxEnricher
     protected DamUrlProvider $damUrlProvider;
     protected ArtifactUrlProvider $artifactUrlProvider;
 
+    public static function getSubscribedEvents()
+    {
+        return [
+            'triniti:ovp:mixin:video.enrich' => 'enrich',
+        ];
+    }
+
     public function __construct(DamUrlProvider $damUrlProvider, ArtifactUrlProvider $artifactUrlProvider)
     {
         $this->damUrlProvider = $damUrlProvider;
         $this->artifactUrlProvider = $artifactUrlProvider;
     }
 
-    public static function getSubscribedEvents()
+    public function enrich(PbjxEvent $pbjxEvent): void
     {
-        $vendor = MessageResolver::getDefaultVendor();
-        return [
-            "{$vendor}:ovp:event:video-updated.enrich" => 'enrichVideoUpdated'
-        ];
+        $node = $pbjxEvent->getMessage();
+        if ($node->isFrozen()) {
+            return;
+        }
+
+        $this->enrichWithCaptionUrls($node);
+        $this->enrichWithMezzanineUrls($node);
     }
 
-    public function enrichVideoUpdated(PbjxEvent $pbjxEvent): void
+    protected function enrichWithCaptionUrls(Message $node): void
     {
-        $event = $pbjxEvent->getMessage();
-        if ($event->isFrozen()) {
+        if (!$node->has('caption_ref')) {
             return;
         }
 
-        if (!$event->has('new_node')) {
+        $assetId = AssetId::fromString($node->get('caption_ref')->getId());
+        $node->addToMap('caption_urls', 'en', $this->damUrlProvider->getUrl($assetId));
+    }
+
+    protected function enrichWithMezzanineUrls(Message $node): void
+    {
+        if (!$node->has('mezzanine_ref')) {
             return;
         }
 
-        $node = $event->get('new_node');
-        if ($node->has('mezzanine_ref')) {
-            $mezzanineAssetId = AssetId::fromString($node->get('mezzanine_ref')->getId());
-            $node
-                ->set('mezzanine_url', $this->artifactUrlProvider->getManifest($mezzanineAssetId))
-                ->set('kaltura_mp4_url', $this->artifactUrlProvider->getVideo($mezzanineAssetId));
-        }
-
-        if ($node->has('caption_ref')) {
-            $documentAssetId = AssetId::fromString($node->get('caption_ref')->getId());
-            $node->addToMap('caption_urls', 'en', $this->damUrlProvider->getUrl($documentAssetId));
-        }
+        $assetId = AssetId::fromString($node->get('mezzanine_ref')->getId());
+        $node
+            ->set('mezzanine_url', $this->artifactUrlProvider->getManifest($assetId))
+            ->set('kaltura_mp4_url', $this->artifactUrlProvider->getVideo($assetId));
     }
 }
