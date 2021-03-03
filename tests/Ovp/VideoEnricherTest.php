@@ -27,8 +27,8 @@ final class VideoEnricherTest extends TestCase
             ->set('caption_ref', $documentAsset->generateNodeRef());
         $pbjxEvent = new PbjxEvent($newNode);
 
-        $damUrlProvider = new DamUrlProvider(['default' => 'https://dam.acme.com/']);
-        $artifactUrlProvider = new ArtifactUrlProvider($damUrlProvider);
+        $damUrlProvider = DamUrlProvider::getInstance();
+        $artifactUrlProvider = ArtifactUrlProvider::getInstance();
         (new VideoEnricher($damUrlProvider, $artifactUrlProvider))->enrich($pbjxEvent);
 
         $actual = $newNode->get('mezzanine_url');

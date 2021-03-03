@@ -6,7 +6,7 @@ namespace Triniti\Tests\Ovp;
 use Acme\Schemas\Dam\Node\VideoAssetV1;
 use Acme\Schemas\Ovp\Node\VideoV1;
 use Gdbots\Pbj\WellKnown\NodeRef;
-use Triniti\Dam\UrlService;
+use Triniti\Dam\UrlProvider;
 use Triniti\Ovp\ArtifactUrlProvider;
 use Triniti\Ovp\VideoAggregate;
 use Triniti\Schemas\Dam\AssetId;
@@ -91,7 +91,7 @@ final class VideoAggregateTest extends AbstractPbjxTest
         $this->assertTrue($documentRef->equals($aggregateNode->get('caption_ref')));
 
         $actual = $aggregateNode->getFromMap('caption_urls', 'en');
-        $expected = UrlService::getUrl(AssetId::fromString($documentRef->getId()));
+        $expected = UrlProvider::getInstance()->getUrl(AssetId::fromString($documentRef->getId()));
         $this->assertSame($actual, $expected);
     }
 }

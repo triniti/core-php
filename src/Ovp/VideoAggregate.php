@@ -7,7 +7,7 @@ use Gdbots\Ncr\Aggregate;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbj\WellKnown\NodeRef;
-use Triniti\Dam\UrlService;
+use Triniti\Dam\UrlProvider;
 use Triniti\Schemas\Dam\AssetId;
 use Triniti\Schemas\Ovp\Enum\TranscodingStatus;
 use Triniti\Schemas\Ovp\Enum\TranscriptionStatus;
@@ -142,7 +142,7 @@ class VideoAggregate extends Aggregate
         $assetId = AssetId::fromString($captionRef->getId());
         $this->node
             ->set('caption_ref', $captionRef)
-            ->addToMap('caption_urls', 'en', UrlService::getUrl($assetId));
+            ->addToMap('caption_urls', 'en', UrlProvider::getInstance()->getUrl($assetId));
     }
 
     /**
