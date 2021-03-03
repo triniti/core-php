@@ -49,6 +49,7 @@ class VideoAggregate extends Aggregate
         }
 
         $videoAssetRef = $videoAsset->generateNodeRef();
+        /** @var AssetId $videoAssetId */
         $videoAssetId = $videoAsset->get('_id');
         $imageRef = sprintf(
             '%s:image-asset:image_jpg_%s_%s',
@@ -78,15 +79,16 @@ class VideoAggregate extends Aggregate
         $this->recordEvent($event);
     }
 
-    public function updateTranscriptionStatus(Message $command): void
+    public function updateTranscriptionStatus(Message $command, Message $videoAsset): void
     {
         if (TranscriptionStatus::COMPLETED !== $command->fget('transcription_status')) {
-            // this _should_ be enforced by the handler but might as well do it here too
+            // we only care about completed for now.
             return;
         }
 
-        $videoAssetRef = $command->get('node_ref');
-        $videoAssetId = AssetId::fromString($videoAssetRef->getId());
+        $videoAssetRef = $videoAsset->generateNodeRef();
+        /** @var AssetId $videoAssetId */
+        $videoAssetId = $videoAsset->get('_id');
         $documentRef = NodeRef::fromString(sprintf(
             '%s:document-asset:document_vtt_%s_%s',
             $videoAssetRef->getVendor(),
@@ -96,6 +98,9 @@ class VideoAggregate extends Aggregate
 
         $event = TranscriptionCompletedV1::create()
             ->set('node_ref', $this->nodeRef)
+            ->set('transcribe_job_name', $command->get('transcribe_job_name'))
+            ->set('transcribe_job_region', $command->get('transcribe_job_region'))
+            ->set('language_code', $command->get('language_code'))
             ->addToMap('tags', 'document_asset_ref', $documentRef->toString());
 
         $this->copyContext($command, $event);
@@ -127,16 +132,6 @@ class VideoAggregate extends Aggregate
         }
     }
 
-    protected function applyTranscodingFailed(Message $event): void
-    {
-        // override at site level if need be
-    }
-
-    protected function applyTranscodingStarted(Message $event): void
-    {
-        // override at site level if need be
-    }
-
     protected function applyTranscriptionCompleted(Message $event): void
     {
         if (!$event->isInMap('tags', 'document_asset_ref')) {
@@ -148,16 +143,6 @@ class VideoAggregate extends Aggregate
         $this->node
             ->set('caption_ref', $captionRef)
             ->addToMap('caption_urls', 'en', UrlService::getUrl($assetId));
-    }
-
-    protected function applyTranscriptionFailed(Message $event): void
-    {
-        // override at site level if need be
-    }
-
-    protected function applyTranscriptionStarted(Message $event): void
-    {
-        // override at site level if need be
     }
 
     /**

@@ -6,10 +6,12 @@ namespace Triniti\Ovp;
 use Gdbots\Ncr\AggregateResolver;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
+use Gdbots\Pbj\Util\StringUtil;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Pbjx;
-use Triniti\Dam\AssetAggregate;
+use Triniti\Dam\DocumentAssetAggregate;
+use Triniti\Dam\VideoAssetAggregate;
 use Triniti\Schemas\Dam\AssetId;
 use Triniti\Schemas\Ovp\Enum\TranscriptionStatus;
 
@@ -17,78 +19,90 @@ class UpdateTranscriptionStatusHandler implements CommandHandler
 {
     protected Ncr $ncr;
 
+    public static function handlesCuries(): array
+    {
+        return ['triniti:ovp:command:update-transcription-status'];
+    }
+
     public function __construct(Ncr $ncr)
     {
         $this->ncr = $ncr;
     }
 
-    public static function handlesCuries(): array
-    {
-        return [
-            'triniti:ovp:command:update-transcription-status',
-        ];
-    }
-
     public function handleCommand(Message $command, Pbjx $pbjx): void
     {
-        $videoAssetRef = $command->get('node_ref');
-        if (!$this->isNodeRefSupported($videoAssetRef)) {
-            return;
-        }
-
-        if (
-            !($command->has('transcription_status')
+        if (!(
+            $command->has('transcription_status')
             || $command->has('transcribe_job_name')
             || $command->has('transcribe_job_region')
             || $command->has('language_code')
             || $command->has('error_code')
-            || $command->has('error_message'))
-        ) {
+            || $command->has('error_message')
+        )) {
             return;
         }
 
-        $asset = $this->ncr->getNode($videoAssetRef);
-        /** @var AssetAggregate $videoAssetAggregate */
-        $videoAssetAggregate = AggregateResolver::resolve($videoAssetRef->getQName())::fromNode($asset, $pbjx);
-        $videoAssetAggregate->sync();
-        $videoAssetAggregate->updateTranscriptionStatus($command);
-        $videoAssetAggregate->commit();
+        /** @var NodeRef $videoAssetRef */
+        $videoAssetRef = $command->get('node_ref');
+        $context = ['causator' => $command];
+        $videoAsset = $this->ncr->getNode($videoAssetRef, true, $context);
 
-        if (!TranscriptionStatus::COMPLETED()->equals($command->get('transcription_status'))) {
-            return; // we only update the document and video if transcription completed
+        /** @var VideoAssetAggregate $aggregate */
+        $aggregate = AggregateResolver::resolve($videoAssetRef->getQName())::fromNode($videoAsset, $pbjx);
+        $aggregate->sync($context);
+        $aggregate->updateTranscriptionStatus($command);
+        $aggregate->commit($context);
+        $videoAsset = $aggregate->getNode();
+
+        if (TranscriptionStatus::COMPLETED !== $command->fget('transcription_status')) {
+            // we only update the document and video if transcription completed
+            return;
         }
 
-        $videoAssetId = AssetId::fromString($videoAssetRef->getId());
+        /** @var AssetId $videoAssetId */
+        $videoAssetId = $videoAsset->get('_id');
         $documentRef = NodeRef::fromString(sprintf(
             '%s:document-asset:document_vtt_%s_%s',
             $videoAssetRef->getVendor(),
             $videoAssetId->getDate(),
             $videoAssetId->getUuid()
         ));
-        $document = $this->ncr->getNode($documentRef);
-        /** @var AssetAggregate $documentAssetAggregate */
-        $documentAssetAggregate = AggregateResolver::resolve($documentRef->getQName())::fromNode($document, $pbjx);
-        $documentAssetAggregate->sync();
-        $documentAssetAggregate->updateTranscriptionStatus($command, $videoAssetAggregate->getNode()->get('title'));
-        $documentAssetAggregate->commit();
 
-        /** @var NodeRef $linkedRef */
-        foreach ($videoAssetAggregate->getNode()->get('linked_refs', []) as $linkedRef) {
-            if ('video' !== $linkedRef->getLabel()) {
+        /** @var NodeRef[] $linkedRefs */
+        $linkedRefs = array_merge([$documentRef], $videoAsset->get('linked_refs', []));
+
+        foreach ($linkedRefs as $linkedRef) {
+            $method = 'update' . StringUtil::toCamelFromSlug($linkedRef->getLabel());
+            if (!method_exists($this, $method)) {
                 continue;
             }
 
-            $video = $this->ncr->getNode($linkedRef);
-            /** @var VideoAggregate $videoAggregate */
-            $videoAggregate = AggregateResolver::resolve($linkedRef->getQName())::fromNode($video, $pbjx);
-            $videoAggregate->sync();
-            $videoAggregate->updateTranscriptionStatus($command);
-            $videoAggregate->commit();
+            $node = $this->ncr->getNode($linkedRef, true, $context);
+            $this->$method($node, $videoAsset, $command, $pbjx);
         }
     }
 
-    protected function isNodeRefSupported(NodeRef $nodeRef): bool
+    protected function updateDocumentAsset(Message $documentAsset, Message $videoAsset, Message $command, Pbjx $pbjx): void
     {
-        return 'video-asset' === $nodeRef->getLabel();
+        $nodeRef = $documentAsset->generateNodeRef();
+        $context = ['causator' => $command];
+
+        /** @var DocumentAssetAggregate $aggregate */
+        $aggregate = AggregateResolver::resolve($nodeRef->getQName())::fromNode($documentAsset, $pbjx);
+        $aggregate->sync($context);
+        $aggregate->updateTranscriptionStatus($command, $videoAsset);
+        $aggregate->commit($context);
+    }
+
+    protected function updateVideo(Message $video, Message $videoAsset, Message $command, Pbjx $pbjx): void
+    {
+        $nodeRef = $video->generateNodeRef();
+        $context = ['causator' => $command];
+
+        /** @var VideoAggregate $aggregate */
+        $aggregate = AggregateResolver::resolve($nodeRef->getQName())::fromNode($video, $pbjx);
+        $aggregate->sync($context);
+        $aggregate->updateTranscriptionStatus($command, $videoAsset);
+        $aggregate->commit($context);
     }
 }

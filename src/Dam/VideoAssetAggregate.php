@@ -70,7 +70,8 @@ class VideoAssetAggregate extends AssetAggregate
         $event
             ->set('node_ref', $this->nodeRef)
             ->set('transcribe_job_name', $command->get('transcribe_job_name'))
-            ->set('transcribe_job_region', $command->get('transcribe_job_region'));
+            ->set('transcribe_job_region', $command->get('transcribe_job_region'))
+            ->set('language_code', $command->get('language_code'));
 
         $this->copyContext($command, $event);
         $this->recordEvent($event);
