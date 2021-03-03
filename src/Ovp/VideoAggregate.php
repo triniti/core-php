@@ -19,6 +19,10 @@ class VideoAggregate extends Aggregate
 {
     public function syncMedia(Message $command, array $fields = [], ?string $mediaId = null): void
     {
+        /** @var NodeRef $nodeRef */
+        $nodeRef = $command->get('node_ref');
+        $this->assertNodeRefMatches($nodeRef);
+
         $event = MediaSyncedV1::create()
             ->set('node_ref', $this->nodeRef)
             ->set('jwplayer_media_id', $mediaId);
@@ -33,47 +37,52 @@ class VideoAggregate extends Aggregate
             }
         }
 
-        $this->pbjx->copyContext($command, $event);
+        $this->copyContext($command, $event);
         $this->recordEvent($event);
     }
 
-    public function updateTranscodingStatus(Message $command): void
+    public function updateTranscodingStatus(Message $command, Message $videoAsset): void
     {
-        if (!TranscodingStatus::COMPLETED()->equals($command->get('transcoding_status'))) {
-            return; // this _should_ be enforced by the handler but might as well do it here too
+        if (TranscodingStatus::COMPLETED !== $command->fget('transcoding_status')) {
+            // we only care about completed for now.
+            return;
         }
 
-        $videoAssetRef = $command->get('node_ref');
+        $videoAssetRef = $videoAsset->generateNodeRef();
+        $videoAssetId = $videoAsset->get('_id');
+        $imageRef = sprintf(
+            '%s:image-asset:image_jpg_%s_%s',
+            $videoAssetRef->getVendor(),
+            $videoAssetId->getDate(),
+            $videoAssetId->getUuid()
+        );
+
+        if ($this->node->fget('mezzanine_ref') === $videoAssetRef->toString()
+            && $this->node->fget('image_ref') === $imageRef
+        ) {
+            // ignore since there are no changes
+            return;
+        }
+
         $event = TranscodingCompletedV1::create()
             ->set('node_ref', $this->nodeRef)
+            ->set('mediaconvert_job_arn', $command->get('mediaconvert_job_arn'))
+            ->set('mediaconvert_queue_arn', $command->get('mediaconvert_queue_arn'))
             ->addToMap('tags', 'video_asset_ref', $videoAssetRef->toString());
 
-        if ($command->has('mediaconvert_job_arn')) {
-            $event->set('mediaconvert_job_arn', $command->get('mediaconvert_job_arn'));
-        }
-        if ($command->has('mediaconvert_queue_arn')) {
-            $event->set('mediaconvert_queue_arn', $command->get('mediaconvert_queue_arn'));
-        }
-
         if (!$this->node->has('image_ref')) {
-            $videoAssetId = AssetId::fromString($videoAssetRef->getId());
-            $imageRef = sprintf(
-                '%s:image-asset:image_jpg_%s_%s',
-                $videoAssetRef->getVendor(),
-                $videoAssetId->getDate(),
-                $videoAssetId->getUuid()
-            );
             $event->addToMap('tags', 'image_asset_ref', $imageRef);
         }
 
-        $this->pbjx->copyContext($command, $event);
+        $this->copyContext($command, $event);
         $this->recordEvent($event);
     }
 
     public function updateTranscriptionStatus(Message $command): void
     {
-        if (!TranscriptionStatus::COMPLETED()->equals($command->get('transcription_status'))) {
-            return; // this _should_ be enforced by the handler but might as well do it here too
+        if (TranscriptionStatus::COMPLETED !== $command->fget('transcription_status')) {
+            // this _should_ be enforced by the handler but might as well do it here too
+            return;
         }
 
         $videoAssetRef = $command->get('node_ref');
@@ -84,10 +93,12 @@ class VideoAggregate extends Aggregate
             $videoAssetId->getDate(),
             $videoAssetId->getUuid()
         ));
+
         $event = TranscriptionCompletedV1::create()
             ->set('node_ref', $this->nodeRef)
             ->addToMap('tags', 'document_asset_ref', $documentRef->toString());
-        $this->pbjx->copyContext($command, $event);
+
+        $this->copyContext($command, $event);
         $this->recordEvent($event);
     }
 
@@ -100,6 +111,10 @@ class VideoAggregate extends Aggregate
 
     protected function applyTranscodingCompleted(Message $event): void
     {
+        if (!$event->isInMap('tags', 'video_asset_ref')) {
+            return;
+        }
+
         $assetRef = NodeRef::fromString($event->getFromMap('tags', 'video_asset_ref'));
         $assetId = AssetId::fromString($assetRef->getId());
         $this->node
@@ -114,12 +129,12 @@ class VideoAggregate extends Aggregate
 
     protected function applyTranscodingFailed(Message $event): void
     {
-        return; // override at site level if need be
+        // override at site level if need be
     }
 
     protected function applyTranscodingStarted(Message $event): void
     {
-        return; // override at site level if need be
+        // override at site level if need be
     }
 
     protected function applyTranscriptionCompleted(Message $event): void
@@ -128,21 +143,21 @@ class VideoAggregate extends Aggregate
             return;
         }
 
-        $documentAssetRef = NodeRef::fromString($event->getFromMap('tags', 'document_asset_ref'));
-        $assetId = AssetId::fromString($documentAssetRef->getId());
+        $captionRef = NodeRef::fromString($event->getFromMap('tags', 'document_asset_ref'));
+        $assetId = AssetId::fromString($captionRef->getId());
         $this->node
-            ->set('caption_ref', $documentAssetRef)
+            ->set('caption_ref', $captionRef)
             ->addToMap('caption_urls', 'en', UrlService::getUrl($assetId));
     }
 
     protected function applyTranscriptionFailed(Message $event): void
     {
-        return; // override at site level if need be
+        // override at site level if need be
     }
 
     protected function applyTranscriptionStarted(Message $event): void
     {
-        return; // override at site level if need be
+        // override at site level if need be
     }
 
     /**
@@ -162,6 +177,35 @@ class VideoAggregate extends Aggregate
         }
     }
 
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createNodeCreatedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:ovp:event:video-created:v1')::create();
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createNodeDeletedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:ovp:event:video-deleted:v1')::create();
+    }
 
     /**
      * This is for legacy uses of command/event mixins for common

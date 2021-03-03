@@ -6,75 +6,77 @@ namespace Triniti\Ovp;
 use Gdbots\Ncr\AggregateResolver;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
+use Gdbots\Pbj\Util\StringUtil;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Pbjx;
-use Triniti\Dam\AssetAggregate;
+use Triniti\Dam\VideoAssetAggregate;
 use Triniti\Schemas\Ovp\Enum\TranscodingStatus;
 
 class UpdateTranscodingStatusHandler implements CommandHandler
 {
     protected Ncr $ncr;
-    protected ArtifactUrlProvider $artifactUrlProvider;
-
-    public function __construct(Ncr $ncr, ArtifactUrlProvider $artifactUrlProvider)
-    {
-        $this->ncr = $ncr;
-        $this->artifactUrlProvider = $artifactUrlProvider;
-    }
 
     public static function handlesCuries(): array
     {
-        return [
-            'triniti:ovp:command:update-transcoding-status',
-        ];
+        return ['triniti:ovp:command:update-transcoding-status'];
+    }
+
+    public function __construct(Ncr $ncr)
+    {
+        $this->ncr = $ncr;
     }
 
     public function handleCommand(Message $command, Pbjx $pbjx): void
     {
-        /** @var NodeRef $videoAssetRef */
-        $videoAssetRef = $command->get('node_ref');
-        if (!$this->isNodeRefSupported($videoAssetRef)) {
-            return;
-        }
-
-        if (
-            !($command->has('transcoding_status')
+        if (!(
+            $command->has('transcoding_status')
             || $command->has('mediaconvert_job_arn')
             || $command->has('mediaconvert_queue_arn')
             || $command->has('error_code')
-            || $command->has('error_message'))
-        ) {
+            || $command->has('error_message')
+        )) {
             return;
         }
 
-        $asset = $this->ncr->getNode($videoAssetRef);
-        /** @var AssetAggregate $assetAggregate */
-        $assetAggregate = AggregateResolver::resolve($videoAssetRef->getQName())::fromNode($asset, $pbjx);
-        $assetAggregate->sync();
-        $assetAggregate->updateTranscodingStatus($command);
-        $assetAggregate->commit();
+        /** @var NodeRef $videoAssetRef */
+        $videoAssetRef = $command->get('node_ref');
+        $context = ['causator' => $command];
+        $videoAsset = $this->ncr->getNode($videoAssetRef, true, $context);
 
-        if (!TranscodingStatus::COMPLETED()->equals($command->get('transcoding_status'))) {
-            return; // we only update the video if transcoding completed
+        /** @var VideoAssetAggregate $aggregate */
+        $aggregate = AggregateResolver::resolve($videoAssetRef->getQName())::fromNode($videoAsset, $pbjx);
+        $aggregate->sync($context);
+        $aggregate->updateTranscodingStatus($command);
+        $aggregate->commit($context);
+        $videoAsset = $aggregate->getNode();
+
+        if (TranscodingStatus::COMPLETED !== $command->fget('transcoding_status')) {
+            // we only update the linked_refs (just videos atm) if transcoding completed
+            return;
         }
 
         /** @var NodeRef $linkedRef */
-        foreach ($assetAggregate->getNode()->get('linked_refs', []) as $linkedRef) {
-            if ('video' !== $linkedRef->getLabel()) {
+        foreach ($videoAsset->get('linked_refs', []) as $linkedRef) {
+            $method = 'update' . StringUtil::toCamelFromSlug($linkedRef->getLabel());
+            if (!method_exists($this, $method)) {
                 continue;
             }
-            $video = $this->ncr->getNode($linkedRef);
-            /** @var VideoAggregate $videoAggregate */
-            $videoAggregate = AggregateResolver::resolve($linkedRef->getQName())::fromNode($video, $pbjx);
-            $videoAggregate->sync();
-            $videoAggregate->updateTranscodingStatus($command);
-            $videoAggregate->commit();
+
+            $node = $this->ncr->getNode($linkedRef, true, $context);
+            $this->$method($node, $videoAsset, $command, $pbjx);
         }
     }
 
-    protected function isNodeRefSupported(NodeRef $nodeRef): bool
+    protected function updateVideo(Message $video, Message $videoAsset, Message $command, Pbjx $pbjx): void
     {
-        return 'video-asset' === $nodeRef->getLabel();
+        $nodeRef = $video->generateNodeRef();
+        $context = ['causator' => $command];
+
+        /** @var VideoAggregate $aggregate */
+        $aggregate = AggregateResolver::resolve($nodeRef->getQName())::fromNode($video, $pbjx);
+        $aggregate->sync($context);
+        $aggregate->updateTranscodingStatus($command, $videoAsset);
+        $aggregate->commit($context);
     }
 }
