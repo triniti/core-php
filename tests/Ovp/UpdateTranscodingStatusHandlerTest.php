@@ -10,9 +10,9 @@ use Acme\Schemas\Ovp\Node\VideoV1;
 use Gdbots\Ncr\AggregateResolver;
 use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Schemas\Pbjx\StreamId;
-use Triniti\Dam\UrlProvider;
-use Triniti\Ovp\ArtifactUrlProvider;
+use Triniti\Dam\VideoAssetAggregate;
 use Triniti\Ovp\UpdateTranscodingStatusHandler;
+use Triniti\Ovp\VideoAggregate;
 use Triniti\Schemas\Dam\AssetId;
 use Triniti\Schemas\Ovp\Command\UpdateTranscodingStatusV1;
 use Triniti\Schemas\Ovp\Enum\TranscodingStatus;
@@ -23,7 +23,6 @@ use Triniti\Tests\AbstractPbjxTest;
 
 final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
 {
-    private ArtifactUrlProvider $artifactUrlProvider;
     private UpdateTranscodingStatusHandler $handler;
     protected InMemoryNcr $ncr;
 
@@ -32,13 +31,9 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
         parent::setup();
         $this->ncr = new InMemoryNcr();
 
-        AggregateResolver::register(['acme:video-asset' => 'Triniti\Dam\AssetAggregate']);
-        AggregateResolver::register(['acme:video' => 'Triniti\Ovp\VideoAggregate']);
-        $this->artifactUrlProvider = new ArtifactUrlProvider(new UrlProvider(['video' => 'https://video.acme.com/']));
-        $this->handler = new UpdateTranscodingStatusHandler(
-            $this->ncr,
-            $this->artifactUrlProvider,
-        );
+        AggregateResolver::register(['acme:video-asset' => VideoAssetAggregate::class]);
+        AggregateResolver::register(['acme:video' => VideoAggregate::class]);
+        $this->handler = new UpdateTranscodingStatusHandler($this->ncr);
     }
 
     public function testHandleNonVideoAsset(): void
@@ -69,7 +64,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
     {
         $videoAsset = VideoAssetV1::fromArray([
             '_id'       => AssetId::create('video', 'mxf'),
-            'mime_type' => 'application/mxf'
+            'mime_type' => 'application/mxf',
         ]);
         $this->ncr->putNode($videoAsset);
         $videoAssetRef = $videoAsset->generateNodeRef();
@@ -78,7 +73,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
             ->set('transcoding_status', TranscodingStatus::CANCELED());
         $this->handler->handleCommand($command, $this->pbjx);
 
-        $streamId = StreamId::fromString(sprintf('acme:%s:%s', $videoAssetRef->getLabel(), $videoAssetRef->getId()));
+        $streamId = StreamId::fromNodeRef($videoAssetRef);
         foreach ($this->eventStore->pipeEvents($streamId) as $event) {
             $this->assertInstanceOf(TranscodingFailedV1::class, $event);
             $this->assertTrue($event->get('node_ref')->equals($videoAssetRef));
@@ -94,7 +89,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
         $videoAssetId = AssetId::create('video', 'mxf');
         $videoAsset = VideoAssetV1::fromArray([
             '_id'       => $videoAssetId,
-            'mime_type' => 'application/mxf'
+            'mime_type' => 'application/mxf',
         ]);
         $videoAsset->addToSet('linked_refs', [$videoRef]);
         $videoAssetRef = $videoAsset->generateNodeRef();
@@ -102,7 +97,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
 
         $imageAsset = ImageAssetV1::fromArray([
             '_id'       => 'image_jpg_' . $videoAssetId->getDate() . '_' . $videoAssetId->getUuid(),
-            'mime_type' => 'image/jpeg'
+            'mime_type' => 'image/jpeg',
         ]);
         $imageAssetRef = $imageAsset->generateNodeRef();
 
@@ -113,7 +108,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
             ->set('mediaconvert_queue_arn', 'bar');
         $this->handler->handleCommand($command, $this->pbjx);
 
-        $videoAssetStreamId = StreamId::fromString(sprintf('acme:%s:%s', $videoAssetRef->getLabel(), $videoAssetRef->getId()));
+        $videoAssetStreamId = StreamId::fromNodeRef($videoAssetRef);
         foreach ($this->eventStore->pipeEvents($videoAssetStreamId) as $event) {
             $this->assertInstanceOf(TranscodingCompletedV1::class, $event);
             $this->assertTrue($event->get('node_ref')->equals($videoAssetRef));
@@ -127,7 +122,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
             $this->assertSame($actual, $expected);
         }
 
-        $videoStreamId = StreamId::fromString(sprintf('acme:%s:%s', $videoRef->getLabel(), $videoRef->getId()));
+        $videoStreamId = StreamId::fromNodeRef($videoRef);
         foreach ($this->eventStore->pipeEvents($videoStreamId) as $event) {
             $this->assertInstanceOf(TranscodingCompletedV1::class, $event);
             $this->assertTrue($event->get('node_ref')->equals($videoRef));
@@ -154,7 +149,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
     {
         $videoAsset = VideoAssetV1::fromArray([
             '_id'       => AssetId::create('video', 'mxf'),
-            'mime_type' => 'application/mxf'
+            'mime_type' => 'application/mxf',
         ]);
         $this->ncr->putNode($videoAsset);
         $videoAssetRef = $videoAsset->generateNodeRef();
@@ -163,7 +158,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
             ->set('transcoding_status', TranscodingStatus::FAILED());
         $this->handler->handleCommand($command, $this->pbjx);
 
-        $streamId = StreamId::fromString(sprintf('acme:%s:%s', $videoAssetRef->getLabel(), $videoAssetRef->getId()));
+        $streamId = StreamId::fromNodeRef($videoAssetRef);
         foreach ($this->eventStore->pipeEvents($streamId) as $event) {
             $this->assertInstanceOf(TranscodingFailedV1::class, $event);
             $this->assertTrue($event->get('node_ref')->equals($videoAssetRef));
@@ -174,7 +169,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
     {
         $videoAsset = VideoAssetV1::fromArray([
             '_id'       => AssetId::create('video', 'mxf'),
-            'mime_type' => 'application/mxf'
+            'mime_type' => 'application/mxf',
         ]);
         $this->ncr->putNode($videoAsset);
         $videoAssetRef = $videoAsset->generateNodeRef();
@@ -183,7 +178,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
             ->set('transcoding_status', TranscodingStatus::PROCESSING());
         $this->handler->handleCommand($command, $this->pbjx);
 
-        $streamId = StreamId::fromString(sprintf('acme:%s:%s', $videoAssetRef->getLabel(), $videoAssetRef->getId()));
+        $streamId = StreamId::fromNodeRef($videoAssetRef);
         foreach ($this->eventStore->pipeEvents($streamId) as $event) {
             $this->assertInstanceOf(TranscodingStartedV1::class, $event);
             $this->assertTrue($event->get('node_ref')->equals($videoAssetRef));
@@ -194,7 +189,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
     {
         $videoAsset = VideoAssetV1::fromArray([
             '_id'       => AssetId::create('video', 'mxf'),
-            'mime_type' => 'application/mxf'
+            'mime_type' => 'application/mxf',
         ]);
         $this->ncr->putNode($videoAsset);
         $videoAssetRef = $videoAsset->generateNodeRef();
@@ -203,7 +198,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
             ->set('transcoding_status', TranscodingStatus::UNKNOWN());
         $this->handler->handleCommand($command, $this->pbjx);
 
-        $streamId = StreamId::fromString(sprintf('acme:%s:%s', $videoAssetRef->getLabel(), $videoAssetRef->getId()));
+        $streamId = StreamId::fromNodeRef($videoAssetRef);
         foreach ($this->eventStore->pipeEvents($streamId) as $event) {
             $this->assertInstanceOf(TranscodingFailedV1::class, $event);
             $this->assertTrue($event->get('node_ref')->equals($videoAssetRef));

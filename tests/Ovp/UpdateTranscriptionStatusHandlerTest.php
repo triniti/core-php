@@ -9,7 +9,10 @@ use Acme\Schemas\Ovp\Node\VideoV1;
 use Gdbots\Ncr\AggregateResolver;
 use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Schemas\Pbjx\StreamId;
+use Triniti\Dam\DocumentAssetAggregate;
+use Triniti\Dam\VideoAssetAggregate;
 use Triniti\Ovp\UpdateTranscriptionStatusHandler;
+use Triniti\Ovp\VideoAggregate;
 use Triniti\Schemas\Dam\AssetId;
 use Triniti\Schemas\Ovp\Command\UpdateTranscodingStatusV1;
 use Triniti\Schemas\Ovp\Command\UpdateTranscriptionStatusV1;
@@ -30,16 +33,16 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
         $this->ncr = new InMemoryNcr();
 
         $this->handler = new UpdateTranscriptionStatusHandler($this->ncr);
-        AggregateResolver::register(['acme:video' => 'Triniti\Ovp\VideoAggregate']);
-        AggregateResolver::register(['acme:video-asset' => 'Triniti\Dam\AssetAggregate']);
-        AggregateResolver::register(['acme:document-asset' => 'Triniti\Dam\AssetAggregate']);
+        AggregateResolver::register(['acme:video' => VideoAggregate::class]);
+        AggregateResolver::register(['acme:video-asset' => VideoAssetAggregate::class]);
+        AggregateResolver::register(['acme:document-asset' => DocumentAssetAggregate::class]);
     }
 
     public function testHandleNonVideoAsset(): void
     {
         $node = DocumentAssetV1::fromArray([
             '_id'       => AssetId::create('document', 'vtt'),
-            'mime_type' => 'text/vtt'
+            'mime_type' => 'text/vtt',
         ]);
         $command = UpdateTranscriptionStatusV1::create()->set('node_ref', $node->generateNodeRef());
         $this->handler->handleCommand($command, $this->pbjx);
@@ -55,7 +58,7 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
     {
         $node = VideoAssetV1::fromArray([
             '_id'       => AssetId::create('video', 'mxf'),
-            'mime_type' => 'application/mxf'
+            'mime_type' => 'application/mxf',
         ]);
         $command = UpdateTranscodingStatusV1::create()->set('node_ref', $node->generateNodeRef());
         $this->handler->handleCommand($command, $this->pbjx);
@@ -71,7 +74,7 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
     {
         $node = VideoAssetV1::fromArray([
             '_id'       => AssetId::create('video', 'mxf'),
-            'mime_type' => 'application/mxf'
+            'mime_type' => 'application/mxf',
         ]);
         $nodeRef = $node->generateNodeRef();
         $this->ncr->putNode($node);
@@ -80,7 +83,7 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
             ->set('transcription_status', TranscriptionStatus::CANCELED());
         $this->handler->handleCommand($command, $this->pbjx);
 
-        $streamId = StreamId::fromString(sprintf('acme:%s:%s', $nodeRef->getLabel(), $nodeRef->getId()));
+        $streamId = StreamId::fromNodeRef($nodeRef);
         foreach ($this->eventStore->pipeEvents($streamId) as $event) {
             $this->assertTrue($nodeRef->equals($event->get('node_ref')));
             $this->assertInstanceOf(TranscriptionFailedV1::class, $event);
@@ -97,7 +100,7 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
         $videoAsset = VideoAssetV1::fromArray([
             '_id'       => $videoAssetId,
             'mime_type' => 'application/mxf',
-            'title'     => 'foo'
+            'title'     => 'foo',
         ]);
         $videoAsset->addToSet('linked_refs', [$videoRef]);
         $videoAssetRef = $videoAsset->generateNodeRef();
@@ -105,7 +108,7 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
 
         $documentAsset = DocumentAssetV1::fromArray([
             '_id'       => 'document_vtt_' . $videoAssetId->getDate() . '_' . $videoAssetId->getUuid(),
-            'mime_type' => 'text/vtt'
+            'mime_type' => 'text/vtt',
         ]);
         $documentAssetRef = $documentAsset->generateNodeRef();
         $this->ncr->putNode($documentAsset);
@@ -115,20 +118,20 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
             ->set('transcription_status', TranscriptionStatus::COMPLETED());
         $this->handler->handleCommand($command, $this->pbjx);
 
-        $videoAssetStreamId = StreamId::fromString(sprintf('acme:%s:%s', $videoAssetRef->getLabel(), $videoAssetRef->getId()));
+        $videoAssetStreamId = StreamId::fromNodeRef($videoAssetRef);
         foreach ($this->eventStore->pipeEvents($videoAssetStreamId) as $event) {
             $this->assertTrue($videoAssetRef->equals($event->get('node_ref')));
             $this->assertInstanceOf(TranscriptionCompletedV1::class, $event);
         }
 
-        $documentAssetStreamId = StreamId::fromString(sprintf('acme:%s:%s', $documentAssetRef->getLabel(), $documentAssetRef->getId()));
+        $documentAssetStreamId = StreamId::fromNodeRef($documentAssetRef);
         foreach ($this->eventStore->pipeEvents($documentAssetStreamId) as $event) {
             $this->assertTrue($documentAssetRef->equals($event->get('node_ref')));
             $this->assertInstanceOf(TranscriptionCompletedV1::class, $event);
             $this->assertTrue($event->getFromMap('tags', 'video_asset_title') === $videoAsset->get('title'));
         }
 
-        $videoStreamId = StreamId::fromString(sprintf('acme:%s:%s', $videoRef->getLabel(), $videoRef->getId()));
+        $videoStreamId = StreamId::fromNodeRef($videoRef);
         foreach ($this->eventStore->pipeEvents($videoStreamId) as $event) {
             $this->assertTrue($videoRef->equals($event->get('node_ref')));
             $this->assertInstanceOf(TranscriptionCompletedV1::class, $event);
@@ -140,7 +143,7 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
     {
         $videoAsset = VideoAssetV1::fromArray([
             '_id'       => AssetId::create('video', 'mxf'),
-            'mime_type' => 'application/mxf'
+            'mime_type' => 'application/mxf',
         ]);
         $this->ncr->putNode($videoAsset);
         $videoAssetRef = $videoAsset->generateNodeRef();
@@ -149,7 +152,7 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
             ->set('transcription_status', TranscriptionStatus::FAILED());
         $this->handler->handleCommand($command, $this->pbjx);
 
-        $streamId = StreamId::fromString(sprintf('acme:%s:%s', $videoAssetRef->getLabel(), $videoAssetRef->getId()));
+        $streamId = StreamId::fromNodeRef($videoAssetRef);
         foreach ($this->eventStore->pipeEvents($streamId) as $event) {
             $this->assertTrue($videoAssetRef->equals($event->get('node_ref')));
             $this->assertInstanceOf(TranscriptionFailedV1::class, $event);
@@ -160,7 +163,7 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
     {
         $videoAsset = VideoAssetV1::fromArray([
             '_id'       => AssetId::create('video', 'mxf'),
-            'mime_type' => 'application/mxf'
+            'mime_type' => 'application/mxf',
         ]);
         $this->ncr->putNode($videoAsset);
         $videoAssetRef = $videoAsset->generateNodeRef();
@@ -169,7 +172,7 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
             ->set('transcription_status', TranscriptionStatus::PROCESSING());
         $this->handler->handleCommand($command, $this->pbjx);
 
-        $streamId = StreamId::fromString(sprintf('acme:%s:%s', $videoAssetRef->getLabel(), $videoAssetRef->getId()));
+        $streamId = StreamId::fromNodeRef($videoAssetRef);
         foreach ($this->eventStore->pipeEvents($streamId) as $event) {
             $this->assertTrue($videoAssetRef->equals($event->get('node_ref')));
             $this->assertInstanceOf(TranscriptionStartedV1::class, $event);
@@ -180,7 +183,7 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
     {
         $videoAsset = VideoAssetV1::fromArray([
             '_id'       => AssetId::create('video', 'mxf'),
-            'mime_type' => 'application/mxf'
+            'mime_type' => 'application/mxf',
         ]);
         $this->ncr->putNode($videoAsset);
         $videoAssetRef = $videoAsset->generateNodeRef();
@@ -189,7 +192,7 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
             ->set('transcription_status', TranscriptionStatus::UNKNOWN());
         $this->handler->handleCommand($command, $this->pbjx);
 
-        $streamId = StreamId::fromString(sprintf('acme:%s:%s', $videoAssetRef->getLabel(), $videoAssetRef->getId()));
+        $streamId = StreamId::fromNodeRef($videoAssetRef);
         foreach ($this->eventStore->pipeEvents($streamId) as $event) {
             $this->assertTrue($videoAssetRef->equals($event->get('node_ref')));
             $this->assertInstanceOf(TranscriptionFailedV1::class, $event);

@@ -24,7 +24,9 @@ final class VideoAggregateTest extends AbstractPbjxTest
         $node = VideoV1::create();
         $mediaId = 'baz';
         $aggregate = VideoAggregate::fromNode($node, $this->pbjx);
-        $aggregate->syncMedia(SyncMediaV1::create(), [], $mediaId);
+        $command = SyncMediaV1::create()
+            ->set('node_ref', $node->generateNodeRef());
+        $aggregate->syncMedia($command, [], $mediaId);
         $aggregate->commit();
 
         $actual = $aggregate->getNode()->get('jwplayer_media_id');
@@ -50,7 +52,7 @@ final class VideoAggregateTest extends AbstractPbjxTest
             ->set('mediaconvert_job_arn', 'foo')
             ->set('mediaconvert_queue_arn', 'bar');
         $aggregate = VideoAggregate::fromNode($video, $this->pbjx);
-        $aggregate->updateTranscodingStatus($command);
+        $aggregate->updateTranscodingStatus($command, $videoAsset);
         $aggregate->commit();
         $aggregateNode = $aggregate->getNode();
         $this->assertTrue($videoAssetRef->equals($aggregateNode->get('mezzanine_ref')));
@@ -75,7 +77,7 @@ final class VideoAggregateTest extends AbstractPbjxTest
             ->set('node_ref', $videoAssetRef)
             ->set('transcription_status', TranscriptionStatus::COMPLETED());
         $aggregate = VideoAggregate::fromNode($video, $this->pbjx);
-        $aggregate->updateTranscriptionStatus($command);
+        $aggregate->updateTranscriptionStatus($command, $videoAsset);
         $aggregate->commit();
         $aggregateNode = $aggregate->getNode();
 
