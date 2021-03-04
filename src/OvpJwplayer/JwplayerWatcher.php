@@ -3,9 +3,8 @@ declare(strict_types=1);
 
 namespace Triniti\OvpJwplayer;
 
-use Gdbots\Ncr\Ncr;
+use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Pbj\Message;
-use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\EventSubscriber;
 use Gdbots\Pbjx\Pbjx;
@@ -13,48 +12,41 @@ use Triniti\Schemas\OvpJwplayer\Command\SyncMediaV1;
 
 class JwplayerWatcher implements EventSubscriber
 {
-    protected Ncr $ncr;
-
-    public function __construct(Ncr $ncr)
-    {
-        $this->ncr = $ncr;
-    }
-
     public static function getSubscribedEvents()
     {
-        $vendor = MessageResolver::getDefaultVendor();
         return [
-            "{$vendor}:ovp:event:video-created"           => 'onVideoCreated',
-            "{$vendor}:ovp:event:video-deleted"           => 'onVideoStatusChanged',
-            "{$vendor}:ovp:event:video-expired"           => 'onVideoStatusChanged',
-            "{$vendor}:ovp:event:video-marked-as-draft"   => 'onVideoStatusChanged',
-            "{$vendor}:ovp:event:video-marked-as-pending" => 'onVideoStatusChanged',
-            "{$vendor}:ovp:event:video-renamed"           => 'onVideoStatusChanged',
-            "{$vendor}:ovp:event:video-scheduled"         => 'onVideoStatusChanged',
-            "{$vendor}:ovp:event:video-published"         => 'onVideoStatusChanged',
-            "{$vendor}:ovp:event:video-updated"           => 'onVideoUpdated',
-            "{$vendor}:ovp:event:video-unpublished"       => 'onVideoStatusChanged',
-            "triniti:ovp:event:transcoding-completed"     => 'onTranscodingCompleted',
-            "triniti:ovp:event:transcription-completed"   => 'onTranscriptionCompleted',
+            'triniti:ovp.jwplayer:mixin:has-media.created'                 => 'onVideoCreated',
+            'triniti:ovp.jwplayer:mixin:has-media.deleted'                 => 'onVideoEvent',
+            'triniti:ovp.jwplayer:mixin:has-media.expired'                 => 'onVideoEvent',
+            'triniti:ovp.jwplayer:mixin:has-media.marked-as-draft'         => 'onVideoEvent',
+            'triniti:ovp.jwplayer:mixin:has-media.marked-as-pending'       => 'onVideoEvent',
+            'triniti:ovp.jwplayer:mixin:has-media.renamed'                 => 'onVideoEvent',
+            'triniti:ovp.jwplayer:mixin:has-media.scheduled'               => 'onVideoEvent',
+            'triniti:ovp.jwplayer:mixin:has-media.published'               => 'onVideoEvent',
+            'triniti:ovp.jwplayer:mixin:has-media.updated'                 => 'onVideoUpdated',
+            'triniti:ovp.jwplayer:mixin:has-media.transcoding-completed'   => 'onTranscodingCompleted',
+            'triniti:ovp.jwplayer:mixin:has-media.transcription-completed' => 'onTranscriptionCompleted',
         ];
     }
 
-    public function onVideoCreated(Message $event, Pbjx $pbjx): void
+    public function onVideoCreated(NodeProjectedEvent $pbjxEvent): void
     {
+        $pbjx = $pbjxEvent::getPbjx();
+        $event = $pbjxEvent->getLastEvent();
+        $node = $pbjxEvent->getNode();
+
         if ($event->isReplay()) {
             return;
         }
 
-        $this->syncMedia(
-            $event,
-            $pbjx,
-            $event->get('node')->generateNodeRef(),
-            ['captions', 'thumbnail']
-        );
+        $this->syncMedia($event, $pbjx, $node->generateNodeRef(), ['captions', 'thumbnail']);
     }
 
-    public function onVideoStatusChanged(Message $event, Pbjx $pbjx): void
+    public function onVideoEvent(NodeProjectedEvent $pbjxEvent): void
     {
+        $pbjx = $pbjxEvent::getPbjx();
+        $event = $pbjxEvent->getLastEvent();
+
         if ($event->isReplay()) {
             return;
         }
@@ -62,43 +54,51 @@ class JwplayerWatcher implements EventSubscriber
         $this->syncMedia($event, $pbjx, $event->get('node_ref'));
     }
 
-    public function onVideoUpdated(Message $event, Pbjx $pbjx): void
+    public function onVideoUpdated(NodeProjectedEvent $pbjxEvent): void
     {
+        $pbjx = $pbjxEvent::getPbjx();
+        $event = $pbjxEvent->getLastEvent();
+        $newNode = $pbjxEvent->getNode();
+
         if ($event->isReplay()) {
             return;
         }
 
-        $nodeRef = $event->get('node_ref');
-        $node = $event->get('old_node') ?: $this->ncr->getNode($nodeRef);
-        $newNode = $event->get('new_node');
+        if (!$event->has('old_node')) {
+            $this->syncMedia($event, $pbjx, $newNode->generateNodeRef());
+            return;
+        }
+
+        /** @var Message $oldNode */
+        $oldNode = $event->get('old_node');
         $fields = [];
 
-        $newImageRef = $newNode->get('poster_image_ref', $newNode->get('image_ref'));
-        $imageRef = $node->get('poster_image_ref', $node->get('image_ref'));
-        if ($newImageRef && (!$imageRef || !$newImageRef->equals($imageRef))) {
+        $oldImageRef = $oldNode->fget('poster_image_ref', $oldNode->fget('image_ref'));
+        $newImageRef = $newNode->fget('poster_image_ref', $newNode->fget('image_ref'));
+
+        if ($newImageRef && $newImageRef !== $oldImageRef) {
             $fields[] = 'thumbnail';
         }
 
         if ($newNode->has('caption_urls')) {
             foreach ($newNode->get('caption_urls') as $language => $url) {
-                if ($url !== $node->getFromMap('caption_urls', $language)) {
+                if ($url !== $oldNode->getFromMap('caption_urls', $language)) {
                     $fields[] = 'captions';
                     break;
                 }
             }
         }
 
-        $this->syncMedia($event, $pbjx, $nodeRef, $fields);
+        $this->syncMedia($event, $pbjx, $newNode->generateNodeRef(), $fields);
     }
 
-    public function onTranscodingCompleted(Message $event, Pbjx $pbjx): void
+    public function onTranscodingCompleted(NodeProjectedEvent $pbjxEvent): void
     {
-        if ($event->isReplay()) {
-            return;
-        }
+        $pbjx = $pbjxEvent::getPbjx();
+        $event = $pbjxEvent->getLastEvent();
+        $node = $pbjxEvent->getNode();
 
-        $nodeRef = $event->get('node_ref');
-        if ('video' !== $nodeRef->getLabel()) {
+        if ($event->isReplay()) {
             return;
         }
 
@@ -107,21 +107,20 @@ class JwplayerWatcher implements EventSubscriber
             $fields[] = 'thumbnail';
         }
 
-        $this->syncMedia($event, $pbjx, $nodeRef, $fields);
+        $this->syncMedia($event, $pbjx, $node->generateNodeRef(), $fields);
     }
 
-    public function onTranscriptionCompleted(Message $event, Pbjx $pbjx): void
+    public function onTranscriptionCompleted(NodeProjectedEvent $pbjxEvent): void
     {
+        $pbjx = $pbjxEvent::getPbjx();
+        $event = $pbjxEvent->getLastEvent();
+        $node = $pbjxEvent->getNode();
+
         if ($event->isReplay()) {
             return;
         }
 
-        $nodeRef = $event->get('node_ref');
-        if ('video' !== $nodeRef->getLabel()) {
-            return;
-        }
-
-        $this->syncMedia($event, $pbjx, $nodeRef, ['captions']);
+        $this->syncMedia($event, $pbjx, $node->generateNodeRef(), ['captions']);
     }
 
     protected function syncMedia(Message $event, Pbjx $pbjx, NodeRef $nodeRef, array $fields = []): void

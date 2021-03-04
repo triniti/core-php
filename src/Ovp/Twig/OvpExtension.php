@@ -56,23 +56,15 @@ final class OvpExtension extends AbstractExtension
             }
         }
 
-        switch ($type) {
-            case 'audio':
-                return $this->artifactUrlProvider->getAudio($assetId);
-            case 'manifest':
-                return $this->artifactUrlProvider->getManifest($assetId);
-            case 'original':
-                return $this->artifactUrlProvider->getOriginal($assetId);
-            case 'tooltip_thumbnail_sprite':
-                return $this->artifactUrlProvider->getTooltipThumbnailSprite($assetId);
-            case 'tooltip_thumbnail_track':
-                return $this->artifactUrlProvider->getTooltipThumbnailTrack($assetId);
-            case 'transcription':
-                return $this->artifactUrlProvider->getTranscription($assetId);
-            case 'video':
-                return $this->artifactUrlProvider->getVideo($assetId);
-            default:
-                return null;
-        }
+        return match ($type) {
+            'audio' => $this->artifactUrlProvider->getAudio($assetId),
+            'manifest' => $this->artifactUrlProvider->getManifest($assetId),
+            'original' => $this->artifactUrlProvider->getOriginal($assetId),
+            'tooltip_thumbnail_sprite' => $this->artifactUrlProvider->getTooltipThumbnailSprite($assetId),
+            'tooltip_thumbnail_track' => $this->artifactUrlProvider->getTooltipThumbnailTrack($assetId),
+            'transcription' => $this->artifactUrlProvider->getTranscription($assetId),
+            'video' => $this->artifactUrlProvider->getVideo($assetId),
+            default => null,
+        };
     }
 }

@@ -8,6 +8,7 @@ use Acme\Schemas\Ovp\Event\VideoCreatedV1;
 use Acme\Schemas\Ovp\Event\VideoDeletedV1;
 use Acme\Schemas\Ovp\Event\VideoUpdatedV1;
 use Acme\Schemas\Ovp\Node\VideoV1;
+use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\WellKnown\NodeRef;
@@ -77,8 +78,8 @@ final class JwplayerWatcherTest extends AbstractPbjxTest
         ]);
         $nodeRef = NodeRef::fromNode($node);
         $event = VideoCreatedV1::create()->set('node', $node);
-        $watcher = new JwplayerWatcher($this->ncr);
-        $watcher->onVideoCreated($event, $this->pbjx);
+        $watcher = new JwplayerWatcher();
+        $watcher->onVideoCreated(new NodeProjectedEvent($node, $event));
         $expectedJobId = 'acme:video:7afcc2f1-9654-46d1-8fc1-b0511df257db.sync-jwplayer-media';
         $scheduled = $this->scheduler->describeScheduled()[$expectedJobId];
         $this->assertTrue($scheduled instanceof SyncMediaV1, 'The JwplayerWatcher should schedule a SyncMedia command when a video is created.');
@@ -94,8 +95,8 @@ final class JwplayerWatcherTest extends AbstractPbjxTest
         ]);
         $nodeRef = NodeRef::fromNode($node);
         $event = VideoDeletedV1::create()->set('node_ref', $nodeRef);
-        $watcher = new JwplayerWatcher($this->ncr);
-        $watcher->onVideoStatusChanged($event, $this->pbjx);
+        $watcher = new JwplayerWatcher();
+        $watcher->onVideoEvent(new NodeProjectedEvent($node, $event));
         $expectedJobId = 'acme:video:7afcc2f1-9654-46d1-8fc1-b0511df257db.sync-jwplayer-media';
         $scheduled = $this->scheduler->describeScheduled()[$expectedJobId];
         $this->assertTrue($scheduled instanceof SyncMediaV1, 'The JwplayerWatcher should schedule a SyncMedia command when a video is deleted.');
@@ -117,8 +118,8 @@ final class JwplayerWatcherTest extends AbstractPbjxTest
         $event = VideoUpdatedV1::create()
             ->set('node_ref', $nodeRef)
             ->set('new_node', $newNode);
-        $watcher = new JwplayerWatcher($this->ncr);
-        $watcher->onVideoUpdated($event, $this->pbjx);
+        $watcher = new JwplayerWatcher();
+        $watcher->onVideoUpdated(new NodeProjectedEvent($newNode, $event));
         $expectedJobId = 'acme:video:7afcc2f1-9654-46d1-8fc1-b0511df257db.sync-jwplayer-media';
         $scheduled = $this->scheduler->describeScheduled()[$expectedJobId];
         $this->assertTrue($scheduled instanceof SyncMediaV1, 'The JwplayerWatcher should schedule a SyncMedia command when a video is updated.');
@@ -129,9 +130,10 @@ final class JwplayerWatcherTest extends AbstractPbjxTest
         $newNode = (clone $node)->set('image_ref', NodeRef::fromString('acme:image:image_jpg_20200409_8e2d2e3c09074959ab1f794fcbf901cc'));
         $event = VideoUpdatedV1::create()
             ->set('node_ref', $nodeRef)
+            ->set('old_node', $node)
             ->set('new_node', $newNode);
-        $watcher = new JwplayerWatcher($this->ncr);
-        $watcher->onVideoUpdated($event, $this->pbjx);
+        $watcher = new JwplayerWatcher();
+        $watcher->onVideoUpdated(new NodeProjectedEvent($newNode, $event));
         $expectedJobId = 'acme:video:7afcc2f1-9654-46d1-8fc1-b0511df257db.sync-jwplayer-media';
         $scheduled = $this->scheduler->describeScheduled()[$expectedJobId];
         $this->assertTrue($scheduled instanceof SyncMediaV1, 'The JwplayerWatcher should schedule a SyncMedia command when a video is updated.');
@@ -142,9 +144,10 @@ final class JwplayerWatcherTest extends AbstractPbjxTest
         $newNode = (clone $node)->addToMap('caption_urls', 'en', 'https://dam.dev.acme.com/document/11/o/2020/03/28/116565cba0404c43b9ee760e88b513b7.vtt');
         $event = VideoUpdatedV1::create()
             ->set('node_ref', $nodeRef)
+            ->set('old_node', $node)
             ->set('new_node', $newNode);
-        $watcher = new JwplayerWatcher($this->ncr);
-        $watcher->onVideoUpdated($event, $this->pbjx);
+        $watcher = new JwplayerWatcher();
+        $watcher->onVideoUpdated(new NodeProjectedEvent($newNode, $event));
         $expectedJobId = 'acme:video:7afcc2f1-9654-46d1-8fc1-b0511df257db.sync-jwplayer-media';
         $scheduled = $this->scheduler->describeScheduled()[$expectedJobId];
         $this->assertTrue($scheduled instanceof SyncMediaV1, 'The JwplayerWatcher should schedule a SyncMedia command when a video is updated.');
@@ -157,41 +160,16 @@ final class JwplayerWatcherTest extends AbstractPbjxTest
             ->addToMap('caption_urls', 'en', 'https://dam.dev.acme.com/document/11/o/2020/03/28/116565cba0404c43b9ee760e88b513b7.vtt');
         $event = VideoUpdatedV1::create()
             ->set('node_ref', $nodeRef)
+            ->set('old_node', $node)
             ->set('new_node', $newNode);
-        $watcher = new JwplayerWatcher($this->ncr);
-        $watcher->onVideoUpdated($event, $this->pbjx);
+        $watcher = new JwplayerWatcher();
+        $watcher->onVideoUpdated(new NodeProjectedEvent($newNode, $event));
         $expectedJobId = 'acme:video:7afcc2f1-9654-46d1-8fc1-b0511df257db.sync-jwplayer-media';
         $scheduled = $this->scheduler->describeScheduled()[$expectedJobId];
         $this->assertTrue($scheduled instanceof SyncMediaV1, 'The JwplayerWatcher should schedule a SyncMedia command when a video is updated.');
         $this->assertTrue($scheduled->get('node_ref')->equals($nodeRef), 'The SyncMedia command should have the correct node_ref');
         $this->assertTrue($scheduled->isInSet('fields', 'captions'), 'The SyncMedia command should have captions in its fields set.');
         $this->assertTrue($scheduled->isInSet('fields', 'thumbnail'), 'The SyncMedia command should have thumbnail in its fields set.');
-    }
-
-    public function testOnVideoAssetTranscodingCompleted(): void
-    {
-        $videoAsset = VideoAssetV1::fromArray([
-            '_id' => 'video_mp4_20200123_f3681efca5ff49b784e93d35c4ae0639',
-        ]);
-        $videoAssetRef = NodeRef::fromNode($videoAsset);
-        $event = TranscodingCompletedV1::create()->set('node_ref', $videoAssetRef);
-        $watcher = new JwplayerWatcher($this->ncr);
-        $watcher->onTranscodingCompleted($event, $this->pbjx);
-        $scheduled = $this->scheduler->describeScheduled();
-        $this->assertTrue(empty($scheduled), 'nothing should be scheduled because the node is not a video.');
-    }
-
-    public function testOnVideoAssetTranscriptionCompleted(): void
-    {
-        $videoAsset = VideoAssetV1::fromArray([
-            '_id' => 'video_mp4_20200123_f3681efca5ff49b784e93d35c4ae0639',
-        ]);
-        $videoAssetRef = NodeRef::fromNode($videoAsset);
-        $event = TranscriptionCompletedV1::create()->set('node_ref', $videoAssetRef);
-        $watcher = new JwplayerWatcher($this->ncr);
-        $watcher->onTranscriptionCompleted($event, $this->pbjx);
-        $scheduled = $this->scheduler->describeScheduled();
-        $this->assertTrue(empty($scheduled), 'nothing should be scheduled because the node is not a video.');
     }
 
     public function testOnVideoTranscodingCompleted(): void
@@ -203,9 +181,9 @@ final class JwplayerWatcherTest extends AbstractPbjxTest
         $event = TranscodingCompletedV1::create()
             ->set('node_ref', $videoRef)
             ->addToMap('tags', 'image_asset_ref', 'acme:image-asset:image_jpeg_20200701_5ede1a15996e46bd85250949195e7301');
-        $watcher = new JwplayerWatcher($this->ncr);
+        $watcher = new JwplayerWatcher();
         $expectedJobId = 'acme:video:7afcc2f1-9654-46d1-8fc1-b0511df257db.sync-jwplayer-media';
-        $watcher->onTranscodingCompleted($event, $this->pbjx);
+        $watcher->onTranscodingCompleted(new NodeProjectedEvent($video, $event));
         $scheduled = $this->scheduler->describeScheduled()[$expectedJobId];
         $this->assertTrue($scheduled instanceof SyncMediaV1);
         $this->assertTrue($scheduled->isInSet('fields', 'thumbnail'));
@@ -218,9 +196,9 @@ final class JwplayerWatcherTest extends AbstractPbjxTest
         ]);
         $videoRef = NodeRef::fromNode($video);
         $event = TranscriptionCompletedV1::create()->set('node_ref', $videoRef);
-        $watcher = new JwplayerWatcher($this->ncr);
+        $watcher = new JwplayerWatcher();
         $expectedJobId = 'acme:video:7afcc2f1-9654-46d1-8fc1-b0511df257db.sync-jwplayer-media';
-        $watcher->onTranscriptionCompleted($event, $this->pbjx);
+        $watcher->onTranscriptionCompleted(new NodeProjectedEvent($video, $event));
         $scheduled = $this->scheduler->describeScheduled()[$expectedJobId];
         $this->assertTrue($scheduled instanceof SyncMediaV1);
         $this->assertTrue($scheduled->isInSet('fields', 'captions'));
