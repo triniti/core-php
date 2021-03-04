@@ -7,6 +7,7 @@ use Gdbots\Ncr\AggregateResolver;
 use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
+use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
@@ -20,7 +21,6 @@ use Triniti\Ovp\ArtifactUrlProvider;
 use Triniti\Ovp\VideoAggregate;
 use Triniti\OvpJwplayer\Exception\JwplayerMediaNotSynced;
 use Triniti\Schemas\Dam\AssetId;
-use Triniti\Schemas\OvpJwplayer\Command\SyncMediaV1;
 use Triniti\Sys\Flags;
 
 class SyncMediaHandler implements CommandHandler
@@ -36,6 +36,11 @@ class SyncMediaHandler implements CommandHandler
     protected UrlProvider $urlProvider;
     protected ArtifactUrlProvider $artifactUrlProvider;
     protected GuzzleClientInterface $guzzleClient;
+
+    public static function handlesCuries(): array
+    {
+        return ['triniti:ovp.jwplayer:command:sync-media'];
+    }
 
     public function __construct(
         string $key,
@@ -53,13 +58,6 @@ class SyncMediaHandler implements CommandHandler
         $this->artifactUrlProvider = $artifactUrlProvider;
         $this->flags = $flags;
         $this->guzzleClient = $guzzleClient ?: new GuzzleClient();
-    }
-
-    public static function handlesCuries(): array
-    {
-        return [
-            SyncMediaV1::schema()->getCurie(),
-        ];
     }
 
     public function handleCommand(Message $command, Pbjx $pbjx): void
@@ -82,7 +80,7 @@ class SyncMediaHandler implements CommandHandler
             ));
         }
 
-        if ($node->get('status')->equals(NodeStatus::DELETED()) && $node->has('jwplayer_media_id')) {
+        if ($node->fget('status') === NodeStatus::DELETED && $node->has('jwplayer_media_id')) {
             $this->deleteVideo($command, $pbjx, $node);
             return;
         }
@@ -372,16 +370,20 @@ class SyncMediaHandler implements CommandHandler
 
     protected function getSupportedNode(Message $command, Pbjx $pbjx): ?Message
     {
+        /** @var NodeRef $nodeRef */
         $nodeRef = $command->get('node_ref');
+        $context = ['causator' => $command];
+
         try {
-            $node = $this->ncr->getNode($nodeRef);
-            $aggregate = VideoAggregate::fromNode($node, $pbjx);
+            $node = $this->ncr->getNode($nodeRef, true, $context);
+            $aggregate = AggregateResolver::resolve($nodeRef->getQName())::fromNode($node, $pbjx);
         } catch (NodeNotFound $nf) {
-            $aggregate = VideoAggregate::fromNodeRef($nodeRef, $pbjx);
+            $aggregate = AggregateResolver::resolve($nodeRef->getQName())::fromNodeRef($nodeRef, $pbjx);
         } catch (\Throwable $e) {
             throw $e;
         }
-        $aggregate->sync(['causator' => $command]);
+
+        $aggregate->sync($context);
         $node = $aggregate->getNode();
 
         if (
@@ -406,6 +408,7 @@ class SyncMediaHandler implements CommandHandler
         $qString = $this->createAuthenticatedQString([
             'video_key' => $mediaId,
         ]);
+
         try {
             $response = $this->guzzleClient->get(self::ENDPOINT . '/videos/show' . $qString);
         } catch (RequestException $re) {
@@ -431,6 +434,7 @@ class SyncMediaHandler implements CommandHandler
                 $response->getReasonPhrase() ?: 'none given'
             ));
         }
+
         return unserialize($response->getBody()->getContents());
     }
 
@@ -484,7 +488,7 @@ class SyncMediaHandler implements CommandHandler
             'title'        => $node->get('title'),
         ];
 
-        $parameters['date'] = NodeStatus::PUBLISHED()->equals($node->get('status'))
+        $parameters['date'] = NodeStatus::PUBLISHED === $node->fget('status')
             ? $node->get('published_at')->getTimeStamp()
             : $node->get('created_at')->getSeconds();
 
@@ -508,6 +512,7 @@ class SyncMediaHandler implements CommandHandler
             $node->get('person_refs', []),
             $node->get('primary_person_refs', [])
         ));
+
         foreach ($this->ncr->getNodes($refs) as $n) {
             $tags[] = $n::schema()->getCurie()->getMessage() . ':' . $n->get('slug');
         }
@@ -662,8 +667,7 @@ class SyncMediaHandler implements CommandHandler
     ): void {
         /** @var VideoAggregate $aggregate */
         $aggregate = AggregateResolver::resolve($node->generateNodeRef()->getQName())::fromNode($node, $pbjx);
-        $aggregate->sync(['causator' => $command]);
         $aggregate->syncMedia($command, $fields, $mediaId);
-        $aggregate->commit();
+        $aggregate->commit(['causator' => $command]);
     }
 }
