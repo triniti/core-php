@@ -6,6 +6,7 @@ namespace Triniti\Dam;
 use Gdbots\Ncr\Aggregate;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
+use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Triniti\Schemas\Dam\Event\AssetUnlinkedV1;
@@ -25,15 +26,37 @@ class AssetAggregate extends Aggregate
 
     public function linkAsset(Message $command): void
     {
-        $event = $this->createAssetLinked()
+        if (!$command->isInSet('asset_refs', $this->nodeRef)) {
+            // command doesn't contain this asset
+            return;
+        }
+
+        /** @var NodeRef $linkedRef */
+        $linkedRef = $command->get('node_ref');
+        if ($this->node->isInSet('linked_refs', $linkedRef)) {
+            // this asset is already linked
+            return;
+        }
+
+        $event = $this->createAssetLinked($command)
             ->set('node_ref', $this->nodeRef)
-            ->set('linked_ref', $command->get('node_ref'));
-        $this->pbjx->copyContext($command, $event);
+            ->set('linked_ref', $linkedRef);
+
+        $this->copyContext($command, $event);
         $this->recordEvent($event);
     }
 
     public function patchAsset(Message $command): void
     {
+        if (!$command->isInSet('node_refs', $this->nodeRef)) {
+            // command doesn't contain this asset
+            return;
+        }
+
+        if (!$command->has('paths')) {
+            return;
+        }
+
         $paths = $command->get('paths');
         $event = $this->createAssetPatched($command)
             ->set('node_ref', $this->nodeRef)
@@ -57,6 +80,7 @@ class AssetAggregate extends Aggregate
             }
         }
 
+        $this->copyContext($command, $event);
         $this->recordEvent($event);
     }
 
@@ -72,10 +96,23 @@ class AssetAggregate extends Aggregate
 
     public function unlinkAsset(Message $command): void
     {
-        $event = AssetUnlinkedV1::create()
+        if (!$command->isInSet('asset_refs', $this->nodeRef)) {
+            // command doesn't contain this asset
+            return;
+        }
+
+        /** @var NodeRef $linkedRef */
+        $linkedRef = $command->get('node_ref');
+        if (!$this->node->isInSet('linked_refs', $linkedRef)) {
+            // this asset is already [un]linked
+            return;
+        }
+
+        $event = $this->createAssetUnlinked($command)
             ->set('node_ref', $this->nodeRef)
-            ->set('linked_ref', $command->get('node_ref'));
-        $this->pbjx->copyContext($command, $event);
+            ->set('linked_ref', $linkedRef);
+
+        $this->copyContext($command, $event);
         $this->recordEvent($event);
     }
 
@@ -84,16 +121,16 @@ class AssetAggregate extends Aggregate
         $this->node->addToSet('linked_refs', [$event->get('linked_ref')]);
     }
 
+    protected function applyAssetPatched(Message $event): void
+    {
+        foreach ($event->get('paths', []) as $path) {
+            $this->node->set($path, $event->get($path));
+        }
+    }
+
     protected function applyAssetUnlinked(Message $event): void
     {
         $this->node->removeFromSet('linked_refs', [$event->get('linked_ref')]);
-    }
-
-    protected function applyAssetPatched(Message $event): void
-    {
-        foreach ($event->get('paths') as $path) {
-            $this->node->set($path, $event->get($path));
-        }
     }
 
     protected function applyGalleryAssetReordered(Message $event): void

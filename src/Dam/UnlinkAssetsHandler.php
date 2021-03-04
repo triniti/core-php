@@ -17,51 +17,41 @@ class UnlinkAssetsHandler implements CommandHandler
 {
     protected Ncr $ncr;
 
+    public static function handlesCuries(): array
+    {
+        // deprecated mixins, will be removed in 3.x
+        $curies = MessageResolver::findAllUsingMixin('triniti:dam:mixin:unlink-assets:v1', false);
+        $curies[] = 'triniti:dam:command:unlink-assets';
+        return $curies;
+    }
+
     public function __construct(Ncr $ncr)
     {
         $this->ncr = $ncr;
     }
 
-    public static function handlesCuries(): array
-    {
-        // deprecated mixins, will be removed in 3.x
-        $curies = MessageResolver::findAllUsingMixin('triniti:dam:mixin:unlink-assets', false);
-        $curies[] = 'triniti:dam:command:unlink-assets';
-        return $curies;
-    }
-
     public function handleCommand(Message $command, Pbjx $pbjx): void
     {
-        $nodeRef = $command->get('node_ref');
-        /** @var NodeRef[] $assetRefs */
-        $assetRefs = $command->get('asset_refs', []);
-
-        static $validQNames = null;
-        if (null === $validQNames) {
-            $validQNames = [];
-            foreach (MessageResolver::findAllUsingMixin('triniti:dam:mixin:asset:v1', false) as $curie) {
-                $qname = SchemaCurie::fromString($curie)->getQName();
-                $validQNames[$qname->getMessage()] = $qname;
-            }
+        $validQNames = [];
+        foreach (MessageResolver::findAllUsingMixin('triniti:dam:mixin:asset:v1', false) as $curie) {
+            $qname = SchemaCurie::fromString($curie)->getQName();
+            $validQNames[$qname->toString()] = true;
         }
 
-        foreach ($assetRefs as $assetRef) {
-            if (!isset($validQNames[$assetRef->getQName()->getMessage()])) {
+        $context = ['causator' => $command];
+
+        /** @var NodeRef $assetRef */
+        foreach ($command->get('asset_refs', []) as $assetRef) {
+            if (!isset($validQNames[$assetRef->getQName()->toString()])) {
                 throw new AssetTypeNotSupported();
             }
 
-            $asset = $this->ncr->getNode($assetRef, true);
-            if (!$asset->isInSet('linked_refs', $nodeRef)) {
-                continue;
-            }
-
-            $context = ['causator' => $command];
-            $node = $this->ncr->getNode($assetRef, true, $context);
+            $asset = $this->ncr->getNode($assetRef, true, $context);
             /** @var AssetAggregate $aggregate */
-            $aggregate = AggregateResolver::resolve($assetRef->getQName())::fromNode($node, $pbjx);
-            $aggregate->sync();
+            $aggregate = AggregateResolver::resolve($assetRef->getQName())::fromNode($asset, $pbjx);
+            $aggregate->sync($context);
             $aggregate->unlinkAsset($command);
-            $aggregate->commit();
+            $aggregate->commit($context);
         }
     }
 }
