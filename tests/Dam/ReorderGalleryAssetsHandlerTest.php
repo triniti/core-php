@@ -54,7 +54,6 @@ final class ReorderGalleryAssetsHandlerTest extends AbstractPbjxTest
         $handler->handleCommand($command, $this->pbjx);
 
         foreach ($this->pbjx->getEventStore()->pipeEvents(StreamId::fromNodeRef($asset1Ref)) as $event) {
-            $this->assertInstanceOf(GalleryAssetReorderedV1::class, $event);
             $this->assertTrue($asset1Ref->equals($event->get('node_ref')));
             $this->assertSame($sequenceNumbers[0], $event->get('gallery_seq'));
             $this->assertTrue($galleryNodeRef->equals($event->get('gallery_ref')));
@@ -62,7 +61,6 @@ final class ReorderGalleryAssetsHandlerTest extends AbstractPbjxTest
         }
 
         foreach ($this->pbjx->getEventStore()->pipeEvents(StreamId::fromNodeRef($asset2Ref)) as $event) {
-            $this->assertInstanceOf(GalleryAssetReorderedV1::class, $event);
             $this->assertTrue($asset2Ref->equals($event->get('node_ref')));
             $this->assertSame($sequenceNumbers[1], $event->get('gallery_seq'));
             $this->assertTrue($galleryNodeRef->equals($event->get('gallery_ref')));

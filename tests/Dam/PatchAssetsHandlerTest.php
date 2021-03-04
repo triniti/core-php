@@ -55,7 +55,6 @@ final class PatchAssetsHandlerTest extends AbstractPbjxTest
         $handler->handleCommand($command, $this->pbjx);
 
         foreach ($this->pbjx->getEventStore()->pipeEvents(StreamId::fromNodeRef($asset1Ref)) as $event) {
-            $this->assertInstanceOf(AssetPatchedV1::class, $event);
             $this->assertEquals($paths, $event->get('paths'));
             $this->assertTrue($asset1Ref->equals($event->get('node_ref')));
             $this->assertSame($title, $event->get('title'));
@@ -65,7 +64,6 @@ final class PatchAssetsHandlerTest extends AbstractPbjxTest
         }
 
         foreach ($this->pbjx->getEventStore()->pipeEvents(StreamId::fromNodeRef($asset2Ref)) as $event) {
-            $this->assertInstanceOf(AssetPatchedV1::class, $event);
             $this->assertEquals($paths, $event->get('paths'));
             $this->assertTrue($asset2Ref->equals($event->get('node_ref')));
             $this->assertSame($title, $event->get('title'));

@@ -114,13 +114,13 @@ final class AssetAggregateTest extends AbstractPbjxTest
         $description = 'Possible Description';
 
         $command = PatchAssetsV1::create()
+            ->addToSet('node_refs', [$asset1->generateNodeRef()])
             ->addToSet('paths', $paths)
             ->set('title', $title)
             ->set('credit', $credit)
             ->set('expires_at', $expiresAt)
             ->set('description', $description);
         $aggregate = AssetAggregate::fromNode($asset1, $this->pbjx);
-        $aggregate->sync();
         $aggregate->patchAsset($command);
         $aggregate->commit();
 
@@ -147,7 +147,7 @@ final class AssetAggregateTest extends AbstractPbjxTest
             ->addToMap('gallery_seqs', $asset->get('_id')->toString(), $sequenceNumber);
         $aggregate = AssetAggregate::fromNode($asset, $this->pbjx);
         $aggregate->sync();
-        $aggregate->reorderGalleryAsset($command);
+        $aggregate->reorderGalleryAsset($command, $sequenceNumber);
         $aggregate->commit();
         $aggregateNode = $aggregate->getNode();
         $this->assertSame($sequenceNumber, $aggregateNode->get('gallery_seq'));

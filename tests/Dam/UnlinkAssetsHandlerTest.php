@@ -50,13 +50,11 @@ final class UnlinkAssetsHandlerTest extends AbstractPbjxTest
         $handler->handleCommand($command, $this->pbjx);
 
         foreach ($this->pbjx->getEventStore()->pipeEvents(StreamId::fromNodeRef($asset1Ref)) as $event) {
-            $this->assertInstanceOf(AssetUnlinkedV1::class, $event);
             $this->assertTrue($event->get('node_ref')->equals($asset1Ref));
             $this->assertTrue($event->get('linked_ref')->equals($nodeRef));
         }
 
         foreach ($this->pbjx->getEventStore()->pipeEvents(StreamId::fromNodeRef($asset2Ref)) as $event) {
-            $this->assertInstanceOf(AssetUnlinkedV1::class, $event);
             $this->assertTrue($event->get('node_ref')->equals($asset2Ref));
             $this->assertTrue($event->get('linked_ref')->equals($nodeRef));
         }
