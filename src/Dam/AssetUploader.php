@@ -4,6 +4,9 @@ declare(strict_types=1);
 namespace Triniti\Dam;
 
 use Aws\S3\S3Client;
+use Gdbots\Pbj\MessageResolver;
+use Gdbots\Pbj\SchemaCurie;
+use Gdbots\Pbj\WellKnown\NodeRef;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\ClientInterface as GuzzleClientInterface;
 use Triniti\Dam\Exception\InvalidArgumentException;
@@ -53,6 +56,11 @@ class AssetUploader
         $mimeType = $options['mimeType'] ?? MimeTypeUtil::mimeTypeFromExtension($assetId->getExt());
         $version = $options['version'] ?? 'o';
         $quality = $options['quality'] ?? null;
+        $metadata = $options['metadata'] ?? [];
+        $nodeRef = $this->assetIdToNodeRef($assetId);
+        if ($nodeRef) {
+            $metadata['asset-ref'] = $nodeRef->toString();
+        }
 
         $this->s3Client->putObject([
             'Bucket'       => $this->bucket,
@@ -61,13 +69,23 @@ class AssetUploader
             'ContentType'  => $mimeType,
             'ACL'          => 'public-read',
             'CacheControl' => 'max-age=31536000', // 1 year
-            'Metadata'     => array_merge($options['metadata'] ?? [], [
-                'asset-ref' => $assetId->toNodeRef()->toString(),
-            ]),
+            'Metadata'     => $metadata,
         ]);
 
         if (true === (bool)($options['deleteOnComplete'] ?? true)) {
             @unlink($filename);
         }
+    }
+
+    protected function assetIdToNodeRef(AssetId $assetId): ?NodeRef
+    {
+        try {
+            $mixin = "triniti:dam:mixin:{$assetId->getType()}-asset:v1";
+            $curie = SchemaCurie::fromString(MessageResolver::findOneUsingMixin($mixin, false));
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        return new NodeRef($curie->getQName(), $assetId->toString());
     }
 }

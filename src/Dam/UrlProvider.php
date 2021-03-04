@@ -8,8 +8,6 @@ use Triniti\Schemas\Dam\AssetId;
 
 class UrlProvider
 {
-    private static ?self $instance = null;
-
     /**
      * An array keyed by the asset type with base urls.
      * @example
@@ -20,7 +18,9 @@ class UrlProvider
      *
      * @var string[]
      */
-    private array $baseUrls = [];
+    protected array $baseUrls = [];
+
+    private static ?self $instance = null;
 
     public static function setInstance(self $instance): void
     {

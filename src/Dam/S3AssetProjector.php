@@ -6,13 +6,10 @@ namespace Triniti\Dam;
 use Aws\S3\S3Client;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbjx\DependencyInjection\PbjxProjector;
-use Gdbots\Pbjx\EventSubscriberTrait;
 use Gdbots\Pbjx\Pbjx;
 
 class S3AssetProjector implements PbjxProjector
 {
-    use EventSubscriberTrait;
-
     protected S3Client $s3Client;
     protected string $bucket;
 
