@@ -16,35 +16,33 @@ class ReorderGalleryAssetsHandler implements CommandHandler
 {
     protected Ncr $ncr;
 
+    public static function handlesCuries(): array
+    {
+        // deprecated mixins, will be removed in 3.x
+        $curies = MessageResolver::findAllUsingMixin('triniti:dam:mixin:reorder-gallery-assets:v1', false);
+        $curies[] = 'triniti:dam:command:reorder-gallery-assets';
+        return $curies;
+    }
+
     public function __construct(Ncr $ncr)
     {
         $this->ncr = $ncr;
     }
 
-    public static function handlesCuries(): array
-    {
-        // deprecated mixins, will be removed in 3.x
-        $curies = MessageResolver::findAllUsingMixin('triniti:dam:mixin:reorder-gallery-assets', false);
-        $curies[] = 'triniti:dam:command:reorder-gallery-assets';
-        return $curies;
-    }
-
     public function handleCommand(Message $command, Pbjx $pbjx): void
     {
-        static $vendor = null;
-        if (null === $vendor) {
-            $vendor = MessageResolver::getDefaultVendor();
-        }
+        $vendor = MessageResolver::getDefaultVendor();
+        $context = ['causator' => $command];
 
         foreach ($command->get('gallery_seqs', []) as $id => $seq) {
             $assetId = AssetId::fromString($id);
             $nodeRef = NodeRef::fromString("{$vendor}:{$assetId->getType()}-asset:{$id}");
-            $node = $this->ncr->getNode($nodeRef, true);
+            $node = $this->ncr->getNode($nodeRef, true, $context);
             /** @var AssetAggregate $aggregate */
             $aggregate = AggregateResolver::resolve($nodeRef->getQName())::fromNode($node, $pbjx);
-            $aggregate->sync();
-            $aggregate->reorderGalleryAsset($command);
-            $aggregate->commit();
+            $aggregate->sync($context);
+            $aggregate->reorderGalleryAsset($command, $seq);
+            $aggregate->commit($context);
         }
     }
 }

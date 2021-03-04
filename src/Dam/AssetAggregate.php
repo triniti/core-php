@@ -9,7 +9,6 @@ use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
-use Triniti\Schemas\Dam\Event\AssetUnlinkedV1;
 
 class AssetAggregate extends Aggregate
 {
@@ -84,13 +83,15 @@ class AssetAggregate extends Aggregate
         $this->recordEvent($event);
     }
 
-    public function reorderGalleryAsset(Message $command): void
+    public function reorderGalleryAsset(Message $command, int $seq): void
     {
         $event = $this->createGalleryAssetReordered($command)
             ->set('node_ref', $this->nodeRef)
-            ->set('gallery_seq', $command->get('gallery_seqs')[$this->nodeRef->getId()])
+            ->set('gallery_seq', $seq)
             ->set('gallery_ref', $command->get('gallery_ref'))
             ->set('old_gallery_ref', $command->getFromMap('old_gallery_refs', $this->nodeRef->getId()));
+
+        $this->copyContext($command, $event);
         $this->recordEvent($event);
     }
 
