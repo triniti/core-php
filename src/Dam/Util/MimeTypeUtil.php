@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Triniti\Dam\Util;
 
-use GuzzleHttp\Psr7;
+use GuzzleHttp\Psr7\MimeType;
 
 class MimeTypeUtil
 {
@@ -16,16 +16,12 @@ class MimeTypeUtil
 
     public static function mimeTypeFromExtension(string $extension): ?string
     {
-        switch ($extension) {
-            case 'mxf':
-                return 'application/mxf';
-            case 'srt':
-                return 'text/srt';
-            case 'vtt':
-                return 'text/vtt';
-            default:
-                return Psr7\mimetype_from_extension($extension);
-        }
+        return match ($extension) {
+            'mxf' => 'application/mxf',
+            'srt' => 'text/srt',
+            'vtt' => 'text/vtt',
+            default => MimeType::fromExtension($extension),
+        };
     }
 
     public static function assetTypeFromMimeType(?string $mimeType = null): string
@@ -156,6 +152,6 @@ class MimeTypeUtil
      */
     private static function check(string $mimeType): bool
     {
-        return $mimeType === self::$mimeTypeToResolve || false !== strpos(self::$mimeTypeToResolve, $mimeType);
+        return $mimeType === self::$mimeTypeToResolve || str_contains(self::$mimeTypeToResolve, $mimeType);
     }
 }
