@@ -6,24 +6,18 @@ namespace Triniti\Dam;
 use Aws\S3\S3Client;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
+use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Pbjx\RequestHandler;
 use Triniti\Dam\Exception\AssetTypeNotSupported;
 use Triniti\Dam\Exception\InvalidArgumentException;
 use Triniti\Dam\Util\MimeTypeUtil;
 use Triniti\Schemas\Dam\AssetId;
-use Triniti\Schemas\Dam\Request\GetUploadUrlsResponseV1;
 
 final class GetUploadUrlsRequestHandler implements RequestHandler
 {
     private S3Client $s3Client;
     private string $bucket;
-
-    public function __construct(S3Client $s3Client, string $damBucket)
-    {
-        $this->s3Client = $s3Client;
-        $this->bucket = $damBucket;
-    }
 
     public static function handlesCuries(): array
     {
@@ -33,9 +27,15 @@ final class GetUploadUrlsRequestHandler implements RequestHandler
         return $curies;
     }
 
+    public function __construct(S3Client $s3Client, string $damBucket)
+    {
+        $this->s3Client = $s3Client;
+        $this->bucket = $damBucket;
+    }
+
     public function handleRequest(Message $request, Pbjx $pbjx): Message
     {
-        $response = GetUploadUrlsResponseV1::create();
+        $response = MessageResolver::resolveCurie('*:dam:request:get-upload-urls-response:v1')::create();
 
         if (!$request->has('files')) {
             return $response;
@@ -70,14 +70,13 @@ final class GetUploadUrlsRequestHandler implements RequestHandler
                     throw new AssetTypeNotSupported("The file '{$filename}' type does not match the provided asset id '{$assetId}'");
                 }
 
-                $vendor = MessageResolver::getDefaultVendor();
                 $command = $this->s3Client->getCommand('PutObject', [
                     'Bucket'       => $this->bucket,
                     'Key'          => $assetId->toFilePath($version, $quality),
                     'ACL'          => 'public-read',
                     'CacheControl' => 'max-age=31536000', // 1 year
                     'Metadata'     => [
-                        'asset-ref' => "{$vendor}:{$assetId->getType()}:{$assetId->getUuid()}",
+                        'asset-ref' => $this->assetIdToNodeRef($assetId)->toString(),
                     ],
                 ]);
 
@@ -95,5 +94,11 @@ final class GetUploadUrlsRequestHandler implements RequestHandler
         }
 
         return $response;
+    }
+
+    protected function assetIdToNodeRef(AssetId $assetId): NodeRef
+    {
+        $vendor = MessageResolver::getDefaultVendor();
+        return NodeRef::fromString("{$vendor}:{$assetId->getType()}-asset:{$assetId}");
     }
 }
