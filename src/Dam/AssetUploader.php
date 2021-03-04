@@ -5,7 +5,6 @@ namespace Triniti\Dam;
 
 use Aws\S3\S3Client;
 use Gdbots\Pbj\MessageResolver;
-use Gdbots\Pbj\SchemaCurie;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\ClientInterface as GuzzleClientInterface;
@@ -57,10 +56,7 @@ class AssetUploader
         $version = $options['version'] ?? 'o';
         $quality = $options['quality'] ?? null;
         $metadata = $options['metadata'] ?? [];
-        $nodeRef = $this->assetIdToNodeRef($assetId);
-        if ($nodeRef) {
-            $metadata['asset-ref'] = $nodeRef->toString();
-        }
+        $metadata['asset-ref'] = $this->assetIdToNodeRef($assetId)->toString();
 
         $this->s3Client->putObject([
             'Bucket'       => $this->bucket,
@@ -77,15 +73,9 @@ class AssetUploader
         }
     }
 
-    protected function assetIdToNodeRef(AssetId $assetId): ?NodeRef
+    protected function assetIdToNodeRef(AssetId $assetId): NodeRef
     {
-        try {
-            $mixin = "triniti:dam:mixin:{$assetId->getType()}-asset:v1";
-            $curie = SchemaCurie::fromString(MessageResolver::findOneUsingMixin($mixin, false));
-        } catch (\Throwable $e) {
-            return null;
-        }
-
-        return new NodeRef($curie->getQName(), $assetId->toString());
+        $vendor = MessageResolver::getDefaultVendor();
+        return NodeRef::fromString("{$vendor}:{$assetId->getType()}-asset:{$assetId}");
     }
 }

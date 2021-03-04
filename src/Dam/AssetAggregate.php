@@ -8,61 +8,24 @@ use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
-use Triniti\Schemas\Dam\Event\AssetLinkedV1;
-use Triniti\Schemas\Dam\Event\AssetPatchedV1;
 use Triniti\Schemas\Dam\Event\AssetUnlinkedV1;
-use Triniti\Schemas\Dam\Event\GalleryAssetReorderedV1;
 
 class AssetAggregate extends Aggregate
 {
     protected function __construct(Message $node, Pbjx $pbjx, bool $syncAllEvents = false)
     {
         parent::__construct($node, $pbjx, $syncAllEvents);
-        $this->node->set('status', NodeStatus::PUBLISHED());
-    }
-
-    protected function enrichNodeCreated(Message $event): void
-    {
-        parent::enrichNodeCreated($event);
-
-        $node = $event->get('node');
-        $node
-            ->set('status', NodeStatus::PUBLISHED())
-            // AssetEnricher SHOULD update file_etag
-            ->clear('file_etag');
-    }
-
-    protected function enrichNodeUpdated(Message $event): void
-    {
-        parent::enrichNodeUpdated($event);
-
-        $oldNode = $event->get('old_node');
-        $newNode = $event->get('new_node');
-        $newNode
-            // file details SHOULD not change
-            ->set('mime_type', $oldNode->get('mime_type'))
-            ->set('file_size', $oldNode->get('file_size'))
-            ->set('file_etag', $oldNode->get('file_etag'));
-
         // assets are only published, deleted, expired, enforce it.
-        $status = $newNode->get('status');
-        if (!NodeStatus::DELETED()->equals($status) && !NodeStatus::EXPIRED()->equals($status)) {
-            $newNode->set('status', NodeStatus::PUBLISHED());
+        if (NodeStatus::DELETED !== $this->node->fget('status')
+            && NodeStatus::EXPIRED !== $this->node->fget('status')
+        ) {
+            $this->node->set('status', NodeStatus::PUBLISHED());
         }
     }
 
     public function linkAsset(Message $command): void
     {
-        $event = AssetLinkedV1::create()
-            ->set('node_ref', $this->nodeRef)
-            ->set('linked_ref', $command->get('node_ref'));
-        $this->pbjx->copyContext($command, $event);
-        $this->recordEvent($event);
-    }
-
-    public function unlinkAsset(Message $command): void
-    {
-        $event = AssetUnlinkedV1::create()
+        $event = $this->createAssetLinked()
             ->set('node_ref', $this->nodeRef)
             ->set('linked_ref', $command->get('node_ref'));
         $this->pbjx->copyContext($command, $event);
@@ -107,6 +70,15 @@ class AssetAggregate extends Aggregate
         $this->recordEvent($event);
     }
 
+    public function unlinkAsset(Message $command): void
+    {
+        $event = AssetUnlinkedV1::create()
+            ->set('node_ref', $this->nodeRef)
+            ->set('linked_ref', $command->get('node_ref'));
+        $this->pbjx->copyContext($command, $event);
+        $this->recordEvent($event);
+    }
+
     protected function applyAssetLinked(Message $event): void
     {
         $this->node->addToSet('linked_refs', [$event->get('linked_ref')]);
@@ -131,18 +103,28 @@ class AssetAggregate extends Aggregate
             ->set('gallery_seq', $event->get('gallery_seq'));
     }
 
-    protected function createAssetPatched(Message $command): Message
+    protected function enrichNodeUpdated(Message $event): void
     {
-        $event = AssetPatchedV1::create();
-        $this->pbjx->copyContext($command, $event);
-        return $event;
-    }
+        /** @var Message $oldNode */
+        $oldNode = $event->get('old_node');
 
-    protected function createGalleryAssetReordered(Message $command): Message
-    {
-        $event = GalleryAssetReorderedV1::create();
-        $this->pbjx->copyContext($command, $event);
-        return $event;
+        /** @var Message $newNode */
+        $newNode = $event->get('new_node');
+
+        $newNode
+            // file details SHOULD not change
+            ->set('mime_type', $oldNode->get('mime_type'))
+            ->set('file_size', $oldNode->get('file_size'))
+            ->set('file_etag', $oldNode->get('file_etag'));
+
+        // assets are only published, deleted, expired, enforce it.
+        if (NodeStatus::DELETED !== $newNode->fget('status')
+            && NodeStatus::EXPIRED !== $newNode->fget('status')
+        ) {
+            $newNode->set('status', NodeStatus::PUBLISHED());
+        }
+
+        parent::enrichNodeUpdated($event);
     }
 
     /**
@@ -162,6 +144,95 @@ class AssetAggregate extends Aggregate
         }
     }
 
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createAssetLinked(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:dam:event:asset-linked:v1')::create();
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createAssetPatched(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:dam:event:asset-patched:v1')::create();
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createAssetUnlinked(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:dam:event:asset-unlinked:v1')::create();
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createGalleryAssetReordered(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:dam:event:gallery-asset-reordered:v1')::create();
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createNodeCreatedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:dam:event:asset-created:v1')::create();
+    }
+
+    /**
+     * This is for legacy uses of command/event mixins for common
+     * ncr operations. It will be removed in 3.x.
+     *
+     * @param Message $command
+     *
+     * @return Message
+     *
+     * @deprecated Will be removed in 3.x.
+     */
+    protected function createNodeDeletedEvent(Message $command): Message
+    {
+        return MessageResolver::resolveCurie('*:dam:event:asset-deleted:v1')::create();
+    }
 
     /**
      * This is for legacy uses of command/event mixins for common

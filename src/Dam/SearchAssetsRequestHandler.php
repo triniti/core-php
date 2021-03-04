@@ -16,14 +16,13 @@ use Gdbots\QueryParser\Node\NumberRange;
 use Gdbots\QueryParser\Node\Numbr;
 use Gdbots\QueryParser\Node\Word;
 use Gdbots\QueryParser\ParsedQuery;
-use Triniti\Schemas\Dam\Request\SearchAssetsResponseV1;
 
 class SearchAssetsRequestHandler extends AbstractSearchNodesRequestHandler
 {
     public static function handlesCuries(): array
     {
         // deprecated mixins, will be removed in 3.x
-        $curies = MessageResolver::findAllUsingMixin('triniti:dam:mixin:search-assets-request', false);
+        $curies = MessageResolver::findAllUsingMixin('triniti:dam:mixin:search-assets-request:v1', false);
         $curies[] = 'triniti:dam:request:search-assets-request';
         return $curies;
     }
@@ -141,6 +140,6 @@ class SearchAssetsRequestHandler extends AbstractSearchNodesRequestHandler
 
     protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
     {
-        return SearchAssetsResponseV1::create();
+        return MessageResolver::resolveCurie('*:dam:request:search-assets-response:v1')::create();
     }
 }

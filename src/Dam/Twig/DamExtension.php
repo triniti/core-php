@@ -28,8 +28,8 @@ final class DamExtension extends AbstractExtension
 
     /**
      * @param AssetId|NodeRef|Message|string $id
-     * @param string                       $version
-     * @param string                       $quality
+     * @param string                         $version
+     * @param string                         $quality
      *
      * @return string|null
      */

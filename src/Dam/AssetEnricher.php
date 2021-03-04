@@ -51,6 +51,17 @@ class AssetEnricher implements EventSubscriber, PbjxEnricher
     {
         $asset = $pbjxEvent->getMessage();
 
+        if ($pbjxEvent->hasParentEvent()) {
+            $parentEvent = $pbjxEvent->getParentEvent()->getMessage();
+            $schema = $parentEvent::schema();
+            if ($schema->hasMixin('gdbots:ncr:mixin:node-created')
+                || $schema->usesCurie('gdbots:ncr:event:node-created')
+            ) {
+                // always try to get file_etag from s3 upon node creation
+                $asset->clear('file_etag');
+            }
+        }
+
         if ($asset->has('file_etag')) {
             // nothing to do here
             return;
