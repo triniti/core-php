@@ -3,15 +3,13 @@ declare(strict_types=1);
 
 namespace Triniti\Notify;
 
-use Gdbots\Ncr\Ncr;
-use Gdbots\Ncr\NcrSearch;
+use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Pbj\Message;
-use Gdbots\Pbj\MessageResolver;
-use Gdbots\Pbj\SchemaCurie;
 use Gdbots\Pbj\Util\ClassUtil;
-use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\EventSubscriber;
 use Gdbots\Pbjx\Pbjx;
+use Gdbots\Schemas\Ncr\Command\DeleteNodeV1;
+use Gdbots\Schemas\Ncr\Command\UpdateNodeV1;
 use Psr\Log\LoggerInterface;
 use Triniti\Schemas\Notify\Enum\NotificationSendStatus;
 use Triniti\Schemas\Notify\Enum\SearchNotificationsSort;
@@ -24,129 +22,57 @@ use Triniti\Schemas\Notify\Request\SearchNotificationsRequestV1;
  */
 class HasNotificationsWatcher implements EventSubscriber
 {
-    protected Ncr $ncr;
-    protected NcrSearch $ncrSearch;
     protected LoggerInterface $logger;
-
-    public function __construct(Ncr $ncr, NcrSearch $ncrSearch, LoggerInterface $logger)
-    {
-        $this->ncr = $ncr;
-        $this->ncrSearch = $ncrSearch;
-        $this->logger = $logger;
-    }
 
     public static function getSubscribedEvents()
     {
         return [
-            'gdbots:ncr:mixin:node-deleted'     => 'onNodeDeleted',
-            'gdbots:ncr:mixin:node-expired'     => 'onNodeExpired',
-            'gdbots:ncr:mixin:node-published'   => 'onNodePublished',
-            'gdbots:ncr:mixin:node-scheduled'   => 'onNodeScheduled',
-            'gdbots:ncr:mixin:node-updated'     => 'onNodeUpdated',
-            'gdbots:ncr:mixin:node-unpublished' => 'onNodeUnpublished',
+            'triniti:notify:mixin:has-notifications.deleted'     => 'cancel',
+            'triniti:notify:mixin:has-notifications.expired'     => 'cancel',
+            'triniti:notify:mixin:has-notifications.published'   => 'schedule',
+            'triniti:notify:mixin:has-notifications.scheduled'   => 'schedule',
+            'triniti:notify:mixin:has-notifications.unpublished' => 'cancel',
+            'triniti:notify:mixin:has-notifications.updated'     => 'schedule',
         ];
     }
 
-    public function onNodeDeleted(Message $event, Pbjx $pbjx): void
+    public function __construct(LoggerInterface $logger)
     {
-        $this->cancelNotification($event, $pbjx);
+        $this->logger = $logger;
     }
 
-    public function onNodeExpired(Message $event, Pbjx $pbjx): void
+    public function cancel(NodeProjectedEvent $pbjxEvent): void
     {
-        $this->cancelNotification($event, $pbjx);
-    }
-
-    public function onNodePublished(Message $event, Pbjx $pbjx): void
-    {
-        /** @var NodeRef $contentRef */
-        $contentRef = $event->get('node_ref');
-        $this->scheduleNotification($event, $pbjx, $contentRef, $event->get('published_at'));
-    }
-
-    public function onNodeScheduled(Message $event, Pbjx $pbjx): void
-    {
-        /** @var NodeRef $contentRef */
-        $contentRef = $event->get('node_ref');
-        $this->scheduleNotification($event, $pbjx, $contentRef, $event->get('publish_at'));
-    }
-
-    public function onNodeUpdated(Message $event, Pbjx $pbjx): void
-    {
-        /** @var Message $content */
-        $content = $event->get('new_node');
-        if (null === $content || !$this->isNodeSupported($content)) {
-            return;
-        }
-
-        $this->scheduleNotification(
-            $event,
-            $pbjx,
-            NodeRef::fromNode($content),
-            $content->get('published_at'),
-            $content->get('title')
-        );
-    }
-
-    public function onNodeUnpublished(Message $event, Pbjx $pbjx): void
-    {
-        $this->cancelNotification($event, $pbjx);
-    }
-
-    protected function isNodeSupported(Message $node): bool
-    {
-        return $node::schema()->hasMixin('triniti:notify:mixin:has-notifications');
-    }
-
-    protected function isNodeRefSupported(NodeRef $nodeRef): bool
-    {
-        static $validQNames = null;
-        if (null === $validQNames) {
-            $validQNames = [];
-            foreach (MessageResolver::findAllUsingMixin('triniti:notify:mixin:has-notifications', false) as $curie) {
-                $qname = SchemaCurie::fromString($curie)->getQName();
-                $validQNames[$qname->toString()] = true;
-            }
-        }
-
-        return isset($validQNames[$nodeRef->getQName()->toString()]);
-    }
-
-    protected function cancelNotification(Message $event, Pbjx $pbjx): void
-    {
+        $event = $pbjxEvent->getLastEvent();
+        $pbjx = $pbjxEvent::getPbjx();
         if ($event->isReplay()) {
             return;
         }
 
-        /** @var NodeRef $contentRef */
-        $contentRef = $event->get('node_ref');
-        if (null === $contentRef || !$this->isNodeRefSupported($contentRef)) {
-            return;
-        }
-
+        $contentRef = $pbjxEvent->getNode()->generateNodeRef();
         $request = $this->createSearchNotificationsRequest($event, $pbjx)->set('content_ref', $contentRef);
+
         $this->forEachNotification($request, $pbjx, function (Message $node) use ($event, $pbjx) {
-            return $this->createDeleteNotification($node, $event, $pbjx);
+            $command = DeleteNodeV1::create()->set('node_ref', $node->generateNodeRef());
+            $pbjx->copyContext($event, $command);
+            return $command;
         });
     }
 
-    public function scheduleNotification(
-        Message $event,
-        Pbjx $pbjx,
-        NodeRef $contentRef,
-        ?\DateTimeInterface $sendAt = null,
-        ?string $title = null
-    ): void {
+    public function schedule(NodeProjectedEvent $pbjxEvent): void
+    {
+        $event = $pbjxEvent->getLastEvent();
+        $pbjx = $pbjxEvent::getPbjx();
         if ($event->isReplay()) {
             return;
         }
 
-        if (!$this->isNodeRefSupported($contentRef)) {
-            return;
-        }
+        $content = $pbjxEvent->getNode();
+        $contentRef = $content->generateNodeRef();
+        $sendAt = null;
 
-        if (null !== $sendAt) {
-            $sendAt = clone $sendAt;
+        if ($content->has('published_at')) {
+            $sendAt = clone $content->get('published_at');
             $sendAt = $sendAt->modify('+10 seconds');
         }
 
@@ -155,19 +81,16 @@ class HasNotificationsWatcher implements EventSubscriber
             ->set('content_ref', $contentRef)
             ->set('q', $request->get('q') . ' +send_on_publish:true');
 
-        $this->forEachNotification($request, $pbjx, function (Message $node)
-        use ($sendAt, $title, $event, $pbjx) {
+        $this->forEachNotification($request, $pbjx, function (Message $node) use ($sendAt, $content, $event, $pbjx) {
             $newNode = clone $node;
-            $command = $this->createUpdateNotification($newNode, $event, $pbjx);
-            $newNode->set('send_at', $sendAt);
+            $newNode
+                ->set('title', $content->get('title'))
+                ->set('send_at', $sendAt);
+
             if ($newNode->has('send_at')) {
                 $newNode->set('send_status', NotificationSendStatus::SCHEDULED());
             } else {
                 $newNode->set('send_status', NotificationSendStatus::DRAFT());
-            }
-
-            if (null !== $title) {
-                $newNode->set('title', $title);
             }
 
             $old = serialize([
@@ -182,7 +105,16 @@ class HasNotificationsWatcher implements EventSubscriber
                 $newNode->get('title'),
             ]);
 
-            return $old === $new ? null : $command;
+            if ($old === $new) {
+                return null;
+            }
+
+            $command = UpdateNodeV1::create()
+                ->set('node_ref', $newNode->generateNodeRef())
+                ->set('new_node', $newNode)
+                ->addToSet('paths', ['send_at', 'send_status', 'title']);
+            $pbjx->copyContext($event, $command);
+            return $command;
         });
     }
 
@@ -203,11 +135,11 @@ class HasNotificationsWatcher implements EventSubscriber
             $response = $pbjx->request($request);
 
             /** @var Message $node */
-            foreach ($response->get('nodes', []) as $node) {
+            foreach ($response->get('nodes', []) as $index => $node) {
                 /*
                  * If apple news notification and apple_news_operation is not notification then ignore.
-                 * This is because the AppleNewsWatcher in triniti/news is the one handling the notifications
-                 * to apple for create, update, delete and this watcher is responsible for more traditional
+                 * This is because the AppleNewsWatcher is the one handling the notifications to apple
+                 * for create, update, delete and this watcher is responsible for more traditional
                  * notifications like alerts, emails, etc.
                  */
                 if (
@@ -226,7 +158,8 @@ class HasNotificationsWatcher implements EventSubscriber
                 }
 
                 try {
-                    $pbjx->send($command);
+                    $timestamp = strtotime(sprintf('+%d seconds', (2 + $index)));
+                    $pbjx->sendAt($command, $timestamp, "{$node->generateNodeRef()}.sync");
                 } catch (\Throwable $e) {
                     $this->logger->error(
                         sprintf('%s [{pbj_schema}] failed to send.', ClassUtil::getShortName($e)),
@@ -256,31 +189,5 @@ class HasNotificationsWatcher implements EventSubscriber
             ))
             ->set('sort', SearchNotificationsSort::CREATED_AT_ASC())
             ->set('count', 255);
-    }
-
-    protected function createDeleteNotification(Message $notification, Message $event, Pbjx $pbjx): Message
-    {
-        $vendor = MessageResolver::getDefaultVendor();
-        $class = MessageResolver::resolveCurie(
-            SchemaCurie::fromString("{$vendor}:notify:command:delete-notification")
-        );
-
-        $command = $class::create()->set('node_ref', NodeRef::fromNode($notification));
-        $pbjx->copyContext($event, $command);
-        return $command->set('ctx_correlator_ref', $event->generateMessageRef());
-    }
-
-    protected function createUpdateNotification(Message $notification, Message $event, Pbjx $pbjx): Message
-    {
-        $vendor = MessageResolver::getDefaultVendor();
-        $class = MessageResolver::resolveCurie(
-            SchemaCurie::fromString("{$vendor}:notify:command:update-notification")
-        );
-
-        $command = $class::create()
-            ->set('node_ref', NodeRef::fromNode($notification))
-            ->set('new_node', $notification);
-        $pbjx->copyContext($event, $command);
-        return $command->set('ctx_correlator_ref', $event->generateMessageRef());
     }
 }
