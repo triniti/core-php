@@ -54,6 +54,16 @@ class NotificationAggregate extends Aggregate
         $this->recordEvent($event);
     }
 
+    protected function applyNodeDeleted(Message $event): void
+    {
+        parent::applyNodeDeleted($event);
+
+        $sendStatus = $this->node->fget('send_status');
+        if ($sendStatus !== NotificationSendStatus::SENT && $sendStatus !== NotificationSendStatus::FAILED) {
+            $this->node->set('send_status', NotificationSendStatus::CANCELED());
+        }
+    }
+
     protected function applyNotificationFailed(Message $event): void
     {
         $this->node
