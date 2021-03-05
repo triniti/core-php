@@ -28,10 +28,11 @@ abstract class AbstractAzureNotifier implements Notifier
     const DISABLED_FLAG_NAME = 'azure_notifier_disabled';
     const FORMAT = 'unknown';
 
-    protected string $endpoint;
-    protected string $hubName;
-    protected string $sasKeyName;
-    protected string $sasKeyValue;
+    protected string $endpoint = '';
+    protected string $hubName = '';
+    protected string $sasKeyName = '';
+    protected string $sasKeyValue = '';
+
     protected ?GuzzleClient $guzzleClient = null;
     protected Flags $flags;
     protected Key $key;
@@ -114,17 +115,17 @@ abstract class AbstractAzureNotifier implements Notifier
         }
 
         foreach ($parts as $part) {
-            if (strpos($part, 'Endpoint=') === 0) {
+            if (str_starts_with($part, 'Endpoint=')) {
                 $this->endpoint = 'https' . substr($part, strlen('Endpoint=sb'));
                 continue;
             }
 
-            if (strpos($part, 'SharedAccessKeyName=') === 0) {
+            if (str_starts_with($part, 'SharedAccessKeyName=')) {
                 $this->sasKeyName = substr($part, strlen('SharedAccessKeyName='));
                 continue;
             }
 
-            if (strpos($part, 'SharedAccessKey=') === 0) {
+            if (str_starts_with($part, 'SharedAccessKey=')) {
                 $this->sasKeyValue = substr($part, strlen('SharedAccessKey='));
                 continue;
             }

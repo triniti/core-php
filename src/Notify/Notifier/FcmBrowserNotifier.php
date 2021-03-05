@@ -11,9 +11,6 @@ class FcmBrowserNotifier extends AbstractFcmNotifier
 {
     const DISABLED_FLAG_NAME = 'fcm_browser_notifier_disabled';
 
-    /**
-     * {@inheritdoc}
-     */
     protected function buildPayload(Message $notification, Message $app, ?Message $content = null): array
     {
         $payload = parent::buildPayload($notification, $app, $content);

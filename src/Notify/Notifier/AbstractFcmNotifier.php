@@ -26,7 +26,7 @@ abstract class AbstractFcmNotifier implements Notifier
     const API_ENDPOINT = 'https://fcm.googleapis.com';
     const DISABLED_FLAG_NAME = 'fcm_notifier_disabled';
 
-    protected string $apiKey;
+    protected string $apiKey = '';
     protected Flags $flags;
     protected ?GuzzleClient $guzzleClient = null;
     protected Key $key;

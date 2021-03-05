@@ -31,7 +31,7 @@ class SendGridEmailNotifier implements Notifier
     protected Key $key;
     protected Environment $twig;
     protected ?GuzzleClient $guzzleClient = null;
-    protected string $apiKey;
+    protected string $apiKey = '';
 
     public function __construct(Flags $flags, Key $key, Environment $twig)
     {
