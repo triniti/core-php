@@ -34,6 +34,10 @@ final class TeaserableEnricher implements EventSubscriber, PbjxEnricher
         if ($pbjxEvent->hasParentEvent()) {
             $parentEvent = $pbjxEvent->getParentEvent()->getMessage();
             $schema = $parentEvent::schema();
+            if (!$schema->hasMixin('gdbots:pbjx:mixin:event')) {
+                return;
+            }
+
             if ($schema->hasMixin('gdbots:ncr:mixin:node-published')
                 || $schema->usesCurie('gdbots:ncr:event:node-published')
             ) {

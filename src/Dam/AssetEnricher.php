@@ -54,6 +54,10 @@ class AssetEnricher implements EventSubscriber, PbjxEnricher
         if ($pbjxEvent->hasParentEvent()) {
             $parentEvent = $pbjxEvent->getParentEvent()->getMessage();
             $schema = $parentEvent::schema();
+            if (!$schema->hasMixin('gdbots:pbjx:mixin:event')) {
+                return;
+            }
+
             if ($schema->hasMixin('gdbots:ncr:mixin:node-created')
                 || $schema->usesCurie('gdbots:ncr:event:node-created')
             ) {

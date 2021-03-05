@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Triniti\Notify;
 
 use Gdbots\Ncr\AggregateResolver;
+use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
@@ -17,12 +18,20 @@ use Triniti\Schemas\Notify\NotifierResultV1;
 
 class SendNotificationHandler implements CommandHandler
 {
-    use NotificationPbjxHelperTrait;
-
+    protected Ncr $ncr;
     protected NotifierLocator $locator;
 
-    public function __construct(NotifierLocator $locator)
+    public static function handlesCuries(): array
     {
+        // deprecated mixins, will be removed in 3.x
+        $curies = MessageResolver::findAllUsingMixin('triniti:notify:mixin:send-notification:v1', false);
+        $curies[] = 'triniti:notify:command:send-notification';
+        return $curies;
+    }
+
+    public function __construct(Ncr $ncr, NotifierLocator $locator)
+    {
+        $this->ncr = $ncr;
         $this->locator = $locator;
     }
 
@@ -30,36 +39,46 @@ class SendNotificationHandler implements CommandHandler
     {
         /** @var NodeRef $nodeRef */
         $nodeRef = $command->get('node_ref');
+        $context = ['causator' => $command];
 
-        $notificationAggregate = NotificationAggregate::fromNodeRef($nodeRef, $pbjx);
-        $notificationAggregate->sync();
-        $notification = $notificationAggregate->getNode();
-
-        if (!$notification->get('send_status')->equals(NotificationSendStatus::SCHEDULED())) {
+        try {
+            $notification = $this->ncr->getNode($nodeRef, true, $context);
+        } catch (NodeNotFound $nf) {
+            // doesn't exist, ignore
             return;
+        } catch (\Throwable $e) {
+            throw $e;
         }
 
-        if (!$this->isNodeSupported($notification)) {
+        /** @var NotificationAggregate $aggregate */
+        $aggregate = AggregateResolver::resolve($nodeRef->getQName())::fromNode($notification, $pbjx);
+        $aggregate->sync($context);
+        $notification = $aggregate->getNode();
+
+        if (NotificationSendStatus::SCHEDULED !== $notification->fget('send_status')) {
             return;
         }
 
         /** @var NodeRef $appRef */
         $appRef = $notification->get('app_ref');
-        $appAggregate = AggregateResolver::resolve($appRef->getQName())::fromNodeRef($appRef, $pbjx);
-        $appAggregate->sync();
-        $app = $appAggregate->getNode();
 
         /** @var NodeRef $contentRef */
         $contentRef = $notification->get('content_ref');
-        $contentAggregate = AggregateResolver::resolve($contentRef->getQName())::fromNodeRef($contentRef, $pbjx);
-        $contentAggregate->sync();
-        $content = $contentAggregate->getNode();
 
+        $refs = [$appRef];
+        if (null !== $contentRef) {
+            $refs[] = $contentRef;
+        }
+
+        $nodes = $this->ncr->getNodes($refs, true, $context);
+        $app = $nodes[$appRef->toString()] ?? null;
+        $content = null !== $contentRef ? ($nodes[$contentRef->toString()] ?? null) : null;
         $result = null;
 
         if (
-            !$app::schema()->hasMixin('gdbots:iam:mixin:app')
-            || !$this->isSupportedByApp($nodeRef->getQName(), $appRef)
+            null === $app
+            || !$app::schema()->hasMixin('gdbots:iam:mixin:app')
+            || !NotificationValidator::isSupportedByApp($nodeRef->getQName(), $appRef)
         ) {
             $result = NotifierResultV1::create()
                 ->set('ok', false)
@@ -68,23 +87,23 @@ class SendNotificationHandler implements CommandHandler
                 ->set('error_message', "App [{$appRef}] was not found.");
         }
 
-        if (null !== $contentRef) {
-            if (!$content::schema()->hasMixin('triniti:notify:mixin:has-notifications')) {
+        if (null === $result && null !== $contentRef) {
+            if (null === $content || !$content::schema()->hasMixin('triniti:notify:mixin:has-notifications')) {
                 $result = NotifierResultV1::create()
                     ->set('ok', false)
                     ->set('code', Code::INVALID_ARGUMENT)
                     ->set('error_name', 'InvalidNotificationContent')
                     ->set('error_message', "Selected content [{$contentRef}] does not support notifications.");
-            } elseif (
-                !NodeStatus::PUBLISHED()->equals($content->get('status'))
+            } elseif (NodeStatus::PUBLISHED !== $content->fget('status')
                 && 'delete' !== $notification->get('apple_news_operation')
             ) {
-                // If notification is an apple news delete operation then it's ok the send notification against and unpublished article
+                // If notification is an apple news delete operation then it's ok the send
+                // notification against and unpublished article
                 $result = NotifierResultV1::create()
                     ->set('ok', false)
                     ->set('code', Code::ABORTED)
                     ->set('error_name', 'UnpublishedNotificationContent')
-                    ->set('error_message', "Selected content [{$contentRef}] is [{$content->get('status')}].");
+                    ->set('error_message', "Selected content [{$contentRef}] is [{$content->fget('status')}].");
             }
         }
 
@@ -118,19 +137,11 @@ class SendNotificationHandler implements CommandHandler
         }
 
         if ($result->get('ok')) {
-            $notificationAggregate->sendNotification($command, $result);
+            $aggregate->onNotificationSent($command, $result);
         } else {
-            $notificationAggregate->failNotification($command, $result);
+            $aggregate->onNotificationFailed($command, $result);
         }
 
-        $notificationAggregate->commit();
-    }
-
-    public static function handlesCuries(): array
-    {
-        // deprecated mixins, will be removed in 3.x
-        $curies = MessageResolver::findAllUsingMixin('triniti:notify:mixin:send-notification:v1', false);
-        $curies[] = 'triniti:notify:command:send-notification';
-        return $curies;
+        $aggregate->commit($context);
     }
 }

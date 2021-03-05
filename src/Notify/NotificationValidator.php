@@ -1,35 +1,74 @@
 <?php
 declare(strict_types=1);
 
-namespace Triniti\Notify\Validator;
+namespace Triniti\Notify;
 
 use Gdbots\Pbj\Assertion;
 use Gdbots\Pbj\Message;
-use Gdbots\Pbj\MessageResolver;
+use Gdbots\Pbj\SchemaQName;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\DependencyInjection\PbjxValidator;
 use Gdbots\Pbjx\Event\PbjxEvent;
 use Gdbots\Pbjx\EventSubscriber;
 use Triniti\Notify\Exception\NotificationAlreadyScheduled;
 use Triniti\Notify\Exception\NotificationAlreadySent;
-use Triniti\Notify\NotificationPbjxHelperTrait;
 use Triniti\Schemas\Notify\Enum\NotificationSendStatus;
 use Triniti\Schemas\Notify\Request\SearchNotificationsRequestV1;
 
 class NotificationValidator implements EventSubscriber, PbjxValidator
 {
-    use NotificationPbjxHelperTrait;
-
-    public static function getSubscribedEvents(): array
+    public static function getSubscribedEvents()
     {
-        $vendor = MessageResolver::getDefaultVendor();
         return [
-            "{$vendor}:notify:command:create-notification.validate" => 'validateCreateNotification',
-            "{$vendor}:notify:command:update-notification.validate" => 'validateUpdateNotification',
+            'triniti:notify:mixin:notification.validate' => 'validate',
         ];
     }
 
-    public function validateCreateNotification(PbjxEvent $pbjxEvent): void
+    /**
+     * When a notification is created/updated we must ensure the app
+     * it is bound to supports this type of notification. In all cases
+     * so far this is a one to one, e.g. alexa-notification can only
+     * be sent by an alexa-app. By convention both apps and notifications
+     * are named (the node type) using those matching suffixes.
+     *
+     * @param SchemaQName $qname
+     * @param NodeRef     $appRef
+     *
+     * @return bool
+     */
+    public static function isSupportedByApp(SchemaQName $qname, NodeRef $appRef): bool
+    {
+        $expected = str_replace('-notification', '-app', $qname->toString());
+        return $appRef->getQName()->toString() === $expected;
+    }
+
+    public static function alreadySent(Message $notification): bool
+    {
+        $status = $notification->fget('send_status', NotificationSendStatus::DRAFT);
+        $sent = [
+            NotificationSendStatus::SENT     => true,
+            NotificationSendStatus::FAILED   => true,
+            NotificationSendStatus::CANCELED => true,
+        ];
+
+        return $sent[$status] ?? false;
+    }
+
+    public function validate(PbjxEvent $pbjxEvent): void
+    {
+        $event = $pbjxEvent->hasParentEvent() ? $pbjxEvent->getParentEvent() : $pbjxEvent;
+        $method = $event->getMessage()::schema()->getHandlerMethodName(false, 'validate');
+        if (is_callable([$this, $method])) {
+            $this->$method($event);
+        }
+    }
+
+    protected function validateCreateNotification(PbjxEvent $pbjxEvent): void
+    {
+        $this->validateCreateNode($pbjxEvent);
+    }
+
+    protected function validateCreateNode(PbjxEvent $pbjxEvent): void
     {
         $command = $pbjxEvent->getMessage();
         Assertion::true($command->has('node'), 'Field "node" is required.', 'node');
@@ -40,10 +79,10 @@ class NotificationValidator implements EventSubscriber, PbjxValidator
 
         /** @var NodeRef $appRef */
         $appRef = $node->get('app_ref');
-        $nodeRef = NodeRef::fromNode($node);
+        $nodeRef = $node->generateNodeRef();
 
         Assertion::true(
-            $this->isSupportedByApp($nodeRef->getQName(), $appRef),
+            self::isSupportedByApp($nodeRef->getQName(), $appRef),
             sprintf(
                 'The app [%s] does not support the [%s].',
                 $appRef->toString(),
@@ -57,9 +96,15 @@ class NotificationValidator implements EventSubscriber, PbjxValidator
         }
     }
 
-    public function validateUpdateNotification(PbjxEvent $pbjxEvent): void
+    protected function validateUpdateNotification(PbjxEvent $pbjxEvent): void
+    {
+        $this->validateUpdateNode($pbjxEvent);
+    }
+
+    protected function validateUpdateNode(PbjxEvent $pbjxEvent): void
     {
         $command = $pbjxEvent->getMessage();
+        Assertion::true($command->has('old_node'), 'Field "old_node" is required.', 'old_node');
         Assertion::true($command->has('new_node'), 'Field "new_node" is required.', 'new_node');
 
         /** @var Message $oldNode */
@@ -71,10 +116,10 @@ class NotificationValidator implements EventSubscriber, PbjxValidator
 
         /** @var NodeRef $appRef */
         $appRef = $newNode->get('app_ref');
-        $nodeRef = NodeRef::fromNode($newNode);
+        $nodeRef = $newNode->generateNodeRef();
 
         Assertion::true(
-            $this->isSupportedByApp($nodeRef->getQName(), $newNode->get('app_ref')),
+            self::isSupportedByApp($nodeRef->getQName(), $appRef),
             sprintf(
                 'The app [%s] does not support the [%s].',
                 $appRef->toString(),
@@ -83,19 +128,17 @@ class NotificationValidator implements EventSubscriber, PbjxValidator
             'new_node.app_ref'
         );
 
+        // An update SHOULD NOT change the send_status or sent_at
+        $newNode->set('send_status', $oldNode->get('send_status'));
+        $newNode->set('sent_at', $oldNode->get('sent_at'));
+
         // we trust the old node here because the server binds it
-        // at the start of the request
-        if ($this->alreadySent($oldNode)) {
+        // at the start of the request (ref NodeCommandBinder)
+        if (self::alreadySent($oldNode)) {
             throw new NotificationAlreadySent();
         }
     }
 
-    /**
-     * @param PbjxEvent $event
-     * @param Message   $notification
-     *
-     * @throws NotificationAlreadyScheduled
-     */
     protected function ensureNotAlreadyScheduled(PbjxEvent $event, Message $notification): void
     {
         /** @var NodeRef $appRef */
@@ -110,7 +153,6 @@ class NotificationValidator implements EventSubscriber, PbjxValidator
             ->set('send_status', NotificationSendStatus::SCHEDULED())
             ->set('count', 1);
 
-        /** @var Message $response */
         $response = $event::getPbjx()->copyContext($event->getMessage(), $request)->request($request);
 
         if ($response->has('nodes')) {

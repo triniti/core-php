@@ -16,7 +16,7 @@ use Gdbots\QueryParser\ParsedQuery;
 use Triniti\Notify\Exception\NotificationAlreadyScheduled;
 use Triniti\Notify\Exception\NotificationAlreadySent;
 use Triniti\Notify\SearchNotificationsRequestHandler;
-use Triniti\Notify\Validator\NotificationValidator;
+use Triniti\Notify\NotificationValidator;
 use Triniti\Schemas\Notify\Enum\NotificationSendStatus;
 use Triniti\Schemas\Notify\Request\SearchNotificationsRequestV1;
 use Triniti\Tests\AbstractPbjxTest;
@@ -62,7 +62,7 @@ class NotificationValidatorTest extends AbstractPbjxTest
         $validator = new NotificationValidator();
         $pbjxEvent = new PbjxEvent($command);
         $this->expectException(NotificationAlreadySent::class);
-        $validator->validateUpdateNotification($pbjxEvent);
+        $validator->validate($pbjxEvent);
     }
 
     public function testValidateCreateNotificationAlreadyScheduled(): void
@@ -105,7 +105,7 @@ class NotificationValidatorTest extends AbstractPbjxTest
         $validator = new NotificationValidator();
         $pbjxEvent = new PbjxEvent($command);
         $this->expectException(NotificationAlreadyScheduled::class);
-        $validator->validateCreateNotification($pbjxEvent);
+        $validator->validate($pbjxEvent);
 
         // if it gets here it's a pass
         $this->assertTrue(true);
@@ -133,7 +133,7 @@ class NotificationValidatorTest extends AbstractPbjxTest
 
         $validator = new NotificationValidator();
         $pbjxEvent = new PbjxEvent($command);
-        $validator->validateUpdateNotification($pbjxEvent);
+        $validator->validate($pbjxEvent);
 
         // if it gets here it's a pass
         $this->assertTrue(true);

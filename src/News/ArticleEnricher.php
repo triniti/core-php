@@ -24,6 +24,13 @@ final class ArticleEnricher implements EventSubscriber, PbjxEnricher
             return;
         }
 
+        if ($pbjxEvent->hasParentEvent()) {
+            $parentEvent = $pbjxEvent->getParentEvent()->getMessage();
+            if (!$parentEvent::schema()->hasMixin('gdbots:pbjx:mixin:event')) {
+                return;
+            }
+        }
+
         $text = [$node->get('title')];
 
         /** @var Message $block */

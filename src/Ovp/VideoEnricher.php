@@ -35,6 +35,13 @@ class VideoEnricher implements EventSubscriber, PbjxEnricher
             return;
         }
 
+        if ($pbjxEvent->hasParentEvent()) {
+            $parentEvent = $pbjxEvent->getParentEvent()->getMessage();
+            if (!$parentEvent::schema()->hasMixin('gdbots:pbjx:mixin:event')) {
+                return;
+            }
+        }
+
         $this->enrichWithCaptionUrls($node);
         $this->enrichWithMezzanineUrls($node);
     }
