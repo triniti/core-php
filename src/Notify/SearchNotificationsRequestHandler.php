@@ -12,14 +12,13 @@ use Gdbots\QueryParser\Enum\BoolOperator;
 use Gdbots\QueryParser\Node\Field;
 use Gdbots\QueryParser\Node\Word;
 use Gdbots\QueryParser\ParsedQuery;
-use Triniti\Schemas\Notify\Request\SearchNotificationsResponseV1;
 
 class SearchNotificationsRequestHandler extends AbstractSearchNodesRequestHandler
 {
     public static function handlesCuries(): array
     {
         // deprecated mixins, will be removed in 3.x
-        $curies = MessageResolver::findAllUsingMixin('triniti:notify:mixin:search-notifications-request', false);
+        $curies = MessageResolver::findAllUsingMixin('triniti:notify:mixin:search-notifications-request:v1', false);
         $curies[] = 'triniti:notify:request:search-notifications-request';
         return $curies;
     }
@@ -87,6 +86,6 @@ class SearchNotificationsRequestHandler extends AbstractSearchNodesRequestHandle
 
     protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
     {
-        return SearchNotificationsResponseV1::create();
+        return MessageResolver::resolveCurie('*:notify:request:search-notifications-response:v1')::create();
     }
 }
