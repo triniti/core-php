@@ -12,7 +12,6 @@ use Gdbots\QueryParser\Enum\BoolOperator;
 use Gdbots\QueryParser\Node\Field;
 use Gdbots\QueryParser\Node\Word;
 use Gdbots\QueryParser\ParsedQuery;
-use Triniti\Schemas\Apollo\Request\SearchPollsResponseV1;
 
 class SearchPollsRequestHandler extends AbstractSearchNodesRequestHandler
 {
@@ -63,6 +62,6 @@ class SearchPollsRequestHandler extends AbstractSearchNodesRequestHandler
 
     protected function createSearchNodesResponse(Message $request, Pbjx $pbjx): Message
     {
-        return SearchPollsResponseV1::create();
+        return MessageResolver::resolveCurie('*:apollo:request:search-polls-response:v1')::create();
     }
 }

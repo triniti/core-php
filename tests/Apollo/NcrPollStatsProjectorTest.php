@@ -17,6 +17,7 @@ use Acme\Schemas\Apollo\Node\PollV1;
 use Acme\Schemas\Apollo\PollAnswerV1;
 use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Ncr\Exception\NodeNotFound;
+use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Pbj\WellKnown\Microtime;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
@@ -28,11 +29,13 @@ final class NcrPollStatsProjectorTest extends AbstractPbjxTest
 {
     private MockNcrSearch $ncrSearch;
     private NcrPollStatsProjector $projector;
+    private InMemoryNcr $ncr;
 
     public function setup(): void
     {
         parent::setup();
         $this->ncrSearch = new MockNcrSearch();
+        $this->ncr = new InMemoryNcr();
         $this->projector = new NcrPollStatsProjector($this->ncr, $this->ncrSearch);
     }
 

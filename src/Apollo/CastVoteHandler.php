@@ -10,7 +10,6 @@ use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Pbjx\Util\ShardUtil;
 use Gdbots\Schemas\Pbjx\StreamId;
-use Triniti\Schemas\Apollo\Event\VoteCastedV1;
 
 class CastVoteHandler implements CommandHandler
 {
@@ -54,6 +53,6 @@ class CastVoteHandler implements CommandHandler
 
     protected function createVoteCasted(Message $command, Pbjx $pbjx): Message
     {
-        return VoteCastedV1::create();
+        return MessageResolver::resolveCurie('*:apollo:event:vote-casted:v1')::create();
     }
 }

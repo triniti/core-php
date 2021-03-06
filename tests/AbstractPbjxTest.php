@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Triniti\Tests;
 
-use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Pbjx\EventStore\InMemoryEventStore;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Pbjx\RegisteringServiceLocator;
@@ -14,7 +13,6 @@ abstract class AbstractPbjxTest extends TestCase
     protected RegisteringServiceLocator $locator;
     protected Pbjx $pbjx;
     protected InMemoryEventStore $eventStore;
-    protected InMemoryNcr $ncr;
 
     protected function setup(): void
     {
@@ -22,6 +20,5 @@ abstract class AbstractPbjxTest extends TestCase
         $this->pbjx = $this->locator->getPbjx();
         $this->eventStore = new InMemoryEventStore($this->pbjx);
         $this->locator->setEventStore($this->eventStore);
-        $this->ncr = new InMemoryNcr();
     }
 }

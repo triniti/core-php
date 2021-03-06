@@ -4,12 +4,12 @@ declare(strict_types=1);
 namespace Triniti\Tests\Apollo;
 
 use Acme\Schemas\Apollo\Command\CastVoteV1;
+use Acme\Schemas\Apollo\Event\VoteCastedV1;
 use Acme\Schemas\Apollo\Node\PollV1;
 use Acme\Schemas\Apollo\PollAnswerV1;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Schemas\Pbjx\StreamId;
 use Triniti\Apollo\CastVoteHandler;
-use Triniti\Schemas\Apollo\Event\VoteCastedV1;
 use Triniti\Tests\AbstractPbjxTest;
 
 final class CastVoteHandlerTest extends AbstractPbjxTest

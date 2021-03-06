@@ -1,0 +1,27 @@
+<html>
+<body>
+<style type="text/css">
+  a img {
+    border: 0;
+  }
+</style>
+
+{% block header %}
+  <p>header</p>
+{% endblock %}
+
+{% block body %}
+  {{ content.get('body')|raw }}
+  <h1{{ content.get('title') }}</h1>
+  <p>{{ content.get('published_at')|date('n/d/Y g:ia T') }}</p>
+  <p>Blocks will be rendered here, not for unit tests though.</p>
+{% endblock %}
+
+{% block footer %}
+  <p>footer</p>
+{% endblock %}
+
+<p>Click <a href="[unsubscribe]">here</a> to unsubscribe.</p>
+
+</body>
+</html>
