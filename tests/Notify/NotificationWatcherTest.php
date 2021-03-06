@@ -7,6 +7,7 @@ use Acme\Schemas\Notify\Event\NotificationCreatedV1;
 use Acme\Schemas\Notify\Event\NotificationDeletedV1;
 use Acme\Schemas\Notify\Event\NotificationUpdatedV1;
 use Acme\Schemas\Notify\Node\IosNotificationV1;
+use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Triniti\Notify\NotificationWatcher;
 use Triniti\Schemas\Notify\Command\SendNotificationV1;
 use Triniti\Schemas\Notify\Enum\NotificationSendStatus;
@@ -30,7 +31,7 @@ final class NotificationWatcherTest extends AbstractPbjxTest
         $node = IosNotificationV1::create()
             ->set('send_at',$sendAt)
             ->set('send_status', NotificationSendStatus::SCHEDULED());
-        $this->watcher->onNotificationCreated(NotificationCreatedV1::create()->set('node', $node), $this->pbjx);
+        $this->watcher->schedule(new NodeProjectedEvent($node, NotificationCreatedV1::create()->set('node', $node)));
         $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(SendNotificationV1::class, $sentCommand);
         $this->assertTrue($node->generateNodeRef()->equals($sentCommand->get('node_ref')));
@@ -45,22 +46,22 @@ final class NotificationWatcherTest extends AbstractPbjxTest
             ->set('send_status', NotificationSendStatus::SCHEDULED());
         $event = NotificationCreatedV1::create()->set('node', $node);
         $event->isReplay(true);
-        $this->watcher->onNotificationCreated($event, $this->pbjx);
+        $this->watcher->schedule(new NodeProjectedEvent($node, $event));
         $this->assertEmpty($this->pbjx->getSent());
     }
 
     public function testOnNotificationCreatedNoRequiredFields(): void
     {
         $node = IosNotificationV1::create();
-        $this->watcher->onNotificationCreated(NotificationCreatedV1::create()->set('node', $node), $this->pbjx);
+        $this->watcher->schedule(new NodeProjectedEvent($node, NotificationCreatedV1::create()->set('node', $node)));
         $this->assertEmpty($this->pbjx->getSent());
 
         $node->set('send_at', new \DateTime('2031-01-01T15:03:01.012345Z'));
-        $this->watcher->onNotificationCreated(NotificationCreatedV1::create()->set('node', $node), $this->pbjx);
+        $this->watcher->schedule(new NodeProjectedEvent($node, NotificationCreatedV1::create()->set('node', $node)));
         $this->assertEmpty($this->pbjx->getSent());
 
         $node->set('send_status', NotificationSendStatus::DRAFT());
-        $this->watcher->onNotificationCreated(NotificationCreatedV1::create()->set('node', $node), $this->pbjx);
+        $this->watcher->schedule(new NodeProjectedEvent($node, NotificationCreatedV1::create()->set('node', $node)));
         $this->assertEmpty($this->pbjx->getSent());
     }
 
@@ -68,7 +69,7 @@ final class NotificationWatcherTest extends AbstractPbjxTest
     {
         $node = IosNotificationV1::create();
         $this->assertFalse($this->pbjx->getCanceled());
-        $this->watcher->onNotificationDeleted(NotificationDeletedV1::create()->set('node_ref', $node->generateNodeRef()), $this->pbjx);
+        $this->watcher->cancel(new NodeProjectedEvent($node, NotificationDeletedV1::create()->set('node_ref', $node->generateNodeRef())));
         $this->assertTrue($this->pbjx->getCanceled());
     }
 
@@ -78,7 +79,7 @@ final class NotificationWatcherTest extends AbstractPbjxTest
         $this->assertFalse($this->pbjx->getCanceled());
         $event = NotificationDeletedV1::create()->set('node_ref', $node->generateNodeRef());
         $event->isReplay(true);
-        $this->watcher->onNotificationDeleted($event, $this->pbjx);
+        $this->watcher->cancel(new NodeProjectedEvent($node, $event));
         $this->assertFalse($this->pbjx->getCanceled());
     }
 
@@ -93,7 +94,7 @@ final class NotificationWatcherTest extends AbstractPbjxTest
             ->set('node_ref', $oldNode->generateNodeRef())
             ->set('old_node', $oldNode)
             ->set('new_node', $newNode);
-        $this->watcher->onNotificationUpdated($event, $this->pbjx);
+        $this->watcher->reschedule(new NodeProjectedEvent($newNode, $event));
         $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(SendNotificationV1::class, $sentCommand);
         $this->assertTrue($oldNode->generateNodeRef()->equals($sentCommand->get('node_ref')));
@@ -112,7 +113,7 @@ final class NotificationWatcherTest extends AbstractPbjxTest
             ->set('old_node', $oldNode)
             ->set('new_node', $newNode);
         $event->isReplay(true);
-        $this->watcher->onNotificationUpdated($event, $this->pbjx);
+        $this->watcher->reschedule(new NodeProjectedEvent($newNode, $event));
         $this->assertEmpty($this->pbjx->getSent());
     }
 
@@ -126,7 +127,7 @@ final class NotificationWatcherTest extends AbstractPbjxTest
         $event = NotificationUpdatedV1::create()
             ->set('old_node', $oldNode)
             ->set('new_node', $newNode);
-        $this->watcher->onNotificationUpdated($event, $this->pbjx);
+        $this->watcher->reschedule(new NodeProjectedEvent($newNode, $event));
         $this->assertEmpty($this->pbjx->getSent());
     }
 
@@ -138,7 +139,7 @@ final class NotificationWatcherTest extends AbstractPbjxTest
         $event = NotificationUpdatedV1::create()
             ->set('old_node', $oldNode)
             ->set('new_node', $newNode);
-        $this->watcher->onNotificationUpdated($event, $this->pbjx);
+        $this->watcher->reschedule(new NodeProjectedEvent($newNode, $event));
         $this->assertEmpty($this->pbjx->getSent());
     }
 
@@ -151,7 +152,7 @@ final class NotificationWatcherTest extends AbstractPbjxTest
         $event = NotificationUpdatedV1::create()
             ->set('old_node', $oldNode)
             ->set('new_node', $newNode);
-        $this->watcher->onNotificationUpdated($event, $this->pbjx);
+        $this->watcher->reschedule(new NodeProjectedEvent($newNode, $event));
         $this->assertEmpty($this->pbjx->getSent());
         $this->assertTrue($this->pbjx->getCanceled());
     }
