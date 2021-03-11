@@ -33,7 +33,7 @@ class GetAllChannelsRequestHandler implements RequestHandler
         $nodes = $searchResponse->get('nodes', []);
         $refs = array_map(fn(Message $node) => $node->generateNodeRef(), $nodes);
 
-        return $response->addToSet('channels', $refs);
+        return $response->addToList('nodes', $refs);
     }
 
     protected function createGetAllChannelsResponse(Message $request, Pbjx $pbjx): Message
