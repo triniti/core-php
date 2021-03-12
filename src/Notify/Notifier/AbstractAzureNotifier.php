@@ -100,12 +100,12 @@ abstract class AbstractAzureNotifier implements Notifier
     }
 
     /**
-     * @example
-     * Endpoint=sb://{namespace}.servicebus.windows.net/;SharedAccessKeyName={keyName};SharedAccessKey={keyValue}
-     *
      * @param string $connectionString
      *
      * @throws InvalidNotificationContent
+     * @example
+     * Endpoint=sb://{namespace}.servicebus.windows.net/;SharedAccessKeyName={keyName};SharedAccessKey={keyValue}
+     *
      */
     protected function parseConnectionString(string $connectionString): void
     {

@@ -116,7 +116,7 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
      * The return array is keyed by the slot position it should occupy.
      *
      * @param Message $request
-     * @param Pbjx               $pbjx
+     * @param Pbjx    $pbjx
      *
      * @return Message[]
      */
@@ -220,7 +220,7 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
      * and not all time popularity.
      *
      * @param Message $request
-     * @param Pbjx               $pbjx
+     * @param Pbjx    $pbjx
      *
      * @return Message
      */
