@@ -32,18 +32,20 @@ use Triniti\Schemas\Taxonomy\Enum\SearchCategoriesSort;
 
 class QueryFactory extends BaseQueryFactory
 {
-    protected function forSearchArticlesRequest(Message $request, ParsedQuery $parsedQuery): Query
+    protected function forSearchArticlesRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
             ->setDefaultFieldName('_all')
             ->addFullTextSearchField('swipe')
             ->setHashtagFieldName('hashtags')
+            ->addNestedField('blocks')
             ->addParsedQuery($parsedQuery);
 
         $query = $builder->getBoolQuery();
 
-        $this->filterStatuses($request, $query);
         $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
         if ($request->has('cursor')) {
             $cursor = json_decode(StringUtil::urlsafeB64Decode($request->get('cursor', '')), true) ?: [];
@@ -98,7 +100,7 @@ class QueryFactory extends BaseQueryFactory
         }
     }
 
-    protected function forSearchAssetsRequest(Message $request, ParsedQuery $parsedQuery): Query
+    protected function forSearchAssetsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
             ->setDefaultFieldName('_all')
@@ -111,8 +113,9 @@ class QueryFactory extends BaseQueryFactory
             $query->setParam('should', new Query\Wildcard('title.raw', $request->get('q')));
         }
 
-        $this->filterStatuses($request, $query);
         $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
         switch ($request->get('sort', SearchAssetsSort::RELEVANCE())->getValue()) {
             case SearchAssetsSort::CREATED_AT_ASC:
@@ -150,7 +153,7 @@ class QueryFactory extends BaseQueryFactory
         }
     }
 
-    protected function forSearchCategoriesRequest(Message $request, ParsedQuery $parsedQuery): Query
+    protected function forSearchCategoriesRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
             ->setDefaultFieldName('title')
@@ -159,8 +162,9 @@ class QueryFactory extends BaseQueryFactory
 
         $query = $builder->getBoolQuery();
 
-        $this->filterStatuses($request, $query);
         $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
         switch ($request->get('sort', SearchCategoriesSort::RELEVANCE())->getValue()) {
             case SearchCategoriesSort::CREATED_AT_ASC:
@@ -186,7 +190,7 @@ class QueryFactory extends BaseQueryFactory
         }
     }
 
-    protected function forSearchGalleriesRequest(Message $request, ParsedQuery $parsedQuery): Query
+    protected function forSearchGalleriesRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
             ->setDefaultFieldName('_all')
@@ -195,8 +199,9 @@ class QueryFactory extends BaseQueryFactory
 
         $query = $builder->getBoolQuery();
 
-        $this->filterStatuses($request, $query);
         $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
         switch ($request->get('sort', SearchGalleriesSort::RELEVANCE())->getValue()) {
             case SearchGalleriesSort::CREATED_AT_ASC:
@@ -234,7 +239,7 @@ class QueryFactory extends BaseQueryFactory
         }
     }
 
-    protected function forSearchNotificationsRequest(Message $request, ParsedQuery $parsedQuery): Query
+    protected function forSearchNotificationsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
             ->setDefaultFieldName('_all')
@@ -242,8 +247,9 @@ class QueryFactory extends BaseQueryFactory
 
         $query = $builder->getBoolQuery();
 
-        $this->filterStatuses($request, $query);
         $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
         switch ($request->get('sort')->getValue()) {
             case SearchNotificationsSort::CREATED_AT_ASC;
@@ -275,7 +281,7 @@ class QueryFactory extends BaseQueryFactory
         }
     }
 
-    protected function forSearchPagesRequest(Message $request, ParsedQuery $parsedQuery): Query
+    protected function forSearchPagesRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
             ->lowerCaseTerms(!in_array('redirect_ref', $parsedQuery->getFieldsUsed()))
@@ -286,8 +292,9 @@ class QueryFactory extends BaseQueryFactory
 
         $query = $builder->getBoolQuery();
 
-        $this->filterStatuses($request, $query);
         $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
         switch ($request->get('sort', SearchPagesSort::RELEVANCE())->getValue()) {
             case SearchPagesSort::CREATED_AT_ASC:
@@ -325,7 +332,7 @@ class QueryFactory extends BaseQueryFactory
         }
     }
 
-    protected function forSearchPeopleRequest(Message $request, ParsedQuery $parsedQuery): Query
+    protected function forSearchPeopleRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
             ->setDefaultFieldName('title.standard')
@@ -337,8 +344,9 @@ class QueryFactory extends BaseQueryFactory
 
         $query = $builder->getBoolQuery();
 
-        $this->filterStatuses($request, $query);
         $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
         switch ($request->get('sort', SearchPeopleSort::RELEVANCE())->getValue()) {
             case SearchPeopleSort::CREATED_AT_ASC:
@@ -364,7 +372,7 @@ class QueryFactory extends BaseQueryFactory
         }
     }
 
-    protected function forSearchPollsRequest(Message $request, ParsedQuery $parsedQuery): Query
+    protected function forSearchPollsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
             ->setDefaultFieldName('_all')
@@ -373,8 +381,9 @@ class QueryFactory extends BaseQueryFactory
 
         $query = $builder->getBoolQuery();
 
-        $this->filterStatuses($request, $query);
         $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
         switch ($request->get('sort', SearchPollsSort::RELEVANCE())->getValue()) {
             case SearchPollsSort::CREATED_AT_ASC:
@@ -412,7 +421,7 @@ class QueryFactory extends BaseQueryFactory
         }
     }
 
-    protected function forSearchPromotionsRequest(Message $request, ParsedQuery $parsedQuery): Query
+    protected function forSearchPromotionsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
             ->setDefaultFieldName('_all')
@@ -420,8 +429,9 @@ class QueryFactory extends BaseQueryFactory
 
         $query = $builder->getBoolQuery();
 
-        $this->filterStatuses($request, $query);
         $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
         switch ($request->get('sort', SearchPromotionsSort::RELEVANCE())->getValue()) {
             case SearchPromotionsSort::CREATED_AT_ASC:
@@ -459,7 +469,7 @@ class QueryFactory extends BaseQueryFactory
         }
     }
 
-    protected function forSearchRedirectsRequest(Message $request, ParsedQuery $parsedQuery): Query
+    protected function forSearchRedirectsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
             ->setDefaultFieldName('_all')
@@ -467,8 +477,9 @@ class QueryFactory extends BaseQueryFactory
 
         $query = $builder->getBoolQuery();
 
-        $this->filterStatuses($request, $query);
         $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
         switch ($request->get('sort', SearchRedirectsSort::CREATED_AT_ASC())->getValue()) {
             case SearchRedirectsSort::CREATED_AT_ASC:
@@ -494,7 +505,7 @@ class QueryFactory extends BaseQueryFactory
         }
     }
 
-    protected function forSearchSponsorsRequest(Message $request, ParsedQuery $parsedQuery): Query
+    protected function forSearchSponsorsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
             ->setDefaultFieldName('_all')
@@ -502,8 +513,9 @@ class QueryFactory extends BaseQueryFactory
 
         $query = $builder->getBoolQuery();
 
-        $this->filterStatuses($request, $query);
         $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
         switch ($request->get('sort', SearchSponsorsSort::CREATED_AT_ASC())->getValue()) {
             case SearchSponsorsSort::CREATED_AT_ASC:
@@ -535,7 +547,7 @@ class QueryFactory extends BaseQueryFactory
         }
     }
 
-    protected function forSearchTeasersRequest(Message $request, ParsedQuery $parsedQuery): Query
+    protected function forSearchTeasersRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
             ->setDefaultFieldName('_all')
@@ -544,8 +556,9 @@ class QueryFactory extends BaseQueryFactory
 
         $query = $builder->getBoolQuery();
 
-        $this->filterStatuses($request, $query);
         $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
         if ($request->has('cursor')) {
             $cursor = json_decode(StringUtil::urlsafeB64Decode($request->get('cursor', '')), true) ?: [];
@@ -593,7 +606,7 @@ class QueryFactory extends BaseQueryFactory
         }
     }
 
-    protected function forSearchTimelinesRequest(Message $request, ParsedQuery $parsedQuery): Query
+    protected function forSearchTimelinesRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
             ->setDefaultFieldName('_all')
@@ -602,8 +615,9 @@ class QueryFactory extends BaseQueryFactory
 
         $query = $builder->getBoolQuery();
 
-        $this->filterStatuses($request, $query);
         $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
         switch ($request->get('sort', SearchTimelinesSort::RELEVANCE())->getValue()) {
             case SearchTimelinesSort::CREATED_AT_ASC:
@@ -641,7 +655,7 @@ class QueryFactory extends BaseQueryFactory
         }
     }
 
-    protected function forSearchUsersRequest(Message $request, ParsedQuery $parsedQuery): Query
+    protected function forSearchUsersRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
             ->setDefaultFieldName('_all')
@@ -650,8 +664,9 @@ class QueryFactory extends BaseQueryFactory
 
         $query = $builder->getBoolQuery();
 
-        $this->filterStatuses($request, $query);
         $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
         if (!$request->has('sort')) {
             return Query::create($query);
@@ -687,7 +702,7 @@ class QueryFactory extends BaseQueryFactory
         }
     }
 
-    protected function forSearchVideosRequest(Message $request, ParsedQuery $parsedQuery): Query
+    protected function forSearchVideosRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
             ->setDefaultFieldName('_all')
@@ -696,8 +711,9 @@ class QueryFactory extends BaseQueryFactory
 
         $query = $builder->getBoolQuery();
 
-        $this->filterStatuses($request, $query);
         $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
         switch ($request->get('sort', SearchVideosSort::RELEVANCE())->getValue()) {
             case SearchVideosSort::CREATED_AT_ASC:
@@ -735,7 +751,7 @@ class QueryFactory extends BaseQueryFactory
         }
     }
 
-    protected function forSearchWidgetsRequest(Message $request, ParsedQuery $parsedQuery): Query
+    protected function forSearchWidgetsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
             ->setDefaultFieldName('_all')
@@ -743,8 +759,9 @@ class QueryFactory extends BaseQueryFactory
 
         $query = $builder->getBoolQuery();
 
-        $this->filterStatuses($request, $query);
         $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
         switch ($request->get('sort', SearchWidgetsSort::RELEVANCE())->getValue()) {
             case SearchWidgetsSort::CREATED_AT_ASC:
