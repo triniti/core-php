@@ -27,6 +27,10 @@ class MappingBuilder extends BaseMappingBuilder
         return match (true) {
             str_contains($path, 'blocks.data'),
             str_contains($path, 'blocks.size'),
+            $path === 'event.event',
+            str_contains($path, 'event.node'),
+            str_contains($path, 'event.new_node'),
+            str_contains($path, 'event.old_node'),
             str_contains($path, 'event.stats') => true,
             default => false,
         };
