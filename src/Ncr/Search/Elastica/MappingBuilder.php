@@ -38,6 +38,11 @@ class MappingBuilder extends BaseMappingBuilder
                 ];
                 break;
 
+            case 'jwplayer_media_id':
+            case 'kaltura_entry_id':
+                $properties['copy_to'] = self::ALL_FIELD;
+                break;
+
             case 'swipe':
                 unset($properties['copy_to']);
                 break;
@@ -54,6 +59,8 @@ class MappingBuilder extends BaseMappingBuilder
         $ignoredNames = [
             'answer_votes'             => true,
             'cta_text'                 => true,
+            'hf_sizes'                 => true,
+            'hf_styles'                => true,
             'launch_text'              => true,
             'prefetched_nodes'         => true,
             'related_articles_heading' => true,

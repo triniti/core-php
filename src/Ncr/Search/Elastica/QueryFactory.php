@@ -36,6 +36,7 @@ class QueryFactory extends BaseQueryFactory
     {
         $builder = (new ElasticaQueryBuilder())
             ->setDefaultFieldName('_all')
+            ->addFullTextSearchField('hf')
             ->addFullTextSearchField('swipe')
             ->setHashtagFieldName('hashtags')
             ->addNestedField('blocks')
@@ -202,6 +203,16 @@ class QueryFactory extends BaseQueryFactory
         $this->filterDates($request, $query);
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
+
+        if ($request->has('cursor')) {
+            $cursor = json_decode(StringUtil::urlsafeB64Decode($request->get('cursor', '')), true) ?: [];
+            if (isset($cursor['order_date_before'])) {
+                $orderDate = new \DateTime("@{$cursor['order_date_before']}");
+                $query->addFilter(new Query\Range('order_date', [
+                    'lt' => $orderDate->format(DateUtil::ISO8601_ZULU),
+                ]));
+            }
+        }
 
         switch ($request->get('sort', SearchGalleriesSort::RELEVANCE())->getValue()) {
             case SearchGalleriesSort::CREATED_AT_ASC:
@@ -714,6 +725,16 @@ class QueryFactory extends BaseQueryFactory
         $this->filterDates($request, $query);
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
+
+        if ($request->has('cursor')) {
+            $cursor = json_decode(StringUtil::urlsafeB64Decode($request->get('cursor', '')), true) ?: [];
+            if (isset($cursor['order_date_before'])) {
+                $orderDate = new \DateTime("@{$cursor['order_date_before']}");
+                $query->addFilter(new Query\Range('order_date', [
+                    'lt' => $orderDate->format(DateUtil::ISO8601_ZULU),
+                ]));
+            }
+        }
 
         switch ($request->get('sort', SearchVideosSort::RELEVANCE())->getValue()) {
             case SearchVideosSort::CREATED_AT_ASC:
