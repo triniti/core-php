@@ -35,7 +35,7 @@ class QueryFactory extends BaseQueryFactory
     protected function forSearchArticlesRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
-            ->setDefaultFieldName('_all')
+            ->setDefaultFieldName(MappingBuilder::ALL_FIELD)
             ->addFullTextSearchField('hf')
             ->addFullTextSearchField('swipe')
             ->setHashtagFieldName('hashtags')
@@ -104,7 +104,7 @@ class QueryFactory extends BaseQueryFactory
     protected function forSearchAssetsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
-            ->setDefaultFieldName('_all')
+            ->setDefaultFieldName(MappingBuilder::ALL_FIELD)
             ->setHashtagFieldName('hashtags')
             ->addParsedQuery($parsedQuery);
 
@@ -194,7 +194,7 @@ class QueryFactory extends BaseQueryFactory
     protected function forSearchGalleriesRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
-            ->setDefaultFieldName('_all')
+            ->setDefaultFieldName(MappingBuilder::ALL_FIELD)
             ->setHashtagFieldName('hashtags')
             ->addParsedQuery($parsedQuery);
 
@@ -253,7 +253,7 @@ class QueryFactory extends BaseQueryFactory
     protected function forSearchNotificationsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
-            ->setDefaultFieldName('_all')
+            ->setDefaultFieldName(MappingBuilder::ALL_FIELD)
             ->addParsedQuery($parsedQuery);
 
         $query = $builder->getBoolQuery();
@@ -296,7 +296,7 @@ class QueryFactory extends BaseQueryFactory
     {
         $builder = (new ElasticaQueryBuilder())
             ->lowerCaseTerms(!in_array('redirect_ref', $parsedQuery->getFieldsUsed()))
-            ->setDefaultFieldName('_all')
+            ->setDefaultFieldName(MappingBuilder::ALL_FIELD)
             ->addFullTextSearchField('custom_code')
             ->setHashtagFieldName('hashtags')
             ->addParsedQuery($parsedQuery);
@@ -386,7 +386,7 @@ class QueryFactory extends BaseQueryFactory
     protected function forSearchPollsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
-            ->setDefaultFieldName('_all')
+            ->setDefaultFieldName(MappingBuilder::ALL_FIELD)
             ->setHashtagFieldName('hashtags')
             ->addParsedQuery($parsedQuery);
 
@@ -435,7 +435,7 @@ class QueryFactory extends BaseQueryFactory
     protected function forSearchPromotionsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
-            ->setDefaultFieldName('_all')
+            ->setDefaultFieldName(MappingBuilder::ALL_FIELD)
             ->addParsedQuery($parsedQuery);
 
         $query = $builder->getBoolQuery();
@@ -483,7 +483,7 @@ class QueryFactory extends BaseQueryFactory
     protected function forSearchRedirectsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
-            ->setDefaultFieldName('_all')
+            ->setDefaultFieldName(MappingBuilder::ALL_FIELD)
             ->addParsedQuery($parsedQuery);
 
         $query = $builder->getBoolQuery();
@@ -519,7 +519,7 @@ class QueryFactory extends BaseQueryFactory
     protected function forSearchSponsorsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
-            ->setDefaultFieldName('_all')
+            ->setDefaultFieldName(MappingBuilder::ALL_FIELD)
             ->addParsedQuery($parsedQuery);
 
         $query = $builder->getBoolQuery();
@@ -561,7 +561,7 @@ class QueryFactory extends BaseQueryFactory
     protected function forSearchTeasersRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
-            ->setDefaultFieldName('_all')
+            ->setDefaultFieldName(MappingBuilder::ALL_FIELD)
             ->setHashtagFieldName('hashtags')
             ->addParsedQuery($parsedQuery);
 
@@ -620,7 +620,7 @@ class QueryFactory extends BaseQueryFactory
     protected function forSearchTimelinesRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
-            ->setDefaultFieldName('_all')
+            ->setDefaultFieldName(MappingBuilder::ALL_FIELD)
             ->setHashtagFieldName('hashtags')
             ->addParsedQuery($parsedQuery);
 
@@ -669,7 +669,7 @@ class QueryFactory extends BaseQueryFactory
     protected function forSearchUsersRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
-            ->setDefaultFieldName('_all')
+            ->setDefaultFieldName(MappingBuilder::ALL_FIELD)
             ->setMentionFieldName('networks')
             ->addParsedQuery($parsedQuery);
 
@@ -716,7 +716,7 @@ class QueryFactory extends BaseQueryFactory
     protected function forSearchVideosRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
-            ->setDefaultFieldName('_all')
+            ->setDefaultFieldName(MappingBuilder::ALL_FIELD)
             ->setHashtagFieldName('hashtags')
             ->addParsedQuery($parsedQuery);
 
@@ -775,7 +775,7 @@ class QueryFactory extends BaseQueryFactory
     protected function forSearchWidgetsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
-            ->setDefaultFieldName('_all')
+            ->setDefaultFieldName(MappingBuilder::ALL_FIELD)
             ->addParsedQuery($parsedQuery);
 
         $query = $builder->getBoolQuery();
