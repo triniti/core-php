@@ -4,10 +4,27 @@ declare(strict_types=1);
 namespace Triniti\Pbjx\EventSearch\Elastica;
 
 use Gdbots\Pbj\Field;
+use Gdbots\Pbj\Schema;
 use Gdbots\Pbjx\EventSearch\Elastica\MappingBuilder as BaseMappingBuilder;
 
 class MappingBuilder extends BaseMappingBuilder
 {
+    protected function filterProperties(Schema $schema, Field $field, string $path, array $properties): array
+    {
+        $properties = parent::filterProperties($schema, $field, $path, $properties);
+
+        switch ($field->getName()) {
+            case 'sendgrid_senders':
+                $properties['index'] = false;
+                break;
+
+            default:
+                break;
+        }
+
+        return $properties;
+    }
+
     protected function shouldIgnoreField(Field $field, string $path): bool
     {
         $ignoredNames = [
@@ -27,7 +44,7 @@ class MappingBuilder extends BaseMappingBuilder
         return match (true) {
             str_contains($path, 'blocks.data'),
             str_contains($path, 'blocks.size'),
-            $path === 'event.event',
+                $path === 'event.event',
             str_contains($path, 'event.node'),
             str_contains($path, 'event.new_node'),
             str_contains($path, 'event.old_node'),
