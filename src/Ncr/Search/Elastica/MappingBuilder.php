@@ -43,6 +43,10 @@ class MappingBuilder extends BaseMappingBuilder
                 $properties['copy_to'] = self::ALL_FIELD;
                 break;
 
+            case 'sendgrid_senders':
+                $properties['index'] = false;
+                break;
+
             case 'swipe':
                 unset($properties['copy_to']);
                 break;
