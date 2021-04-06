@@ -17,9 +17,11 @@ class GetRedirectRequestHandler extends GetNodeRequestHandler
     public static function handlesCuries(): array
     {
         // deprecated mixins, will be removed in 3.x
-        $curies = MessageResolver::findAllUsingMixin('triniti:sys:mixin:get-redirect-request:v1', false);
-        $curies[] = 'triniti:sys:request:get-redirect-request';
-        return $curies;
+        $vendor = MessageResolver::getDefaultVendor();
+        return [
+            "{$vendor}:sys:request:get-redirect-request",
+            'triniti:sys:request:get-redirect-request',
+        ];
     }
 
     public function handleRequest(Message $request, Pbjx $pbjx): Message
