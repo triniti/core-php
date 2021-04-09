@@ -821,6 +821,10 @@ class QueryFactory extends BaseQueryFactory
      */
     protected function createRelevanceWithRecencySortedQuery(AbstractQuery $query, Message $request): Query
     {
+        if (!$query->hasParam('must') && !$query->hasParam('should')) {
+            // no scores to match so decay function will not work
+            return Query::create($query)->setSort(['created_at' => 'desc']);
+        }
         $before = $request->get('created_before') ?: new \DateTime('now', new \DateTimeZone('UTC'));
         $query = (new FunctionScore())
             ->setQuery($query)
@@ -832,7 +836,6 @@ class QueryFactory extends BaseQueryFactory
                     'decay'  => 0.1,
                 ],
             ]);
-
         return Query::create($query);
     }
 }
