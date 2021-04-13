@@ -28,9 +28,6 @@ final class HasPeopleEnricher implements EventSubscriber, PbjxEnricher
          * our application finds content based on person_refs.
          * primary is used for other purposes.
          */
-        $node->addToSet(
-            'person_refs',
-            array_values($node->get('primary_person_refs'))
-        );
+        $node->addToSet('person_refs', $node->get('primary_person_refs'));
     }
 }
