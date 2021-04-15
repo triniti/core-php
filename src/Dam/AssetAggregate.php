@@ -57,8 +57,7 @@ class AssetAggregate extends Aggregate
         }
 
         $paths = $command->get('paths');
-        $event = $this->createAssetPatched($command)
-            ->set('node_ref', $this->nodeRef);
+        $event = $this->createAssetPatched($command)->set('node_ref', $this->nodeRef);
 
         foreach ($paths as $path) {
             // Add custom handling for each path to field here. For example, a field that uses
@@ -125,8 +124,11 @@ class AssetAggregate extends Aggregate
 
     protected function applyAssetPatched(Message $event): void
     {
+        $schema = $this->node::schema();
         foreach ($event->get('paths', []) as $path) {
-            $this->node->set($path, $event->get($path));
+            if ($schema->hasField($path)) {
+                $this->node->set($path, $event->get($path));
+            }
         }
     }
 
