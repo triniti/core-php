@@ -111,6 +111,7 @@ class Condition extends AppleNewsObject
     private $validSubscriptionStatus = [
         'bundle',
         'subscribed',
+        'bundle_trial_eligible',
     ];
 
     /**
