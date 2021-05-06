@@ -5,7 +5,7 @@ namespace Triniti\AppleNews\Exception;
 
 use Gdbots\Schemas\Pbjx\Enum\Code;
 
-final class ArticleNotPublished extends \RuntimeException
+final class ArticleNotPublished extends \RuntimeException implements TrinitiAppleNewsException
 {
     public function __construct(string $message = 'Article not published.')
     {
