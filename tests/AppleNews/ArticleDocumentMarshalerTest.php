@@ -49,7 +49,6 @@ use Triniti\AppleNews\Component\Map;
 use Triniti\AppleNews\Component\MapItem;
 use Triniti\AppleNews\Component\MapSpan;
 use Triniti\AppleNews\Component\Photo;
-use Triniti\AppleNews\Component\Place;
 use Triniti\AppleNews\Component\PullQuote;
 use Triniti\AppleNews\Component\Quote;
 use Triniti\AppleNews\Component\Tweet;
