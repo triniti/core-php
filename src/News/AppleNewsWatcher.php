@@ -28,6 +28,7 @@ class AppleNewsWatcher implements EventSubscriber
             'triniti:news:mixin:article.published'                             => 'onArticlePublished',
             'triniti:news:mixin:article.renamed'                               => 'onArticleRenamed',
             'triniti:news:mixin:article.unpublished'                           => 'onArticleRemoval',
+            'triniti:news:mixin:article.updated'                               => 'onArticleUpdated',
             'triniti:notify:mixin:apple-news-notification.notification-failed' => 'onNotificationFailed',
             'triniti:notify:mixin:apple-news-notification.notification-sent'   => 'onNotificationSent',
         ];
