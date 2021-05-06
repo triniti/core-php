@@ -23,6 +23,9 @@ use Triniti\AppleNews\Component\GalleryItem;
 use Triniti\AppleNews\Component\Heading;
 use Triniti\AppleNews\Component\Image;
 use Triniti\AppleNews\Component\Instagram;
+use Triniti\AppleNews\Component\Map;
+use Triniti\AppleNews\Component\MapItem;
+use Triniti\AppleNews\Component\MapSpan;
 use Triniti\AppleNews\Component\Photo;
 use Triniti\AppleNews\Component\Place;
 use Triniti\AppleNews\Component\PullQuote;
@@ -763,20 +766,100 @@ class ArticleDocumentMarshaler
             return null;
         }
 
+        $zoom = $block->get('zoom', 0);
+
+        switch ($zoom) {
+            case 1:
+            case 2:
+            case 3:
+                $latitudeDelta = .039;
+                $longitudeDelta = 123;
+                break;
+            case 4:
+                $latitudeDelta = .035;
+                $longitudeDelta = 73;
+                break;
+            case 5:
+                $latitudeDelta = .021;
+                $longitudeDelta = 35;
+                break;
+            case 6:
+                $latitudeDelta = .0048;
+                $longitudeDelta = 13;
+                break;
+            case 7:
+                $latitudeDelta = .0034;
+                $longitudeDelta = 7;
+                break;
+            case 8:
+                $latitudeDelta = .0034;
+                $longitudeDelta = 5;
+                break;
+            case 9:
+                $latitudeDelta = .0034;
+                $longitudeDelta = 2.0;
+                break;
+            case 10:
+                $latitudeDelta = .0032;
+                $longitudeDelta = 1.33;
+                break;
+            case 11:
+                $latitudeDelta = .003;
+                $longitudeDelta = .5;
+                break;
+            case 12:
+                $latitudeDelta = .0018;
+                $longitudeDelta = .25;
+                break;
+            case 13:
+                $latitudeDelta = .0014;
+                $longitudeDelta = .08;
+                break;
+            case 14:
+                $latitudeDelta = .001;
+                $longitudeDelta = .02;
+                break;
+            case 15:
+            case 16:
+                $latitudeDelta = .0006;
+                $longitudeDelta = .018;
+                break;
+            default:
+                $latitudeDelta = .0002;
+                $longitudeDelta = .01;
+                break;
+        }
+
         /** @var GeoPoint $geoPoint */
         $geoPoint = $block->get('center');
-        $component = new Place();
-        $component
+
+        $mapItem = new MapItem();
+        $mapItem
+            ->setCaption($block->get('q'))
+            ->setLatitude($geoPoint->getLatitude())
+            ->setLongitude($geoPoint->getLongitude());
+
+        $map = new Map();
+        $map
             ->setIdentifier($block->get('etag') . $context['idx'])
             ->setLatitude($geoPoint->getLatitude())
             ->setLongitude($geoPoint->getLongitude())
             ->setCaption($block->get('q'));
 
         if ('satellite' === $block->get('maptype')) {
-            $component->setMapType('satellite');
+            $map->setMapType('hybrid');
         }
 
-        return $component;
+        $map->setItems([$mapItem]);
+
+        $mapSpan = new MapSpan();
+        $mapSpan
+            ->setLatitudeDelta($latitudeDelta)
+            ->setLongitudeDelta($longitudeDelta);
+
+        $map->setSpan($mapSpan);
+
+        return $map;
     }
 
     /**

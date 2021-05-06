@@ -45,8 +45,10 @@ use Triniti\AppleNews\Component\GalleryItem;
 use Triniti\AppleNews\Component\Heading;
 use Triniti\AppleNews\Component\Image;
 use Triniti\AppleNews\Component\Instagram;
+use Triniti\AppleNews\Component\Map;
+use Triniti\AppleNews\Component\MapItem;
+use Triniti\AppleNews\Component\MapSpan;
 use Triniti\AppleNews\Component\Photo;
-use Triniti\AppleNews\Component\Place;
 use Triniti\AppleNews\Component\PullQuote;
 use Triniti\AppleNews\Component\Quote;
 use Triniti\AppleNews\Component\Tweet;
@@ -522,14 +524,28 @@ class ArticleDocumentMarshalerTest extends AbstractPbjxTest
         $googleMapBlock
             ->set('etag', '123')
             ->set('q', "disneyland")
-            ->set('center', GeoPoint::fromString('33.812092, -117.918976'));
+            ->set('center', GeoPoint::fromString('33.812092, -117.918976'))
+            ->set('zoom', 10);
 
-        $expected = new Place();
+        $mapItem = new MapItem();
+        $mapItem
+            ->setCaption('disneyland')
+            ->setLatitude(33.812092)
+            ->setLongitude(-117.918976);
+
+        $mapSpan = new MapSpan();
+        $mapSpan
+            ->setLatitudeDelta(0.0032)
+            ->setLongitudeDelta(1.33);
+
+        $expected = new Map();
         $expected
             ->setLongitude(-117.918976)
             ->setLatitude(33.812092)
             ->setCaption('disneyland')
-            ->setIdentifier('1230');
+            ->setIdentifier('1230')
+            ->setSpan($mapSpan)
+            ->setItems([$mapItem]);
 
         $context = ['is_first' => false, 'idx' => 0];
 

@@ -11,6 +11,9 @@ use Triniti\AppleNews\AppleNewsObject;
  */
 class ComponentStyle extends AppleNewsObject
 {
+    /** @var ConditionalComponentStyle[] */
+    protected $conditional;
+
     /** @var string */
     protected $backgroundColor;
 
@@ -25,6 +28,66 @@ class ComponentStyle extends AppleNewsObject
 
     /** @var TableStyle */
     protected $tableStyle;
+
+    /**
+     * @return ConditionalComponentStyle[]
+     */
+    public function getConditional(): array
+    {
+        return $this->conditional;
+    }
+
+    /**
+     * @param ConditionalComponentStyle[] $conditionals
+     *
+     * @return static
+     * @throws \Throwable
+     */
+    public function setConditional(?array $conditionals = []): self
+    {
+        $this->conditional = [];
+
+        if (!empty($conditionals)) {
+            foreach ($conditionals as $conditional) {
+                $this->addConditional($conditional);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param ConditionalComponentStyle|null $conditional
+     *
+     * @return static
+     * @throws \Throwable
+     */
+    public function addConditional(?ConditionalComponentStyle $conditional = null): self
+    {
+        if (null !== $conditional) {
+            $conditional->validate();
+            $this->conditional[] = $conditional;
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param ConditionalComponentStyle[] $conditionals
+     *
+     * @return static
+     * @throws \Throwable
+     */
+    public function addConditionals(?array $conditionals = []): self
+    {
+        if (!empty($conditionals)) {
+            foreach ($conditionals as $conditional) {
+                $this->addConditional($conditional);
+            }
+        }
+
+        return $this;
+    }
 
     /**
      * @return Border

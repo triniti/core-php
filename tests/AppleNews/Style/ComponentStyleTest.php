@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace Triniti\Tests\AppleNews\Style;
 
+use Triniti\AppleNews\Condition;
 use Assert\AssertionFailedException;
 use PHPUnit\Framework\TestCase;
 use Triniti\AppleNews\Style\Border;
 use Triniti\AppleNews\Style\ComponentStyle;
+use Triniti\AppleNews\Style\ConditionalComponentStyle;
 use Triniti\AppleNews\Style\ImageFill;
 use Triniti\AppleNews\Style\StrokeStyle;
 use Triniti\AppleNews\Style\TableStyle;
@@ -29,6 +31,44 @@ class ComponentStyleTest extends TestCase
         $this->assertNull($this->componentStyle->getTableStyle());
         $this->assertEquals(1.0, $this->componentStyle->getOpacity());
         $this->assertNull($this->componentStyle->getBackgroundColor());
+    }
+
+    /**
+     * @test testGetSetAddConditional
+     */
+    public function testGetSetAddConditional()
+    {
+        $conditional1 = new ConditionalComponentStyle();
+        $condition1 = new Condition();
+        $condition1->setMaxColumns(1);
+        $conditional1->addCondition($condition1);
+
+
+        $conditional2 = new ConditionalComponentStyle();
+        $condition2 = new Condition();
+        $condition2->setPlatform('any');
+        $conditional2->addCondition($condition2);
+
+        $conditional = [$conditional1];
+
+        $this->componentStyle->setConditional($conditional);
+        $this->assertEquals($conditional, $this->componentStyle->getConditional());
+
+        $conditional[] = $conditional2;
+        $this->componentStyle->addConditionals($conditional);
+        $this->assertEquals([$conditional1, $conditional1, $conditional2], $this->componentStyle->getConditional());
+
+        $this->componentStyle->addConditionals();
+        $this->assertEquals([$conditional1, $conditional1, $conditional2], $this->componentStyle->getConditional());
+
+        $this->componentStyle->addConditionals(null);
+        $this->assertEquals([$conditional1, $conditional1, $conditional2], $this->componentStyle->getConditional());
+
+        $this->componentStyle->setConditional();
+        $this->assertEquals([], $this->componentStyle->getConditional());
+
+        $this->componentStyle->setConditional(null);
+        $this->assertEquals([], $this->componentStyle->getConditional());
     }
 
     public function testSetBackgroundColor(): void
