@@ -6,6 +6,7 @@ This changelog references the relevant changes done in 1.x versions.
 * Add `Triniti\AppleNews\Style\ConditionalComponentStyle` to enable conditional properties for component style.
 * Update `ArticleDocumentMarshaler::transformGoogleMapBlock` to use Map instead of Place and work with zoom level.
 
+
 ## v1.0.2
 * Remove use of `HasEndUserMessage`.
 
