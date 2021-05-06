@@ -3,10 +3,9 @@ declare(strict_types=1);
 
 namespace Triniti\AppleNews\Exception;
 
-use Gdbots\Pbj\Exception\HasEndUserMessage;
 use Gdbots\Schemas\Pbjx\Enum\Code;
 
-final class ArticleNotPublished extends \RuntimeException implements TrinitiAppleNewsException, HasEndUserMessage
+final class ArticleNotPublished extends \RuntimeException
 {
     /**
      * @param string $message
@@ -14,21 +13,5 @@ final class ArticleNotPublished extends \RuntimeException implements TrinitiAppl
     public function __construct(string $message = 'Article not published.')
     {
         parent::__construct($message, Code::FAILED_PRECONDITION);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getEndUserMessage()
-    {
-        return $this->getMessage();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getEndUserHelpLink()
-    {
-        return null;
     }
 }
