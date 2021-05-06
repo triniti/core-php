@@ -7,9 +7,6 @@ use Gdbots\Schemas\Pbjx\Enum\Code;
 
 final class ArticleNotPublished extends \RuntimeException
 {
-    /**
-     * @param string $message
-     */
     public function __construct(string $message = 'Article not published.')
     {
         parent::__construct($message, Code::FAILED_PRECONDITION);
