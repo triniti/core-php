@@ -101,6 +101,15 @@ class ArticleAggregate extends Aggregate
         }
     }
 
+    protected function applyNodePublished(Message $event): void
+    {
+        parent::applyNodePublished($event);
+
+        if ($this->node::schema()->hasMixin('triniti:curator:mixin:teaserable')) {
+            $this->node->set('order_date', $event->get('published_at'));
+        }
+    }
+
     protected function enrichNodeUpdated(Message $event): void
     {
         /** @var Message $oldNode */

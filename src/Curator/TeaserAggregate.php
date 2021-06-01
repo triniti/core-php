@@ -34,6 +34,12 @@ class TeaserAggregate extends Aggregate
         $this->recordEvent($event);
     }
 
+    protected function applyNodePublished(Message $event): void
+    {
+        parent::applyNodePublished($event);
+        $this->node->set('order_date', $event->get('published_at'));
+    }
+
     protected function applyTeaserSlottingRemoved(Message $event): void
     {
         foreach ($event->get('slotting_keys', []) as $key) {

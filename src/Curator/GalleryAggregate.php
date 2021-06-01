@@ -33,6 +33,15 @@ class GalleryAggregate extends Aggregate
         $this->node->set('image_count', $event->get('image_count'));
     }
 
+    protected function applyNodePublished(Message $event): void
+    {
+        parent::applyNodePublished($event);
+
+        if ($this->node::schema()->hasMixin('triniti:curator:mixin:teaserable')) {
+            $this->node->set('order_date', $event->get('published_at'));
+        }
+    }
+
     /**
      * This is for legacy uses of command/event mixins for common
      * ncr operations. It will be removed in 3.x.

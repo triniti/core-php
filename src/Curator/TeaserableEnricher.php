@@ -31,23 +31,15 @@ final class TeaserableEnricher implements EventSubscriber, PbjxEnricher
             return;
         }
 
-        if ($pbjxEvent->hasParentEvent()) {
-            $parentEvent = $pbjxEvent->getParentEvent()->getMessage();
-            $schema = $parentEvent::schema();
-            if (!$schema->hasMixin('gdbots:pbjx:mixin:event')) {
-                return;
-            }
-
-            if ($schema->hasMixin('gdbots:ncr:mixin:node-published')
-                || $schema->usesCurie('gdbots:ncr:event:node-published')
-            ) {
-                $node->set('order_date', $parentEvent->get('published_at'));
-                return;
-            }
-        }
-
         if ($node->has('order_date')) {
             return;
+        }
+
+        if ($pbjxEvent->hasParentEvent()) {
+            $parentEvent = $pbjxEvent->getParentEvent()->getMessage();
+            if (!$parentEvent::schema()->hasMixin('gdbots:pbjx:mixin:event')) {
+                return;
+            }
         }
 
         $node->set('order_date', $node->get('created_at')->toDateTime());
