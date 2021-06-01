@@ -114,6 +114,15 @@ class VideoAggregate extends Aggregate
             ->set('jwplayer_synced_at', $event->get('occurred_at')->getSeconds());
     }
 
+    protected function applyNodePublished(Message $event): void
+    {
+        parent::applyNodePublished($event);
+
+        if ($this->node::schema()->hasMixin('triniti:curator:mixin:teaserable')) {
+            $this->node->set('order_date', $event->get('published_at'));
+        }
+    }
+
     protected function applyTranscodingCompleted(Message $event): void
     {
         if (!$event->isInMap('tags', 'video_asset_ref')) {

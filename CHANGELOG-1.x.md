@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 1.x versions.
 
 
+## v1.0.4
+* Ensure `order_date` is updated to `published_at` value when a teaser or teaserable node is published.
+
+
 ## v1.0.3
 * Add `Triniti\AppleNews\Style\ConditionalComponentStyle` to enable conditional properties for component style.
 * Update `ArticleDocumentMarshaler::transformGoogleMapBlock` to use Map instead of Place and work with zoom level.
