@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 1.x versions.
 
 
+## v1.0.5
+* Subscribe `NcrArticleProjector` to `apple-news-article-synced` mixin and event.
+
+
 ## v1.0.4
 * Ensure `order_date` is updated to `published_at` value when a teaser or teaserable node is published.
 
