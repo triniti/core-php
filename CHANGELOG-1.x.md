@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 1.x versions.
 
 
+## v1.0.6
+* Add subtitled manifest to artifact url provider.
+
+
 ## v1.0.5
 * Subscribe `NcrArticleProjector` to `apple-news-article-synced` mixin and event.
 
