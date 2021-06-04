@@ -37,6 +37,13 @@ final class ArtifactUrlProviderTest extends TestCase
         $this->assertSame($actual, $expected);
     }
 
+    public function testGetSubtitledManifest(): void
+    {
+        $actual = $this->artifactUrlProvider->getSubtitledManifest($this->assetId);
+        $expected = $this->basePath . '-subtitled.m3u8';
+        $this->assertSame($actual, $expected);
+    }
+
     public function testGetTooltipThumbnailSprite(): void
     {
         $actual = $this->artifactUrlProvider->getTooltipThumbnailSprite($this->assetId);
