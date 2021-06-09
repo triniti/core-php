@@ -53,6 +53,11 @@ class ArtifactUrlProvider
         return $this->getPartial($id) . '-original.' . $id->getExt();
     }
 
+    public function getSubtitledManifest(AssetId $id): string
+    {
+        return $this->getPartial($id) . '-subtitled.m3u8';
+    }
+
     public function getTooltipThumbnailSprite(AssetId $id): string
     {
         return $this->getPartial($id) . '-tooltip-thumbnail-sprite.jpg';
