@@ -5,9 +5,9 @@ namespace Triniti\Notify\Notifier;
 
 use Defuse\Crypto\Crypto;
 use Defuse\Crypto\Key;
-use Gdbots\Common\Util\ClassUtils;
-use Gdbots\Pbjx\Util\StatusCodeConverter;
-use Gdbots\Schemas\Iam\Mixin\App\App;
+use Gdbots\Pbj\Message;
+use Gdbots\Pbj\Util\ClassUtil;
+use Gdbots\Pbjx\Util\StatusCodeUtil;
 use Gdbots\Schemas\Pbjx\Enum\Code;
 use Gdbots\Schemas\Pbjx\Enum\HttpCode;
 use GuzzleHttp\Client as GuzzleClient;
@@ -16,9 +16,6 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\RequestOptions;
 use GuzzleHttp\Subscriber\Oauth\Oauth1;
 use Triniti\Notify\Notifier;
-use Triniti\Schemas\Notify\Mixin\HasNotifications\HasNotifications;
-use Triniti\Schemas\Notify\Mixin\Notification\Notification;
-use Triniti\Schemas\Notify\NotifierResult;
 use Triniti\Schemas\Notify\NotifierResultV1;
 use Triniti\Sys\Flags;
 
@@ -60,7 +57,7 @@ class TwitterNotifier implements Notifier
     /**
      * {@inheritdoc}
      */
-    public function send(Notification $notification, App $app, ?HasNotifications $content = null): NotifierResult
+    public function send(Message $notification, Message $app, ?Message $content = null): Message
     {
         if (null === $content) {
             return NotifierResultV1::create()
@@ -92,7 +89,7 @@ class TwitterNotifier implements Notifier
             return NotifierResultV1::create()
                 ->set('ok', false)
                 ->set('code', $code)
-                ->set('error_name', ClassUtils::getShortName($e))
+                ->set('error_name', ClassUtil::getShortName($e))
                 ->set('error_message', substr($e->getMessage(), 0, 2048));
         }
 
@@ -127,7 +124,7 @@ class TwitterNotifier implements Notifier
 
             return [
                 'ok' => HttpCode::HTTP_OK === $httpCode,
-                'code' => StatusCodeConverter::httpToVendor($httpCode),
+                'code' => StatusCodeUtil::httpToVendor($httpCode),
                 'http_code' => $httpCode,
                 'raw_response' => $content,
                 'response' => $json,
@@ -153,7 +150,7 @@ class TwitterNotifier implements Notifier
 
             $array = [
                 'ok' => HttpCode::HTTP_OK === $httpCode,
-                'code' => StatusCodeConverter::httpToVendor($httpCode),
+                'code' => StatusCodeUtil::httpToVendor($httpCode),
                 'http_code' => $httpCode,
                 'raw_response' => $content,
                 'response' => $json,
@@ -182,10 +179,10 @@ class TwitterNotifier implements Notifier
 
         return [
             'ok'            => false,
-            'code'          => StatusCodeConverter::httpToVendor($httpCode),
+            'code'          => StatusCodeUtil::httpToVendor($httpCode),
             'http_code'     => $httpCode,
             'raw_response'  => $response,
-            'error_name'    => ClassUtils::getShortName($exception),
+            'error_name'    => ClassUtil::getShortName($exception),
             'error_message' => substr($exception->getMessage(), 0, 2048),
         ];
     }
