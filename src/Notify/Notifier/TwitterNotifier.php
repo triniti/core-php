@@ -23,31 +23,14 @@ class TwitterNotifier implements Notifier
 {
     const ENDPOINT = 'https://api.twitter.com/1.1/';
 
-    /** @var Flags */
-    protected $flags;
+    protected Flags $flags;
+    protected Key $key;
+    protected ?GuzzleClient $guzzleClient = null;
+    protected string $oauthConsumerKey;
+    protected string $oauthConsumerSecret;
+    protected string $oauthToken;
+    protected string $oauthTokenSecret;
 
-    /** @var Key */
-    protected $key;
-
-    /* @var GuzzleClient */
-    protected $guzzleClient;
-
-    /* @var string */
-    protected $oauthConsumerKey;
-
-    /* @var string */
-    protected $oauthConsumerSecret;
-
-    /* @var string */
-    protected $oauthToken;
-
-    /* @var string */
-    protected $oauthTokenSecret;
-
-    /**
-     * @param Flags $flags
-     * @param Key   $key
-     */
     public function __construct(Flags $flags, Key $key)
     {
         $this->flags = $flags;
@@ -76,7 +59,6 @@ class TwitterNotifier implements Notifier
         }
 
         try {
-            $this->guzzleClient = null;
             $this->oauthConsumerKey = $app->get('oauth_consumer_key');
             $this->oauthConsumerSecret = Crypto::decrypt($app->get('oauth_consumer_secret'), $this->key);
             $this->oauthToken = $app->get('oauth_token');
@@ -102,13 +84,6 @@ class TwitterNotifier implements Notifier
         return $result;
     }
 
-    /**
-     * Posts a tweet to Twitter account
-     *
-     * @param string $status
-     *
-     * @return array
-     */
     protected function postTweet(string $status): array {
         $options = [
             RequestOptions::FORM_PARAMS => [
@@ -162,11 +137,6 @@ class TwitterNotifier implements Notifier
         return $array;
     }
 
-    /**
-     * @param \Throwable $exception
-     *
-     * @return array
-     */
     protected function convertException(\Throwable $exception): array
     {
         if ($exception instanceof RequestException) {
@@ -187,9 +157,6 @@ class TwitterNotifier implements Notifier
         ];
     }
 
-    /**
-     * @return GuzzleClient
-     */
     protected function getGuzzleClient(): GuzzleClient
     {
         if (null === $this->guzzleClient) {

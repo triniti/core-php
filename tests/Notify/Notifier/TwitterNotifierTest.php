@@ -76,7 +76,7 @@ class TwitterNotifierTest extends AbstractPbjxTest
 
     public function testBeamMeUpScotty()
     {
-        $result = $this->notifier->beamMeUpScotty('sorry bro i have piano lesson now i have to go');
+        $result = $this->notifier->beamMeUpScotty('turn left when you see garage 44');
         $id = $result['response']['id_str'] ?? null;
         $result = NotifierResultV1::fromArray($result);
         if ($id) {

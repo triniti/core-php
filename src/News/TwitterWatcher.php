@@ -1,4 +1,3 @@
-
 <?php
 declare(strict_types=1);
 
@@ -44,7 +43,7 @@ final class TwitterWatcher implements EventSubscriber
           } catch (\Throwable $e) {
               throw $e;
           }
-        }  
+        }
 
         if (!$article instanceof Message) {
             return;
