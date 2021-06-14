@@ -1,52 +1,66 @@
-
 <?php
 declare(strict_types=1);
 
-namespace Tmz\News;
+namespace Triniti\News;
 
 use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Pbj\Message;
+use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbjx\EventSubscriber;
-use Gdbots\UriTemplate\UriTemplateService;
+use Gdbots\Pbjx\Pbjx;
+use Gdbots\Schemas\Iam\Request\SearchAppsRequestV1;
+use Gdbots\Schemas\Ncr\Command\CreateNodeV1;
+use Gdbots\Schemas\Ncr\Enum\NodeStatus;
+use Gdbots\Schemas\Pbjx\Enum\Code;
 
 final class TwitterWatcher implements EventSubscriber
 {
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:news:mixin:article.published' => 'onArticlePublished',
         ];
     }
 
-    /**
-     * @param Message $event
-     * @param Pbjx    $pbjx
-     */
-    public function onArticlePublished(Message $event, Pbjx $pbjx): void
+    public function onArticlePublished(NodeProjectedEvent $pbjxEvent): void
     {
-        $this->notifyTwitter($event, $event->get('node_ref'), $pbjx, 'create');
+        $event = $pbjxEvent->getLastEvent();
+        $node = $pbjxEvent->getNode();
+        $pbjx = $pbjxEvent::getPbjx();
+        $this->notifyTwitter($event, $node, $pbjx);
     }
 
-    public function notifyTwitter(Message $event, $article, Pbjx $pbjx): void
+    protected function createTwitterNotification(Message $event, Message $article, Pbjx $pbjx): Message
     {
-        $lastEvent = $event->getLastEvent();
-        if ($lastEvent->isReplay()) {
-            return;
+        /** @var \DateTime $date */
+        $date = $event->get('occurred_at')->toDateTime();
+
+        return MessageResolver::resolveCurie('*:notify:node:twitter-notification:v1')::create()
+            ->set('title', $article->get('title'))
+            ->set('send_at', $date)
+            ->set('content_ref',  $event->get('node_ref'));
+    }
+
+    protected function getApp(Message $article, Message $event, Pbjx $pbjx): ?Message
+    {
+        $request = SearchAppsRequestV1::create();
+        $response = $pbjx->copyContext($event, $request)->request($request);
+
+        /** @var Message $node */
+        foreach ($response->get('nodes', []) as $node) {
+            if ($node::schema()->hasMixin('gdbots:iam:mixin:twitter-app')
+                && NodeStatus::PUBLISHED === $node->fget('status')
+            ) {
+                return $node;
+            }
         }
 
-        $article = $event->getNode();
+        return null;
+    }
 
-        if ($article instanceof NodeRef) {
-          try {
-              $article = $this->ncr->getNode($article, false, $this->createNcrContext($event));
-          } catch (NodeNotFound $nf) {
-              return;
-          } catch (\Throwable $e) {
-              throw $e;
-          }
-        }  
-
-        if (!$article instanceof Message) {
+    public function notifyTwitter(Message $event, Message $article, Pbjx $pbjx): void
+    {
+        if ($event->isReplay()) {
             return;
         }
 
@@ -54,49 +68,27 @@ final class TwitterWatcher implements EventSubscriber
           return;
         }
 
+        $app = $this->getApp($article, $event, $pbjx);
+        if (null === $app) {
+            return;
+        }
+
         $notification = $this->createTwitterNotification($event, $article, $pbjx)
-        ->set('app_ref', NodeRef::fromNode($app));
+            ->set('app_ref', $app->generateNodeRef());
 
-        $curie = $notification::schema()->getCurie();
-        $curie = "{$curie->getVendor()}:{$curie->getPackage()}:command:create-notification";
-
-        /** @var Message $class */
-        $class = MessageResolver::resolveCurie(SchemaCurie::fromString($curie));
-        $command = $class::create()->set('node', $notification);
-
+        $command = CreateNodeV1::create()->set('node', $notification);
         $pbjx->copyContext($event, $command);
-        $command
-            ->set('ctx_correlator_ref', $event->generateMessageRef())
-            ->clear('ctx_app');
+        $nodeRef = $article->generateNodeRef();
 
-        $nodeRef = NodeRef::fromNode($article);
-        $pbjx->sendAt($command, strtotime('+180 seconds'), "{$nodeRef}.post-tweet");
-  }
-
-    /**
-     * @param Message $event
-     * @param Message $article
-     * @param Pbjx    $pbjx
-     *
-     * @return Message
-     */
-    protected function createTwitterNotification(Message $event, Message $article, Pbjx $pbjx): Message
-    {
-        /** @var \DateTime $date */
-        $date = $event->get('occurred_at')->toDateTime();
-
-        return TwitterNotificationV1Mixin::findOne()->createMessage()
-            ->set('title', $article->get('title'))
-            ->set('send_at', $date)
-            ->set('content_ref', NodeRef::fromNode($article));
+        try {
+            $pbjx->sendAt($command, strtotime('+180 seconds'), "{$nodeRef}.post-tweet");
+        } catch (\Throwable $e) {
+            if ($e->getCode() !== Code::ALREADY_EXISTS) {
+                throw $e;
+            }
+        }
     }
 
-    /**
-     * @param Message $event
-     * @param Message $article
-     *
-     * @return bool
-     */
     protected function shouldNotifyTwitter(Message $event, Message $article): bool
     {
         // override to implement your own check to block twitter posts
