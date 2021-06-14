@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Triniti\Tests\Curator;
 
 use Acme\Schemas\News\Event\ArticleMarkedAsDraftV1;
-use Acme\Schemas\News\Event\ArticlePublishedV1;
 use Acme\Schemas\News\Node\ArticleV1;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\Event\PbjxEvent;
