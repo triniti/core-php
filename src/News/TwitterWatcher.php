@@ -6,12 +6,14 @@ namespace Triniti\News;
 use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
+use Gdbots\Pbj\WellKnown\UuidIdentifier;
 use Gdbots\Pbjx\EventSubscriber;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Iam\Request\SearchAppsRequestV1;
 use Gdbots\Schemas\Ncr\Command\CreateNodeV1;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Gdbots\Schemas\Pbjx\Enum\Code;
+use Ramsey\Uuid\Uuid;
 
 final class TwitterWatcher implements EventSubscriber
 {
@@ -32,13 +34,17 @@ final class TwitterWatcher implements EventSubscriber
 
     protected function createTwitterNotification(Message $event, Message $article, Pbjx $pbjx): Message
     {
-        /** @var \DateTime $date */
         $date = $event->get('occurred_at')->toDateTime();
+        $id = UuidIdentifier::fromString(
+            Uuid::uuid5('twitter-auto-publish',
+            $article->generateNodeRef()->toString())->toString()
+        );
 
         return MessageResolver::resolveCurie('*:notify:node:twitter-notification:v1')::create()
             ->set('title', $article->get('title'))
             ->set('send_at', $date)
-            ->set('content_ref',  $event->get('node_ref'));
+            ->set('content_ref',  $event->get('node_ref')
+            ->set('_id', $id));
     }
 
     protected function getApp(Message $article, Message $event, Pbjx $pbjx): ?Message
