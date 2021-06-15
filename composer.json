@@ -15,6 +15,7 @@
     "gdbots/crypto-bundle": "^2.0",
     "gdbots/enrichments": "^2.0",
     "gdbots/iam-bundle": "^2.1",
+    "guzzlehttp/oauth-subscriber": "^0.5",
     "ruflin/elastica": "^7.1",
     "sensio/framework-extra-bundle": "^5.2",
     "symfony/asset": "^5.2",

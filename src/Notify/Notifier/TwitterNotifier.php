@@ -109,34 +109,6 @@ class TwitterNotifier implements Notifier
         }
     }
 
-    /** Test Method for api call */
-    public function beamMeUpScotty(string $status) {
-        $options = [
-            RequestOptions::FORM_PARAMS => [
-                'status' => $status,
-            ],
-        ];
-
-        try {
-            $response = $this->getGuzzleClient()->post('statuses/update.json', $options);
-            $content = (string)$response->getBody()->getContents();
-            $httpCode = $response->getStatusCode();
-            $json = json_decode($content, true);
-
-            $array = [
-                'ok' => HttpCode::HTTP_OK === $httpCode,
-                'code' => StatusCodeUtil::httpToVendor($httpCode),
-                'http_code' => $httpCode,
-                'raw_response' => $content,
-                'response' => $json,
-            ];
-        } catch (\Throwable $e) {
-            $array = $this->convertException($e);
-        }
-
-        return $array;
-    }
-
     protected function convertException(\Throwable $exception): array
     {
         if ($exception instanceof RequestException) {
