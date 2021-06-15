@@ -15,8 +15,6 @@
     "gdbots/crypto-bundle": "^2.0",
     "gdbots/enrichments": "^2.0",
     "gdbots/iam-bundle": "^2.1",
-    "gdbots/schemas": "dev-twitter-app as 2.1.0",
-    "guzzlehttp/oauth-subscriber": "^0.5",
     "ruflin/elastica": "^7.1",
     "sensio/framework-extra-bundle": "^5.2",
     "symfony/asset": "^5.2",
@@ -25,11 +23,11 @@
     "symfony/twig-bundle": "^5.2",
     "symfony/web-link": "^5.2",
     "symfony/yaml": "^5.2",
-    "triniti/schemas": "dev-twitter as 2.0.2"
+    "triniti/schemas": "^2.0"
   },
   "require-dev": {
     "phpunit/phpunit": "^9.5",
-    "triniti/acme-schemas": "dev-twitter as 2.0.1"
+    "triniti/acme-schemas": "^2.0"
   },
   "autoload": {
     "psr-4": {

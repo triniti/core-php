@@ -71,6 +71,10 @@ final class TwitterWatcher implements EventSubscriber
             return;
         }
 
+        if (!$article->get('twitter_publish_enabled')) {
+            return;
+        }
+
         if (!$this->shouldNotifyTwitter($event, $article)) {
           return;
         }
