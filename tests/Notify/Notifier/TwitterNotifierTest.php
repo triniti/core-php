@@ -28,7 +28,6 @@ use Twig\Loader\FilesystemLoader;
 class TwitterNotifierTest extends AbstractPbjxTest
 {
     protected Key $key;
-    protected Environment $twig;
     private TwitterNotifier $notifier;
     protected InMemoryNcr $ncr;
 
@@ -39,39 +38,38 @@ class TwitterNotifierTest extends AbstractPbjxTest
         $flagset = FlagsetV1::fromArray(['_id' => 'test']);
         $this->ncr->putNode($flagset);
         $flags = new Flags($this->ncr, 'acme:flagset:test');
-        $this->notifier = new TwitterNotifier($flags, $this->key);
 
-//        $this->notifier = new class($flags, $this->key) extends TwitterNotifier
-//        {
-//            /**
-//             * @param Flags $flags
-//             */
-//            public function setFlags(Flags $flags): void
-//            {
-//                $this->flags = $flags;
-//            }
-//
-//            protected function getGuzzleClient(): GuzzleClient
-//            {
-//                $mock = new MockHandler(
-//                    [
-//                        new Response(
-//                            201,
-//                            ['Content-Type' => 'application/json'],
-//                            json_encode(['id' => 123])
-//                        ),
-//                    ]
-//                );
-//                $handler = HandlerStack::create($mock);
-//
-//                return new GuzzleClient(
-//                    [
-//                        'base_uri' => 'https://api.com',
-//                        'handler'  => $handler,
-//                    ]
-//                );
-//            }
-//        };
+        $this->notifier = new class($flags, $this->key) extends TwitterNotifier
+        {
+            /**
+             * @param Flags $flags
+             */
+            public function setFlags(Flags $flags): void
+            {
+                $this->flags = $flags;
+            }
+
+            protected function getGuzzleClient(): GuzzleClient
+            {
+                $mock = new MockHandler(
+                    [
+                        new Response(
+                            200,
+                            ['Content-Type' => 'application/json'],
+                            json_encode(['id_str' => '123'])
+                        ),
+                    ]
+                );
+                $handler = HandlerStack::create($mock);
+
+                return new GuzzleClient(
+                    [
+                        'base_uri' => 'https://api.com',
+                        'handler'  => $handler,
+                    ]
+                );
+            }
+        };
     }
 
     public function testBeamMeUpScotty()

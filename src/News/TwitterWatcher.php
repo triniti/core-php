@@ -36,15 +36,16 @@ final class TwitterWatcher implements EventSubscriber
     {
         $date = $event->get('occurred_at')->toDateTime();
         $id = UuidIdentifier::fromString(
-            Uuid::uuid5('twitter-auto-publish',
-            $article->generateNodeRef()->toString())->toString()
-        );
+            Uuid::uuid5(
+                'twitter-auto-post',
+                $article->generateNodeRef()->toString()
+            )->toString());
 
-        return MessageResolver::resolveCurie('*:notify:node:twitter-notification:v1')::create()
-            ->set('title', $article->get('title'))
+        MessageResolver::resolveCurie('*:notify:node:twitter-notification:v1')::create()
+            ->set('content_ref',  $article->generateNodeRef())
+            ->set('_id', $id)
             ->set('send_at', $date)
-            ->set('content_ref',  $event->get('node_ref')
-            ->set('_id', $id));
+            ->set('title', $article->get('title'));
     }
 
     protected function getApp(Message $article, Message $event, Pbjx $pbjx): ?Message
