@@ -15,7 +15,7 @@ use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Gdbots\Schemas\Pbjx\Enum\Code;
 use Ramsey\Uuid\Uuid;
 
-final class TwitterWatcher implements EventSubscriber
+class TwitterWatcher implements EventSubscriber
 {
     public static function getSubscribedEvents(): array
     {
@@ -34,14 +34,15 @@ final class TwitterWatcher implements EventSubscriber
 
     protected function createTwitterNotification(Message $event, Message $article, Pbjx $pbjx): Message
     {
+
         $date = $event->get('occurred_at')->toDateTime();
         $id = UuidIdentifier::fromString(
             Uuid::uuid5(
-                'twitter-auto-post',
+                Uuid::uuid5(Uuid::NIL, 'twitter-auto-post'),
                 $article->generateNodeRef()->toString()
             )->toString());
 
-        MessageResolver::resolveCurie('*:notify:node:twitter-notification:v1')::create()
+        return MessageResolver::resolveCurie('*:notify:node:twitter-notification:v1')::create()
             ->set('content_ref',  $article->generateNodeRef())
             ->set('_id', $id)
             ->set('send_at', $date)
