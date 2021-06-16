@@ -45,12 +45,22 @@ class TwitterNotifierTest extends AbstractPbjxTest
 
         $this->notifier = new class($flags, $this->key) extends TwitterNotifier
         {
-            /**
-             * @param Flags $flags
-             */
+            protected string $status;
+
             public function setFlags(Flags $flags): void
             {
                 $this->flags = $flags;
+            }
+
+            public function getStatus(): string
+            {
+                return $this->status;
+            }
+
+            protected function postTweet(string $status): array
+            {
+                $this->status = $status;
+                return parent::postTweet($status);
             }
 
             protected function getGuzzleClient(): GuzzleClient
@@ -104,6 +114,19 @@ class TwitterNotifierTest extends AbstractPbjxTest
     {
        $result = $this->notifier->send($this->notification, $this->app, $this->content);
        $this->assertSame('123', $result->getFromMap('tags', 'id'));
+    }
+
+    public function testSendStatusOverride()
+    {
+        $this->notification->clear('body');
+        $this->notifier->send($this->notification, $this->app, $this->content);
+        $status = $this->notifier->getStatus();
+        $this->assertSame('Lorem Ipsum', $status);
+
+        $this->content->set('meta_description', 'meta description');
+        $this->notifier->send($this->notification, $this->app, $this->content);
+        $status = $this->notifier->getStatus();
+        $this->assertSame('meta description', $status);
     }
 
     public function testSendWithExceptionResponse()
