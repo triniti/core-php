@@ -75,13 +75,12 @@ class TwitterNotifier implements Notifier
                 ->set('error_message', substr($e->getMessage(), 0, 2048));
         }
 
-        $id = $result['response']['id_str'] ?? null;
-        $result = NotifierResultV1::fromArray($result);
-        if ($id) {
-            $result->addToMap('tags', 'id', $id);
+        $notifierResult = NotifierResultV1::fromArray($result);
+        if (isset($result['response'])) {
+            $notifierResult->addToMap('tags', 'id', $result['response']['id_str'] ?? null);
         }
 
-        return $result;
+        return $notifierResult;
     }
 
     protected function postTweet(string $status): array {
