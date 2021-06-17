@@ -40,7 +40,8 @@ class TwitterWatcher implements EventSubscriber
             Uuid::uuid5(
                 Uuid::uuid5(Uuid::NIL, 'twitter-auto-post'),
                 $article->generateNodeRef()->toString()
-            )->toString());
+            )->toString()
+        );
 
         return MessageResolver::resolveCurie('*:notify:node:twitter-notification:v1')::create()
             ->set('content_ref',  $article->generateNodeRef())
