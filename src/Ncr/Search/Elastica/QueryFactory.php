@@ -13,6 +13,8 @@ use Gdbots\Pbj\Util\DateUtil;
 use Gdbots\Pbj\Util\StringUtil;
 use Gdbots\QueryParser\Builder\ElasticaQueryBuilder;
 use Gdbots\QueryParser\ParsedQuery;
+use Gdbots\Schemas\Iam\Enum\SearchAppsSort;
+use Gdbots\Schemas\Iam\Enum\SearchRolesSort;
 use Gdbots\Schemas\Iam\Enum\SearchUsersSort;
 use Triniti\Schemas\Apollo\Enum\SearchPollsSort;
 use Triniti\Schemas\Boost\Enum\SearchSponsorsSort;
@@ -27,11 +29,37 @@ use Triniti\Schemas\News\Enum\SearchArticlesSort;
 use Triniti\Schemas\Notify\Enum\SearchNotificationsSort;
 use Triniti\Schemas\Ovp\Enum\SearchVideosSort;
 use Triniti\Schemas\People\Enum\SearchPeopleSort;
+use Triniti\Schemas\Sys\Enum\SearchFlagsetsSort;
+use Triniti\Schemas\Sys\Enum\SearchPicklistsSort;
 use Triniti\Schemas\Sys\Enum\SearchRedirectsSort;
 use Triniti\Schemas\Taxonomy\Enum\SearchCategoriesSort;
+use Triniti\Schemas\Taxonomy\Enum\SearchChannelsSort;
 
 class QueryFactory extends BaseQueryFactory
 {
+    protected function forSearchAppsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
+    {
+        $builder = (new ElasticaQueryBuilder())
+            ->setDefaultFieldName('title')
+            ->addParsedQuery($parsedQuery);
+
+        $query = $builder->getBoolQuery();
+
+        $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
+
+        return match ($request->fget('sort', SearchAppsSort::TITLE_ASC)) {
+            SearchAppsSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchAppsSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchAppsSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchAppsSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchAppsSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchAppsSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            default => Query::create($query),
+        };
+    }
+
     protected function forSearchArticlesRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
     {
         $builder = (new ElasticaQueryBuilder())
@@ -58,47 +86,21 @@ class QueryFactory extends BaseQueryFactory
             }
         }
 
-        switch ($request->get('sort', SearchArticlesSort::RELEVANCE())->getValue()) {
-            case SearchArticlesSort::CREATED_AT_ASC:
-                return Query::create($query)->setSort(['created_at' => 'asc']);
-
-            case SearchArticlesSort::CREATED_AT_DESC:
-                return Query::create($query)->setSort(['created_at' => 'desc']);
-
-            case SearchArticlesSort::UPDATED_AT_ASC:
-                return Query::create($query)->setSort(['updated_at' => 'asc']);
-
-            case SearchArticlesSort::UPDATED_AT_DESC:
-                return Query::create($query)->setSort(['updated_at' => 'desc']);
-
-            case SearchArticlesSort::PUBLISHED_AT_ASC:
-                return Query::create($query)->setSort(['published_at' => 'asc']);
-
-            case SearchArticlesSort::PUBLISHED_AT_DESC:
-                return Query::create($query)->setSort(['published_at' => 'desc']);
-
-            case SearchArticlesSort::ORDER_DATE_ASC:
-                return Query::create($query)->setSort(['order_date' => 'asc']);
-
-            case SearchArticlesSort::ORDER_DATE_DESC:
-                return Query::create($query)->setSort(['order_date' => 'desc']);
-
-            case SearchArticlesSort::TITLE_ASC:
-                return Query::create($query)->setSort(['title.raw' => 'asc']);
-
-            case SearchArticlesSort::TITLE_DESC:
-                return Query::create($query)->setSort(['title.raw' => 'desc']);
-
-            // these "stat" sorting options refer to article-stats fields
-            case SearchArticlesSort::POPULARITY:
-                return Query::create($query)->setSort(['views' => 'desc', 'created_at' => 'desc']);
-
-            case SearchArticlesSort::COMMENTS:
-                return Query::create($query)->setSort(['comments' => 'desc', 'created_at' => 'desc']);
-
-            default:
-                return $this->createRelevanceWithRecencySortedQuery($query, $request);
-        }
+        return match ($request->fget('sort', SearchArticlesSort::RELEVANCE)) {
+            SearchArticlesSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchArticlesSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchArticlesSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchArticlesSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchArticlesSort::PUBLISHED_AT_ASC => Query::create($query)->setSort(['published_at' => 'asc']),
+            SearchArticlesSort::PUBLISHED_AT_DESC => Query::create($query)->setSort(['published_at' => 'desc']),
+            SearchArticlesSort::ORDER_DATE_ASC => Query::create($query)->setSort(['order_date' => 'asc']),
+            SearchArticlesSort::ORDER_DATE_DESC => Query::create($query)->setSort(['order_date' => 'desc']),
+            SearchArticlesSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchArticlesSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            SearchArticlesSort::POPULARITY => Query::create($query)->setSort(['views' => 'desc', 'created_at' => 'desc']),
+            SearchArticlesSort::COMMENTS => Query::create($query)->setSort(['comments' => 'desc', 'created_at' => 'desc']),
+            default => $this->createRelevanceWithRecencySortedQuery($query, $request),
+        };
     }
 
     protected function forSearchAssetsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
@@ -118,40 +120,19 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        switch ($request->get('sort', SearchAssetsSort::RELEVANCE())->getValue()) {
-            case SearchAssetsSort::CREATED_AT_ASC:
-                return Query::create($query)->setSort(['created_at' => 'asc']);
-
-            case SearchAssetsSort::CREATED_AT_DESC:
-                return Query::create($query)->setSort(['created_at' => 'desc']);
-
-            case SearchAssetsSort::UPDATED_AT_ASC:
-                return Query::create($query)->setSort(['updated_at' => 'asc']);
-
-            case SearchAssetsSort::UPDATED_AT_DESC:
-                return Query::create($query)->setSort(['updated_at' => 'desc']);
-
-            case SearchAssetsSort::MIME_TYPE_ASC:
-                return Query::create($query)->setSort(['mime_type' => 'asc']);
-
-            case SearchAssetsSort::MIME_TYPE_DESC:
-                return Query::create($query)->setSort(['mime_type' => 'desc']);
-
-            case SearchAssetsSort::TITLE_ASC:
-                return Query::create($query)->setSort(['title.raw' => 'asc']);
-
-            case SearchAssetsSort::TITLE_DESC:
-                return Query::create($query)->setSort(['title.raw' => 'desc']);
-
-            case SearchAssetsSort::GALLERY_SEQ_ASC:
-                return Query::create($query)->setSort(['gallery_seq' => 'asc']);
-
-            case SearchAssetsSort::GALLERY_SEQ_DESC:
-                return Query::create($query)->setSort(['gallery_seq' => 'desc']);
-
-            default:
-                return $this->createRelevanceWithRecencySortedQuery($query, $request);
-        }
+        return match ($request->fget('sort', SearchAssetsSort::RELEVANCE)) {
+            SearchAssetsSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchAssetsSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchAssetsSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchAssetsSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchAssetsSort::MIME_TYPE_ASC => Query::create($query)->setSort(['mime_type' => 'asc']),
+            SearchAssetsSort::MIME_TYPE_DESC => Query::create($query)->setSort(['mime_type' => 'desc']),
+            SearchAssetsSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchAssetsSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            SearchAssetsSort::GALLERY_SEQ_ASC => Query::create($query)->setSort(['gallery_seq' => 'asc']),
+            SearchAssetsSort::GALLERY_SEQ_DESC => Query::create($query)->setSort(['gallery_seq' => 'desc']),
+            default => $this->createRelevanceWithRecencySortedQuery($query, $request),
+        };
     }
 
     protected function forSearchCategoriesRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
@@ -167,28 +148,61 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        switch ($request->get('sort', SearchCategoriesSort::RELEVANCE())->getValue()) {
-            case SearchCategoriesSort::CREATED_AT_ASC:
-                return Query::create($query)->setSort(['created_at' => 'asc']);
+        return match ($request->fget('sort', SearchCategoriesSort::RELEVANCE)) {
+            SearchCategoriesSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchCategoriesSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchCategoriesSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchCategoriesSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchCategoriesSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchCategoriesSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            default => Query::create($query),
+        };
+    }
 
-            case SearchCategoriesSort::CREATED_AT_DESC:
-                return Query::create($query)->setSort(['created_at' => 'desc']);
+    protected function forSearchChannelsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
+    {
+        $builder = (new ElasticaQueryBuilder())
+            ->setDefaultFieldName('title')
+            ->addParsedQuery($parsedQuery);
 
-            case SearchCategoriesSort::UPDATED_AT_ASC:
-                return Query::create($query)->setSort(['updated_at' => 'asc']);
+        $query = $builder->getBoolQuery();
 
-            case SearchCategoriesSort::UPDATED_AT_DESC:
-                return Query::create($query)->setSort(['updated_at' => 'desc']);
+        $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
-            case SearchCategoriesSort::TITLE_ASC:
-                return Query::create($query)->setSort(['title.raw' => 'asc']);
+        return match ($request->fget('sort', SearchChannelsSort::TITLE_ASC)) {
+            SearchChannelsSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchChannelsSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchChannelsSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchChannelsSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchChannelsSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchChannelsSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            default => Query::create($query),
+        };
+    }
 
-            case SearchCategoriesSort::TITLE_DESC:
-                return Query::create($query)->setSort(['title.raw' => 'desc']);
+    protected function forSearchFlagsetsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
+    {
+        $builder = (new ElasticaQueryBuilder())
+            ->setDefaultFieldName('title')
+            ->addParsedQuery($parsedQuery);
 
-            default:
-                return Query::create($query);
-        }
+        $query = $builder->getBoolQuery();
+
+        $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
+
+        return match ($request->fget('sort', SearchFlagsetsSort::TITLE_ASC)) {
+            SearchFlagsetsSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchFlagsetsSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchFlagsetsSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchFlagsetsSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchFlagsetsSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchFlagsetsSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            default => Query::create($query),
+        };
     }
 
     protected function forSearchGalleriesRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
@@ -214,40 +228,19 @@ class QueryFactory extends BaseQueryFactory
             }
         }
 
-        switch ($request->get('sort', SearchGalleriesSort::RELEVANCE())->getValue()) {
-            case SearchGalleriesSort::CREATED_AT_ASC:
-                return Query::create($query)->setSort(['created_at' => 'asc']);
-
-            case SearchGalleriesSort::CREATED_AT_DESC:
-                return Query::create($query)->setSort(['created_at' => 'desc']);
-
-            case SearchGalleriesSort::UPDATED_AT_ASC:
-                return Query::create($query)->setSort(['updated_at' => 'asc']);
-
-            case SearchGalleriesSort::UPDATED_AT_DESC:
-                return Query::create($query)->setSort(['updated_at' => 'desc']);
-
-            case SearchGalleriesSort::PUBLISHED_AT_ASC:
-                return Query::create($query)->setSort(['published_at' => 'asc']);
-
-            case SearchGalleriesSort::PUBLISHED_AT_DESC:
-                return Query::create($query)->setSort(['published_at' => 'desc']);
-
-            case SearchGalleriesSort::ORDER_DATE_ASC:
-                return Query::create($query)->setSort(['order_date' => 'asc']);
-
-            case SearchGalleriesSort::ORDER_DATE_DESC:
-                return Query::create($query)->setSort(['order_date' => 'desc']);
-
-            case SearchGalleriesSort::TITLE_ASC:
-                return Query::create($query)->setSort(['title.raw' => 'asc']);
-
-            case SearchGalleriesSort::TITLE_DESC:
-                return Query::create($query)->setSort(['title.raw' => 'desc']);
-
-            default:
-                return $this->createRelevanceWithRecencySortedQuery($query, $request);
-        }
+        return match ($request->fget('sort', SearchGalleriesSort::RELEVANCE)) {
+            SearchGalleriesSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchGalleriesSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchGalleriesSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchGalleriesSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchGalleriesSort::PUBLISHED_AT_ASC => Query::create($query)->setSort(['published_at' => 'asc']),
+            SearchGalleriesSort::PUBLISHED_AT_DESC => Query::create($query)->setSort(['published_at' => 'desc']),
+            SearchGalleriesSort::ORDER_DATE_ASC => Query::create($query)->setSort(['order_date' => 'asc']),
+            SearchGalleriesSort::ORDER_DATE_DESC => Query::create($query)->setSort(['order_date' => 'desc']),
+            SearchGalleriesSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchGalleriesSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            default => $this->createRelevanceWithRecencySortedQuery($query, $request),
+        };
     }
 
     protected function forSearchNotificationsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
@@ -262,34 +255,17 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        switch ($request->get('sort')->getValue()) {
-            case SearchNotificationsSort::CREATED_AT_ASC;
-                return Query::create($query)->setSort(['created_at' => 'asc']);
-
-            case SearchNotificationsSort::CREATED_AT_DESC;
-                return Query::create($query)->setSort(['created_at' => 'desc']);
-
-            case SearchNotificationsSort::UPDATED_AT_ASC:
-                return Query::create($query)->setSort(['updated_at' => 'asc']);
-
-            case SearchNotificationsSort::UPDATED_AT_DESC:
-                return Query::create($query)->setSort(['updated_at' => 'desc']);
-
-            case SearchNotificationsSort::SEND_AT_ASC:
-                return Query::create($query)->setSort(['send_at' => 'asc']);
-
-            case SearchNotificationsSort::SEND_AT_DESC:
-                return Query::create($query)->setSort(['send_at' => 'desc']);
-
-            case SearchNotificationsSort::SENT_AT_ASC:
-                return Query::create($query)->setSort(['sent_at' => 'asc']);
-
-            case SearchNotificationsSort::SENT_AT_DESC:
-                return Query::create($query)->setSort(['sent_at' => 'desc']);
-
-            default:
-                return $this->createRelevanceWithRecencySortedQuery($query, $request);
-        }
+        return match ($request->fget('sort', SearchNotificationsSort::SENT_AT_DESC)) {
+            SearchNotificationsSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchNotificationsSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchNotificationsSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchNotificationsSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchNotificationsSort::SEND_AT_ASC => Query::create($query)->setSort(['send_at' => 'asc']),
+            SearchNotificationsSort::SEND_AT_DESC => Query::create($query)->setSort(['send_at' => 'desc']),
+            SearchNotificationsSort::SENT_AT_ASC => Query::create($query)->setSort(['sent_at' => 'asc']),
+            SearchNotificationsSort::SENT_AT_DESC => Query::create($query)->setSort(['sent_at' => 'desc']),
+            default => $this->createRelevanceWithRecencySortedQuery($query, $request),
+        };
     }
 
     protected function forSearchPagesRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
@@ -307,40 +283,19 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        switch ($request->get('sort', SearchPagesSort::RELEVANCE())->getValue()) {
-            case SearchPagesSort::CREATED_AT_ASC:
-                return Query::create($query)->setSort(['created_at' => 'asc']);
-
-            case SearchPagesSort::CREATED_AT_DESC:
-                return Query::create($query)->setSort(['created_at' => 'desc']);
-
-            case SearchPagesSort::UPDATED_AT_ASC:
-                return Query::create($query)->setSort(['updated_at' => 'asc']);
-
-            case SearchPagesSort::UPDATED_AT_DESC:
-                return Query::create($query)->setSort(['updated_at' => 'desc']);
-
-            case SearchPagesSort::PUBLISHED_AT_ASC:
-                return Query::create($query)->setSort(['published_at' => 'asc']);
-
-            case SearchPagesSort::PUBLISHED_AT_DESC:
-                return Query::create($query)->setSort(['published_at' => 'desc']);
-
-            case SearchPagesSort::ORDER_DATE_ASC:
-                return Query::create($query)->setSort(['order_date' => 'asc']);
-
-            case SearchPagesSort::ORDER_DATE_DESC:
-                return Query::create($query)->setSort(['order_date' => 'desc']);
-
-            case SearchPagesSort::TITLE_ASC:
-                return Query::create($query)->setSort(['title.raw' => 'asc']);
-
-            case SearchPagesSort::TITLE_DESC:
-                return Query::create($query)->setSort(['title.raw' => 'desc']);
-
-            default:
-                return $this->createRelevanceWithRecencySortedQuery($query, $request);
-        }
+        return match ($request->fget('sort', SearchPagesSort::RELEVANCE)) {
+            SearchPagesSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchPagesSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchPagesSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchPagesSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchPagesSort::PUBLISHED_AT_ASC => Query::create($query)->setSort(['published_at' => 'asc']),
+            SearchPagesSort::PUBLISHED_AT_DESC => Query::create($query)->setSort(['published_at' => 'desc']),
+            SearchPagesSort::ORDER_DATE_ASC => Query::create($query)->setSort(['order_date' => 'asc']),
+            SearchPagesSort::ORDER_DATE_DESC => Query::create($query)->setSort(['order_date' => 'desc']),
+            SearchPagesSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchPagesSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            default => $this->createRelevanceWithRecencySortedQuery($query, $request),
+        };
     }
 
     protected function forSearchPeopleRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
@@ -359,28 +314,38 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        switch ($request->get('sort', SearchPeopleSort::RELEVANCE())->getValue()) {
-            case SearchPeopleSort::CREATED_AT_ASC:
-                return Query::create($query)->setSort(['created_at' => 'asc']);
+        return match ($request->fget('sort', SearchPeopleSort::RELEVANCE)) {
+            SearchPeopleSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchPeopleSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchPeopleSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchPeopleSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchPeopleSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchPeopleSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            default => $this->createRelevanceWithRecencySortedQuery($query, $request),
+        };
+    }
 
-            case SearchPeopleSort::CREATED_AT_DESC:
-                return Query::create($query)->setSort(['created_at' => 'desc']);
+    protected function forSearchPicklistsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
+    {
+        $builder = (new ElasticaQueryBuilder())
+            ->setDefaultFieldName('title')
+            ->addParsedQuery($parsedQuery);
 
-            case SearchPeopleSort::UPDATED_AT_ASC:
-                return Query::create($query)->setSort(['updated_at' => 'asc']);
+        $query = $builder->getBoolQuery();
 
-            case SearchPeopleSort::UPDATED_AT_DESC:
-                return Query::create($query)->setSort(['updated_at' => 'desc']);
+        $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
-            case SearchPeopleSort::TITLE_ASC:
-                return Query::create($query)->setSort(['title.raw' => 'asc']);
-
-            case SearchPeopleSort::TITLE_DESC:
-                return Query::create($query)->setSort(['title.raw' => 'desc']);
-
-            default:
-                return $this->createRelevanceWithRecencySortedQuery($query, $request);
-        }
+        return match ($request->fget('sort', SearchPicklistsSort::TITLE_ASC)) {
+            SearchPicklistsSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchPicklistsSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchPicklistsSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchPicklistsSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchPicklistsSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchPicklistsSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            default => Query::create($query),
+        };
     }
 
     protected function forSearchPollsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
@@ -396,40 +361,19 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        switch ($request->get('sort', SearchPollsSort::RELEVANCE())->getValue()) {
-            case SearchPollsSort::CREATED_AT_ASC:
-                return Query::create($query)->setSort(['created_at' => 'asc']);
-
-            case SearchPollsSort::CREATED_AT_DESC:
-                return Query::create($query)->setSort(['created_at' => 'desc']);
-
-            case SearchPollsSort::UPDATED_AT_ASC:
-                return Query::create($query)->setSort(['updated_at' => 'asc']);
-
-            case SearchPollsSort::UPDATED_AT_DESC:
-                return Query::create($query)->setSort(['updated_at' => 'desc']);
-
-            case SearchPollsSort::PUBLISHED_AT_ASC:
-                return Query::create($query)->setSort(['published_at' => 'asc']);
-
-            case SearchPollsSort::PUBLISHED_AT_DESC:
-                return Query::create($query)->setSort(['published_at' => 'desc']);
-
-            case SearchPollsSort::ORDER_DATE_ASC:
-                return Query::create($query)->setSort(['order_date' => 'asc']);
-
-            case SearchPollsSort::ORDER_DATE_DESC:
-                return Query::create($query)->setSort(['order_date' => 'desc']);
-
-            case SearchPollsSort::TITLE_ASC:
-                return Query::create($query)->setSort(['title.raw' => 'asc']);
-
-            case SearchPollsSort::TITLE_DESC:
-                return Query::create($query)->setSort(['title.raw' => 'desc']);
-
-            default:
-                return $this->createRelevanceWithRecencySortedQuery($query, $request);
-        }
+        return match ($request->fget('sort', SearchPollsSort::RELEVANCE)) {
+            SearchPollsSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchPollsSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchPollsSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchPollsSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchPollsSort::PUBLISHED_AT_ASC => Query::create($query)->setSort(['published_at' => 'asc']),
+            SearchPollsSort::PUBLISHED_AT_DESC => Query::create($query)->setSort(['published_at' => 'desc']),
+            SearchPollsSort::ORDER_DATE_ASC => Query::create($query)->setSort(['order_date' => 'asc']),
+            SearchPollsSort::ORDER_DATE_DESC => Query::create($query)->setSort(['order_date' => 'desc']),
+            SearchPollsSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchPollsSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            default => $this->createRelevanceWithRecencySortedQuery($query, $request),
+        };
     }
 
     protected function forSearchPromotionsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
@@ -444,40 +388,19 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        switch ($request->get('sort', SearchPromotionsSort::RELEVANCE())->getValue()) {
-            case SearchPromotionsSort::CREATED_AT_ASC:
-                return Query::create($query)->setSort(['created_at' => 'asc']);
-
-            case SearchPromotionsSort::CREATED_AT_DESC:
-                return Query::create($query)->setSort(['created_at' => 'desc']);
-
-            case SearchPromotionsSort::UPDATED_AT_ASC:
-                return Query::create($query)->setSort(['updated_at' => 'asc']);
-
-            case SearchPromotionsSort::UPDATED_AT_DESC:
-                return Query::create($query)->setSort(['updated_at' => 'desc']);
-
-            case SearchPromotionsSort::PUBLISHED_AT_ASC:
-                return Query::create($query)->setSort(['published_at' => 'asc']);
-
-            case SearchPromotionsSort::PUBLISHED_AT_DESC:
-                return Query::create($query)->setSort(['published_at' => 'desc']);
-
-            case SearchPromotionsSort::TITLE_ASC:
-                return Query::create($query)->setSort(['title.raw' => 'asc']);
-
-            case SearchPromotionsSort::TITLE_DESC:
-                return Query::create($query)->setSort(['title.raw' => 'desc']);
-
-            case SearchPromotionsSort::PRIORITY_ASC:
-                return Query::create($query)->setSort(['priority' => 'asc']);
-
-            case SearchPromotionsSort::PRIORITY_DESC:
-                return Query::create($query)->setSort(['priority' => 'desc']);
-
-            default:
-                return $this->createRelevanceWithRecencySortedQuery($query, $request);
-        }
+        return match ($request->fget('sort', SearchPromotionsSort::RELEVANCE)) {
+            SearchPromotionsSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchPromotionsSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchPromotionsSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchPromotionsSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchPromotionsSort::PUBLISHED_AT_ASC => Query::create($query)->setSort(['published_at' => 'asc']),
+            SearchPromotionsSort::PUBLISHED_AT_DESC => Query::create($query)->setSort(['published_at' => 'desc']),
+            SearchPromotionsSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchPromotionsSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            SearchPromotionsSort::PRIORITY_ASC => Query::create($query)->setSort(['priority' => 'asc']),
+            SearchPromotionsSort::PRIORITY_DESC => Query::create($query)->setSort(['priority' => 'desc']),
+            default => $this->createRelevanceWithRecencySortedQuery($query, $request),
+        };
     }
 
     protected function forSearchRedirectsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
@@ -492,28 +415,38 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        switch ($request->get('sort', SearchRedirectsSort::CREATED_AT_ASC())->getValue()) {
-            case SearchRedirectsSort::CREATED_AT_ASC:
-                return Query::create($query)->setSort(['created_at' => 'asc']);
+        return match ($request->fget('sort', SearchRedirectsSort::TITLE_ASC)) {
+            SearchRedirectsSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchRedirectsSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchRedirectsSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchRedirectsSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchRedirectsSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchRedirectsSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            default => $this->createRelevanceWithRecencySortedQuery($query, $request),
+        };
+    }
 
-            case SearchRedirectsSort::CREATED_AT_DESC:
-                return Query::create($query)->setSort(['created_at' => 'desc']);
+    protected function forSearchRolesRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
+    {
+        $builder = (new ElasticaQueryBuilder())
+            ->setDefaultFieldName('title')
+            ->addParsedQuery($parsedQuery);
 
-            case SearchRedirectsSort::UPDATED_AT_ASC:
-                return Query::create($query)->setSort(['updated_at' => 'asc']);
+        $query = $builder->getBoolQuery();
 
-            case SearchRedirectsSort::UPDATED_AT_DESC:
-                return Query::create($query)->setSort(['updated_at' => 'desc']);
+        $this->filterDates($request, $query);
+        $this->filterQNames($request, $query, $qnames);
+        $this->filterStatuses($request, $query);
 
-            case SearchRedirectsSort::TITLE_ASC:
-                return Query::create($query)->setSort(['title.raw' => 'asc']);
-
-            case SearchRedirectsSort::TITLE_DESC:
-                return Query::create($query)->setSort(['title.raw' => 'desc']);
-
-            default:
-                return $this->createRelevanceWithRecencySortedQuery($query, $request);
-        }
+        return match ($request->fget('sort', SearchRolesSort::TITLE_ASC)) {
+            SearchRolesSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchRolesSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchRolesSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchRolesSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchRolesSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchRolesSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            default => Query::create($query),
+        };
     }
 
     protected function forSearchSponsorsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
@@ -528,34 +461,17 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        switch ($request->get('sort', SearchSponsorsSort::CREATED_AT_ASC())->getValue()) {
-            case SearchSponsorsSort::CREATED_AT_ASC:
-                return Query::create($query)->setSort(['created_at' => 'asc']);
-
-            case SearchSponsorsSort::CREATED_AT_DESC:
-                return Query::create($query)->setSort(['created_at' => 'desc']);
-
-            case SearchSponsorsSort::UPDATED_AT_ASC:
-                return Query::create($query)->setSort(['updated_at' => 'asc']);
-
-            case SearchSponsorsSort::UPDATED_AT_DESC:
-                return Query::create($query)->setSort(['updated_at' => 'desc']);
-
-            case SearchSponsorsSort::PUBLISHED_AT_ASC:
-                return Query::create($query)->setSort(['published_at' => 'asc']);
-
-            case SearchSponsorsSort::PUBLISHED_AT_DESC:
-                return Query::create($query)->setSort(['published_at' => 'desc']);
-
-            case SearchSponsorsSort::TITLE_ASC:
-                return Query::create($query)->setSort(['title.raw' => 'asc']);
-
-            case SearchSponsorsSort::TITLE_DESC:
-                return Query::create($query)->setSort(['title.raw' => 'desc']);
-
-            default:
-                return $this->createRelevanceWithRecencySortedQuery($query, $request);
-        }
+        return match ($request->fget('sort', SearchSponsorsSort::RELEVANCE)) {
+            SearchSponsorsSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchSponsorsSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchSponsorsSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchSponsorsSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchSponsorsSort::PUBLISHED_AT_ASC => Query::create($query)->setSort(['published_at' => 'asc']),
+            SearchSponsorsSort::PUBLISHED_AT_DESC => Query::create($query)->setSort(['published_at' => 'desc']),
+            SearchSponsorsSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchSponsorsSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            default => $this->createRelevanceWithRecencySortedQuery($query, $request),
+        };
     }
 
     protected function forSearchTeasersRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
@@ -581,40 +497,19 @@ class QueryFactory extends BaseQueryFactory
             }
         }
 
-        switch ($request->get('sort', SearchTeasersSort::RELEVANCE())->getValue()) {
-            case SearchTeasersSort::CREATED_AT_ASC:
-                return Query::create($query)->setSort(['created_at' => 'asc']);
-
-            case SearchTeasersSort::CREATED_AT_DESC:
-                return Query::create($query)->setSort(['created_at' => 'desc']);
-
-            case SearchTeasersSort::UPDATED_AT_ASC:
-                return Query::create($query)->setSort(['updated_at' => 'asc']);
-
-            case SearchTeasersSort::UPDATED_AT_DESC:
-                return Query::create($query)->setSort(['updated_at' => 'desc']);
-
-            case SearchTeasersSort::PUBLISHED_AT_ASC:
-                return Query::create($query)->setSort(['published_at' => 'asc']);
-
-            case SearchTeasersSort::PUBLISHED_AT_DESC:
-                return Query::create($query)->setSort(['published_at' => 'desc']);
-
-            case SearchTeasersSort::ORDER_DATE_ASC:
-                return Query::create($query)->setSort(['order_date' => 'asc']);
-
-            case SearchTeasersSort::ORDER_DATE_DESC:
-                return Query::create($query)->setSort(['order_date' => 'desc']);
-
-            case SearchTeasersSort::TITLE_ASC:
-                return Query::create($query)->setSort(['title.raw' => 'asc']);
-
-            case SearchTeasersSort::TITLE_DESC:
-                return Query::create($query)->setSort(['title.raw' => 'desc']);
-
-            default:
-                return $this->createRelevanceWithRecencySortedQuery($query, $request);
-        }
+        return match ($request->fget('sort', SearchTeasersSort::RELEVANCE)) {
+            SearchTeasersSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchTeasersSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchTeasersSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchTeasersSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchTeasersSort::PUBLISHED_AT_ASC => Query::create($query)->setSort(['published_at' => 'asc']),
+            SearchTeasersSort::PUBLISHED_AT_DESC => Query::create($query)->setSort(['published_at' => 'desc']),
+            SearchTeasersSort::ORDER_DATE_ASC => Query::create($query)->setSort(['order_date' => 'asc']),
+            SearchTeasersSort::ORDER_DATE_DESC => Query::create($query)->setSort(['order_date' => 'desc']),
+            SearchTeasersSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchTeasersSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            default => $this->createRelevanceWithRecencySortedQuery($query, $request),
+        };
     }
 
     protected function forSearchTimelinesRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
@@ -630,40 +525,19 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        switch ($request->get('sort', SearchTimelinesSort::RELEVANCE())->getValue()) {
-            case SearchTimelinesSort::CREATED_AT_ASC:
-                return Query::create($query)->setSort(['created_at' => 'asc']);
-
-            case SearchTimelinesSort::CREATED_AT_DESC:
-                return Query::create($query)->setSort(['created_at' => 'desc']);
-
-            case SearchTimelinesSort::UPDATED_AT_ASC:
-                return Query::create($query)->setSort(['updated_at' => 'asc']);
-
-            case SearchTimelinesSort::UPDATED_AT_DESC:
-                return Query::create($query)->setSort(['updated_at' => 'desc']);
-
-            case SearchTimelinesSort::PUBLISHED_AT_ASC:
-                return Query::create($query)->setSort(['published_at' => 'asc']);
-
-            case SearchTimelinesSort::PUBLISHED_AT_DESC:
-                return Query::create($query)->setSort(['published_at' => 'desc']);
-
-            case SearchTimelinesSort::ORDER_DATE_ASC:
-                return Query::create($query)->setSort(['order_date' => 'asc']);
-
-            case SearchTimelinesSort::ORDER_DATE_DESC:
-                return Query::create($query)->setSort(['order_date' => 'desc']);
-
-            case SearchTimelinesSort::TITLE_ASC:
-                return Query::create($query)->setSort(['title.raw' => 'asc']);
-
-            case SearchTimelinesSort::TITLE_DESC:
-                return Query::create($query)->setSort(['title.raw' => 'desc']);
-
-            default:
-                return $this->createRelevanceWithRecencySortedQuery($query, $request);
-        }
+        return match ($request->fget('sort', SearchTimelinesSort::RELEVANCE)) {
+            SearchTimelinesSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchTimelinesSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchTimelinesSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchTimelinesSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchTimelinesSort::PUBLISHED_AT_ASC => Query::create($query)->setSort(['published_at' => 'asc']),
+            SearchTimelinesSort::PUBLISHED_AT_DESC => Query::create($query)->setSort(['published_at' => 'desc']),
+            SearchTimelinesSort::ORDER_DATE_ASC => Query::create($query)->setSort(['order_date' => 'asc']),
+            SearchTimelinesSort::ORDER_DATE_DESC => Query::create($query)->setSort(['order_date' => 'desc']),
+            SearchTimelinesSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchTimelinesSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            default => $this->createRelevanceWithRecencySortedQuery($query, $request),
+        };
     }
 
     protected function forSearchUsersRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
@@ -679,38 +553,17 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        if (!$request->has('sort')) {
-            return Query::create($query);
-        }
-
-        switch ($request->get('sort')->getValue()) {
-            case SearchUsersSort::CREATED_AT_ASC:
-                return Query::create($query)->setSort(['created_at' => 'asc']);
-
-            case SearchUsersSort::CREATED_AT_DESC:
-                return Query::create($query)->setSort(['created_at' => 'desc']);
-
-            case SearchUsersSort::UPDATED_AT_ASC:
-                return Query::create($query)->setSort(['updated_at' => 'asc']);
-
-            case SearchUsersSort::UPDATED_AT_DESC:
-                return Query::create($query)->setSort(['updated_at' => 'desc']);
-
-            case SearchUsersSort::FIRST_NAME_ASC:
-                return Query::create($query)->setSort(['first_name.raw' => 'asc', 'last_name.raw' => 'asc']);
-
-            case SearchUsersSort::FIRST_NAME_DESC:
-                return Query::create($query)->setSort(['first_name.raw' => 'desc', 'last_name.raw' => 'desc']);
-
-            case SearchUsersSort::LAST_NAME_ASC:
-                return Query::create($query)->setSort(['last_name.raw' => 'asc', 'first_name.raw' => 'asc']);
-
-            case SearchUsersSort::LAST_NAME_DESC:
-                return Query::create($query)->setSort(['last_name.raw' => 'desc', 'first_name.raw' => 'desc']);
-
-            default:
-                return Query::create($query);
-        }
+        return match ($request->fget('sort', SearchUsersSort::RELEVANCE)) {
+            SearchUsersSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchUsersSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchUsersSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchUsersSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchUsersSort::FIRST_NAME_ASC => Query::create($query)->setSort(['first_name.raw' => 'asc', 'last_name.raw' => 'asc']),
+            SearchUsersSort::FIRST_NAME_DESC => Query::create($query)->setSort(['first_name.raw' => 'desc', 'last_name.raw' => 'desc']),
+            SearchUsersSort::LAST_NAME_ASC => Query::create($query)->setSort(['last_name.raw' => 'asc', 'first_name.raw' => 'asc']),
+            SearchUsersSort::LAST_NAME_DESC => Query::create($query)->setSort(['last_name.raw' => 'desc', 'first_name.raw' => 'desc']),
+            default => Query::create($query),
+        };
     }
 
     protected function forSearchVideosRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
@@ -736,40 +589,19 @@ class QueryFactory extends BaseQueryFactory
             }
         }
 
-        switch ($request->get('sort', SearchVideosSort::RELEVANCE())->getValue()) {
-            case SearchVideosSort::CREATED_AT_ASC:
-                return Query::create($query)->setSort(['created_at' => 'asc']);
-
-            case SearchVideosSort::CREATED_AT_DESC:
-                return Query::create($query)->setSort(['created_at' => 'desc']);
-
-            case SearchVideosSort::UPDATED_AT_ASC:
-                return Query::create($query)->setSort(['updated_at' => 'asc']);
-
-            case SearchVideosSort::UPDATED_AT_DESC:
-                return Query::create($query)->setSort(['updated_at' => 'desc']);
-
-            case SearchVideosSort::PUBLISHED_AT_ASC:
-                return Query::create($query)->setSort(['published_at' => 'asc']);
-
-            case SearchVideosSort::PUBLISHED_AT_DESC:
-                return Query::create($query)->setSort(['published_at' => 'desc']);
-
-            case SearchVideosSort::ORDER_DATE_ASC:
-                return Query::create($query)->setSort(['order_date' => 'asc']);
-
-            case SearchVideosSort::ORDER_DATE_DESC:
-                return Query::create($query)->setSort(['order_date' => 'desc']);
-
-            case SearchVideosSort::TITLE_ASC:
-                return Query::create($query)->setSort(['title.raw' => 'asc']);
-
-            case SearchVideosSort::TITLE_DESC:
-                return Query::create($query)->setSort(['title.raw' => 'desc']);
-
-            default:
-                return $this->createRelevanceWithRecencySortedQuery($query, $request);
-        }
+        return match ($request->fget('sort', SearchVideosSort::RELEVANCE)) {
+            SearchVideosSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchVideosSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchVideosSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchVideosSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchVideosSort::PUBLISHED_AT_ASC => Query::create($query)->setSort(['published_at' => 'asc']),
+            SearchVideosSort::PUBLISHED_AT_DESC => Query::create($query)->setSort(['published_at' => 'desc']),
+            SearchVideosSort::ORDER_DATE_ASC => Query::create($query)->setSort(['order_date' => 'asc']),
+            SearchVideosSort::ORDER_DATE_DESC => Query::create($query)->setSort(['order_date' => 'desc']),
+            SearchVideosSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchVideosSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            default => $this->createRelevanceWithRecencySortedQuery($query, $request),
+        };
     }
 
     protected function forSearchWidgetsRequest(Message $request, ParsedQuery $parsedQuery, array $qnames): Query
@@ -784,28 +616,15 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        switch ($request->get('sort', SearchWidgetsSort::RELEVANCE())->getValue()) {
-            case SearchWidgetsSort::CREATED_AT_ASC:
-                return Query::create($query)->setSort(['created_at' => 'asc']);
-
-            case SearchWidgetsSort::CREATED_AT_DESC:
-                return Query::create($query)->setSort(['created_at' => 'desc']);
-
-            case SearchWidgetsSort::UPDATED_AT_ASC:
-                return Query::create($query)->setSort(['updated_at' => 'asc']);
-
-            case SearchWidgetsSort::UPDATED_AT_DESC:
-                return Query::create($query)->setSort(['updated_at' => 'desc']);
-
-            case SearchWidgetsSort::TITLE_ASC:
-                return Query::create($query)->setSort(['title.raw' => 'asc']);
-
-            case SearchWidgetsSort::TITLE_DESC:
-                return Query::create($query)->setSort(['title.raw' => 'desc']);
-
-            default:
-                return $this->createRelevanceWithRecencySortedQuery($query, $request);
-        }
+        return match ($request->fget('sort', SearchWidgetsSort::RELEVANCE)) {
+            SearchWidgetsSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
+            SearchWidgetsSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
+            SearchWidgetsSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
+            SearchWidgetsSort::UPDATED_AT_DESC => Query::create($query)->setSort(['updated_at' => 'desc']),
+            SearchWidgetsSort::TITLE_ASC => Query::create($query)->setSort(['title.raw' => 'asc']),
+            SearchWidgetsSort::TITLE_DESC => Query::create($query)->setSort(['title.raw' => 'desc']),
+            default => $this->createRelevanceWithRecencySortedQuery($query, $request),
+        };
     }
 
     /**
@@ -825,6 +644,7 @@ class QueryFactory extends BaseQueryFactory
             // no scores to match so decay function will not work
             return Query::create($query)->setSort(['created_at' => 'desc']);
         }
+
         $before = $request->get('created_before') ?: new \DateTime('now', new \DateTimeZone('UTC'));
         $query = (new FunctionScore())
             ->setQuery($query)
@@ -836,6 +656,7 @@ class QueryFactory extends BaseQueryFactory
                     'decay'  => 0.1,
                 ],
             ]);
+
         return Query::create($query);
     }
 }
