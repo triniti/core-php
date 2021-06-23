@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 1.x versions.
 
 
+## v1.0.7
+* Add sort handling for apps, roles, flagsets to `Triniti\Ncr\Search\Elastica\QueryFactory`.
+
+
 ## v1.0.6
 * Add subtitled manifest to artifact url provider.
 
