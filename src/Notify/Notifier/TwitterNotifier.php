@@ -10,6 +10,7 @@ use Gdbots\Pbj\Util\ClassUtil;
 use Gdbots\Pbjx\Util\StatusCodeUtil;
 use Gdbots\Schemas\Pbjx\Enum\Code;
 use Gdbots\Schemas\Pbjx\Enum\HttpCode;
+use Gdbots\UriTemplate\UriTemplateService;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\HandlerStack;
@@ -65,6 +66,7 @@ class TwitterNotifier implements Notifier
             $this->oauthTokenSecret = Crypto::decrypt($app->get('oauth_token_secret'), $this->key);
 
             $status = $notification->get('body') ?: $content->get('meta_description', $content->get('title'));
+            $status .= $content ? ' '. $this->getCanonicalUrl($content) : '';
             $result = $this->postTweet($status);
         } catch (\Throwable $e) {
             $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN;
@@ -126,6 +128,19 @@ class TwitterNotifier implements Notifier
             'error_name'    => ClassUtil::getShortName($exception),
             'error_message' => substr($exception->getMessage(), 0, 2048),
         ];
+    }
+
+    /**
+     * @param Message $message
+     *
+     * @return string
+     */
+    protected function getCanonicalUrl(Message $message): string
+    {
+        return UriTemplateService::expand(
+            "{$message::schema()->getQName()}.canonical",
+            $message->getUriTemplateVars()
+        );
     }
 
     protected function getGuzzleClient(): GuzzleClient
