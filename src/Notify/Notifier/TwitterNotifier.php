@@ -66,7 +66,7 @@ class TwitterNotifier implements Notifier
             $this->oauthTokenSecret = Crypto::decrypt($app->get('oauth_token_secret'), $this->key);
 
             $status = $notification->get('body') ?: $content->get('meta_description', $content->get('title'));
-            $status .= $content ? ' '. $this->getCanonicalUrl($content) : '';
+            $status .= $content ? ' ' . $this->getCanonicalUrl($content) : '';
             $result = $this->postTweet($status);
         } catch (\Throwable $e) {
             $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN;
