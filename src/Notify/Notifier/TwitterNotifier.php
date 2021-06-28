@@ -130,11 +130,6 @@ class TwitterNotifier implements Notifier
         ];
     }
 
-    /**
-     * @param Message $message
-     *
-     * @return string
-     */
     protected function getCanonicalUrl(Message $message): string
     {
         return UriTemplateService::expand(
