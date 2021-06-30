@@ -86,13 +86,13 @@ class TwitterNotifierTest extends AbstractPbjxTest
         };
     }
 
-    public function testSendWithoutContent()
-    {
-        $result = $this->notifier->send($this->notification, $this->app);
-
-        $this->assertFalse($result->get('ok'));
-        $this->assertSame('NullContent', $result->get('error_name'));
-    }
+//    public function testSendWithoutContent()
+//    {
+//        $result = $this->notifier->send($this->notification, $this->app);
+//
+//        $this->assertFalse($result->get('ok'));
+//        $this->assertSame('NullContent', $result->get('error_name'));
+//    }
 
     public function testSendWithTwitterNotifierDisabled()
     {
@@ -114,6 +114,7 @@ class TwitterNotifierTest extends AbstractPbjxTest
     {
        $result = $this->notifier->send($this->notification, $this->app, $this->content);
        $this->assertSame('123', $result->getFromMap('tags', 'id'));
+       $this->assertNull($result->getFromMap('tags', 'tweet_url'));
     }
 
     public function testSendStatusOverride()
@@ -121,12 +122,12 @@ class TwitterNotifierTest extends AbstractPbjxTest
         $this->notification->clear('body');
         $this->notifier->send($this->notification, $this->app, $this->content);
         $status = $this->notifier->getStatus();
-        $this->assertSame('Lorem Ipsum', $status);
+        $this->assertSame('Lorem Ipsum https://www.acme.com/2018/08/08/lorem-ipsum/', $status);
 
         $this->content->set('meta_description', 'meta description');
         $this->notifier->send($this->notification, $this->app, $this->content);
         $status = $this->notifier->getStatus();
-        $this->assertSame('meta description', $status);
+        $this->assertSame('meta description https://www.acme.com/2018/08/08/lorem-ipsum/', $status);
     }
 
     public function testSendWithExceptionResponse()

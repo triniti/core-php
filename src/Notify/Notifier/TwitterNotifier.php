@@ -79,7 +79,12 @@ class TwitterNotifier implements Notifier
 
         $notifierResult = NotifierResultV1::fromArray($result);
         if (isset($result['response'])) {
-            $notifierResult->addToMap('tags', 'id', $result['response']['id_str'] ?? null);
+            $id = $result['response']['id_str'] ?? null;
+            $screenName = $result['response']['user']['screen_name'] ?? null;
+            $tweetUrl = null !== $id && null !== $screenName ? "https://twitter.com/{$screenName}/status/{$id}" : null;
+
+            $notifierResult->addToMap('tags', 'id', $id);
+            $notifierResult->addToMap('tags', 'tweet_url', $tweetUrl);
         }
 
         return $notifierResult;
