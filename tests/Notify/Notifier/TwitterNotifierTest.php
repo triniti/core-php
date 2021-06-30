@@ -86,13 +86,13 @@ class TwitterNotifierTest extends AbstractPbjxTest
         };
     }
 
-//    public function testSendWithoutContent()
-//    {
-//        $result = $this->notifier->send($this->notification, $this->app);
-//
-//        $this->assertFalse($result->get('ok'));
-//        $this->assertSame('NullContent', $result->get('error_name'));
-//    }
+    public function testSendWithoutContent()
+    {
+        $result = $this->notifier->send($this->notification, $this->app);
+
+        $this->assertFalse($result->get('ok'));
+        $this->assertSame('NullContent', $result->get('error_name'));
+    }
 
     public function testSendWithTwitterNotifierDisabled()
     {

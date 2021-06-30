@@ -43,12 +43,12 @@ class TwitterNotifier implements Notifier
      */
     public function send(Message $notification, Message $app, ?Message $content = null): Message
     {
-        if (null === $content && !$notification->get('body')) {
+        if (null === $content) {
             return NotifierResultV1::create()
                 ->set('ok', false)
                 ->set('code', Code::INVALID_ARGUMENT)
-                ->set('error_name', 'MissingNotificationBody')
-                ->set('error_message', 'Must have notification body when content is null.');
+                ->set('error_name', 'NullContent')
+                ->set('error_message', 'Content cannot be null');
         }
 
         if ($this->flags->getBoolean('twitter_notifier_disabled')) {
@@ -65,8 +65,8 @@ class TwitterNotifier implements Notifier
             $this->oauthToken = $app->get('oauth_token');
             $this->oauthTokenSecret = Crypto::decrypt($app->get('oauth_token_secret'), $this->key);
 
-            $status = $notification->get('body') ?: $content->get('meta_description', $content->get('title'));
-            $status .= $content ? ' ' . $this->getCanonicalUrl($content) : '';
+            $status = $notification->get('body', $content->get('meta_description', $content->get('title')))
+                . ' ' . $this->getCanonicalUrl($content);
             $result = $this->postTweet($status);
         } catch (\Throwable $e) {
             $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN;
