@@ -65,9 +65,9 @@ class TwitterNotifier implements Notifier
             $this->oauthToken = $app->get('oauth_token');
             $this->oauthTokenSecret = Crypto::decrypt($app->get('oauth_token_secret'), $this->key);
 
-            $status = $notification->get('body', $content->get('meta_description', $content->get('title')))
+            $tweet = $notification->get('body', $content->get('meta_description', $content->get('title')))
                 . ' ' . $this->getCanonicalUrl($content);
-            $result = $this->postTweet($status);
+            $result = $this->postTweet($tweet);
         } catch (\Throwable $e) {
             $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN;
             return NotifierResultV1::create()
@@ -90,10 +90,10 @@ class TwitterNotifier implements Notifier
         return $notifierResult;
     }
 
-    protected function postTweet(string $status): array {
+    protected function postTweet(string $tweet): array {
         $options = [
             RequestOptions::FORM_PARAMS => [
-                'status' => $status,
+                'status' => $tweet,
             ],
         ];
 
