@@ -147,6 +147,7 @@ class TwitterNotifier implements Notifier
     {
         if (null === $this->guzzleClient) {
             $stack = HandlerStack::create();
+            // Use Guzzle Oauth Subscriber https://github.com/guzzle/oauth-subscriber
             $middleware = new Oauth1([
                 'consumer_key'    => $this->oauthConsumerKey,
                 'consumer_secret' => $this->oauthConsumerSecret,
