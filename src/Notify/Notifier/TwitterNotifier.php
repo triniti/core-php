@@ -38,9 +38,6 @@ class TwitterNotifier implements Notifier
         $this->key = $key;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function send(Message $notification, Message $app, ?Message $content = null): Message
     {
         if (null === $content) {
@@ -65,9 +62,7 @@ class TwitterNotifier implements Notifier
             $this->oauthToken = $app->get('oauth_token');
             $this->oauthTokenSecret = Crypto::decrypt($app->get('oauth_token_secret'), $this->key);
 
-            $tweet = $notification->get('body', $content->get('meta_description', $content->get('title')))
-                . ' ' . $this->getCanonicalUrl($content);
-            $result = $this->postTweet($tweet);
+            $result = $this->postTweet($this->generateTweet($notification, $app, $content));
         } catch (\Throwable $e) {
             $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN;
             return NotifierResultV1::create()
@@ -79,18 +74,20 @@ class TwitterNotifier implements Notifier
 
         $notifierResult = NotifierResultV1::fromArray($result);
         if (isset($result['response'])) {
-            $id = $result['response']['id_str'] ?? null;
-            $screenName = $result['response']['user']['screen_name'] ?? null;
-            $tweetUrl = null !== $id && null !== $screenName ? "https://twitter.com/{$screenName}/status/{$id}" : null;
+            $tweet_id = $result['response']['id_str'] ?? null;
+            $twitterScreenName = $result['response']['user']['screen_name'] ?? null;
+            $tweetUrl = null !== $tweet_id && null !== $twitterScreenName  ? "https://twitter.com/{$twitterScreenName }/status/{$tweet_id}" : null;
 
-            $notifierResult->addToMap('tags', 'id', $id);
+            $notifierResult->addToMap('tags', 'tweet_id', $tweet_id);
             $notifierResult->addToMap('tags', 'tweet_url', $tweetUrl);
+            $notifierResult->addToMap('tags', 'twitter_screen_name', $twitterScreenName);
         }
 
         return $notifierResult;
     }
 
-    protected function postTweet(string $tweet): array {
+    protected function postTweet(string $tweet): array
+    {
         $options = [
             RequestOptions::FORM_PARAMS => [
                 'status' => $tweet,
@@ -113,6 +110,12 @@ class TwitterNotifier implements Notifier
         } catch (\Throwable $e) {
             return $this->convertException($e);
         }
+    }
+
+    protected function generateTweet(Message $notification, Message $app, ?Message $content = null): string
+    {
+        return $notification->get('body', $content->get('meta_description', $content->get('title')))
+            . ' ' . $this->getCanonicalUrl($content);
     }
 
     protected function convertException(\Throwable $exception): array
