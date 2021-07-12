@@ -70,7 +70,7 @@ class TwitterNotifierTest extends AbstractPbjxTest
                         new Response(
                             200,
                             ['Content-Type' => 'application/json'],
-                            json_encode(['id_str' => '123'])
+                            json_encode(['id_str' => '123', 'user' => ['screen_name' => 'tester']])
                         ),
                     ]
                 );
@@ -113,8 +113,9 @@ class TwitterNotifierTest extends AbstractPbjxTest
     public function testSend()
     {
        $result = $this->notifier->send($this->notification, $this->app, $this->content);
-       $this->assertSame('123', $result->getFromMap('tags', 'id'));
-       $this->assertNull($result->getFromMap('tags', 'tweet_url'));
+       $this->assertSame('123', $result->getFromMap('tags', 'tweet_id'));
+       $this->assertSame("https://twitter.com/tester/status/123", $result->getFromMap('tags', 'tweet_url'));
+       $this->assertSame('tester', $result->getFromMap('tags', 'twitter_screen_name'));
     }
 
     public function testSendStatusOverride()
