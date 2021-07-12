@@ -14,6 +14,7 @@ use Gdbots\Schemas\Ncr\Command\CreateNodeV1;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Gdbots\Schemas\Pbjx\Enum\Code;
 use Ramsey\Uuid\Uuid;
+use Triniti\Notify\Exception\NotificationAlreadyScheduled;
 
 class TwitterWatcher implements EventSubscriber
 {
@@ -36,15 +37,16 @@ class TwitterWatcher implements EventSubscriber
     {
 
         $date = $event->get('occurred_at')->toDateTime();
+        $contentRef = $article->generateNodeRef();
         $id = UuidIdentifier::fromString(
             Uuid::uuid5(
                 Uuid::uuid5(Uuid::NIL, 'twitter-auto-post'),
-                $article->generateNodeRef()->toString()
+                $contentRef->toString()
             )->toString()
         );
 
         return MessageResolver::resolveCurie('*:notify:node:twitter-notification:v1')::create()
-            ->set('content_ref',  $article->generateNodeRef())
+            ->set('content_ref',  $contentRef)
             ->set('_id', $id)
             ->set('send_at', $date)
             ->set('title', $article->get('title'));
@@ -52,22 +54,15 @@ class TwitterWatcher implements EventSubscriber
 
     protected function getApp(Message $article, Message $event, Pbjx $pbjx): ?Message
     {
-        $request = SearchAppsRequestV1::create();
+        $request = SearchAppsRequestV1::create()
+            ->set('q', 'd__type:twitter-app')
+            ->set('count', 1);
         $response = $pbjx->copyContext($event, $request)->request($request);
 
-        /** @var Message $node */
-        foreach ($response->get('nodes', []) as $node) {
-            if ($node::schema()->hasMixin('gdbots:iam:mixin:twitter-app')
-                && NodeStatus::PUBLISHED === $node->fget('status')
-            ) {
-                return $node;
-            }
-        }
-
-        return null;
+        return $response->get('nodes')[0] ?? null;
     }
 
-    public function notifyTwitter(Message $event, Message $article, Pbjx $pbjx): void
+    protected function notifyTwitter(Message $event, Message $article, Pbjx $pbjx): void
     {
         if ($event->isReplay()) {
             return;
