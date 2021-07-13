@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Triniti\Tests\Curator;
 
 use Acme\Schemas\News\Event\ArticleMarkedAsDraftV1;
-use Acme\Schemas\News\Event\ArticlePublishedV1;
 use Acme\Schemas\News\Node\ArticleV1;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\Event\PbjxEvent;
@@ -27,25 +26,5 @@ final class TeaserableEnricherTest extends AbstractPbjxTest
         $actual = $node->get('order_date')->format('c');
 
         $this->assertSame($expected, $actual, 'order_date should match created_at');
-    }
-
-    public function testEnrichWithOrderDateWhenPublished(): void
-    {
-        $node = ArticleV1::create()->set('order_date', new \DateTime('-1 month'));
-        $nodeRef = NodeRef::fromNode($node);
-        $publishedAt = new \DateTime();
-
-        $event = ArticlePublishedV1::create()
-            ->set('node_ref', $nodeRef)
-            ->set('published_at', $publishedAt);
-
-        $pbjxEvent = (new PbjxEvent($event))->createChildEvent($node);
-        $enricher = new TeaserableEnricher();
-        $enricher->enrichWithOrderDate($pbjxEvent);
-
-        $expected = $publishedAt->format('c');
-        $actual = $node->get('order_date')->format('c');
-
-        $this->assertSame($expected, $actual, 'order_date should match published_at');
     }
 }

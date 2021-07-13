@@ -15,6 +15,7 @@ use Gdbots\Schemas\Iam\Request\SearchAppsRequestV1;
 use Gdbots\Schemas\Ncr\Command\CreateNodeV1;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Gdbots\Schemas\Pbjx\Enum\Code;
+use Triniti\Ncr\Search\Elastica\MappingBuilder;
 
 class AppleNewsWatcher implements EventSubscriber
 {
@@ -155,19 +156,18 @@ class AppleNewsWatcher implements EventSubscriber
 
     protected function getApp(Message $article, Message $event, Pbjx $pbjx): ?Message
     {
-        $request = SearchAppsRequestV1::create();
-        $response = $pbjx->copyContext($event, $request)->request($request);
+        $typeField = MappingBuilder::TYPE_FIELD;
+        $request = SearchAppsRequestV1::create()
+            ->set('status', NodeStatus::PUBLISHED())
+            ->set('q', "+{$typeField}:apple-news-app")
+            ->set('count', 1);
 
-        /** @var Message $node */
-        foreach ($response->get('nodes', []) as $node) {
-            if ($node::schema()->hasMixin('gdbots:iam:mixin:apple-news-app')
-                && NodeStatus::PUBLISHED === $node->fget('status')
-            ) {
-                return $node;
-            }
+        try {
+            $response = $pbjx->copyContext($event, $request)->request($request);
+            return $response->getFromListAt('nodes', 0);
+        } catch (\Throwable $e) {
+            return null;
         }
-
-        return null;
     }
 
     protected function notifyAppleNews(Message $event, Message $article, Pbjx $pbjx, string $operation): void
