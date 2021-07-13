@@ -23,7 +23,7 @@ use Triniti\Sys\Flags;
 
 class TwitterNotifier implements Notifier
 {
-    const API_ENDPOINT = 'https://api.twitter.com/1.1';
+    const API_ENDPOINT = 'https://api.twitter.com/1.1/';
 
     protected Flags $flags;
     protected Key $key;
@@ -130,7 +130,7 @@ class TwitterNotifier implements Notifier
         ];
 
         try {
-            $response = $this->getGuzzleClient()->post('/statuses/update.json', $options);
+            $response = $this->getGuzzleClient()->post('statuses/update.json', $options);
             $httpCode = $response->getStatusCode();
             $content = (string)$response->getBody()->getContents();
 
