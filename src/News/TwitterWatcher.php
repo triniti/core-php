@@ -35,7 +35,6 @@ class TwitterWatcher implements EventSubscriber
 
     protected function createTwitterNotification(Message $event, Message $article, Pbjx $pbjx): Message
     {
-
         $date = $event->get('occurred_at')->toDateTime();
         $contentRef = $article->generateNodeRef();
         $id = UuidIdentifier::fromString(
@@ -86,10 +85,9 @@ class TwitterWatcher implements EventSubscriber
 
         $command = CreateNodeV1::create()->set('node', $notification);
         $pbjx->copyContext($event, $command);
-        $nodeRef = $article->generateNodeRef();
 
         try {
-            $pbjx->sendAt($command, strtotime('+180 seconds'), "{$nodeRef}.post-tweet");
+            $pbjx->sendAt($command, strtotime('+180 seconds'), "{$article->generateNodeRef()}.post-tweet");
         } catch (\Throwable $e) {
             if ($e->getCode() !== Code::ALREADY_EXISTS) {
                 throw $e;
