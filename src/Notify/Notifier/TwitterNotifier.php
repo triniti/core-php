@@ -16,21 +16,22 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\RequestOptions;
 use GuzzleHttp\Subscriber\Oauth\Oauth1;
+use Triniti\Notify\Exception\RequiredFieldNotSet;
 use Triniti\Notify\Notifier;
 use Triniti\Schemas\Notify\NotifierResultV1;
 use Triniti\Sys\Flags;
 
 class TwitterNotifier implements Notifier
 {
-    const ENDPOINT = 'https://api.twitter.com/1.1/';
+    const API_ENDPOINT = 'https://api.twitter.com/1.1';
 
     protected Flags $flags;
     protected Key $key;
     protected ?GuzzleClient $guzzleClient = null;
-    protected string $oauthConsumerKey;
-    protected string $oauthConsumerSecret;
-    protected string $oauthToken;
-    protected string $oauthTokenSecret;
+    protected string $oauthConsumerKey = '';
+    protected string $oauthConsumerSecret = '';
+    protected string $oauthToken = '';
+    protected string $oauthTokenSecret = '';
 
     public function __construct(Flags $flags, Key $key)
     {
@@ -40,14 +41,6 @@ class TwitterNotifier implements Notifier
 
     public function send(Message $notification, Message $app, ?Message $content = null): Message
     {
-        if (null === $content) {
-            return NotifierResultV1::create()
-                ->set('ok', false)
-                ->set('code', Code::INVALID_ARGUMENT)
-                ->set('error_name', 'NullContent')
-                ->set('error_message', 'Content cannot be null');
-        }
-
         if ($this->flags->getBoolean('twitter_notifier_disabled')) {
             return NotifierResultV1::create()
                 ->set('ok', false)
@@ -57,12 +50,22 @@ class TwitterNotifier implements Notifier
         }
 
         try {
+            $this->guzzleClient = null;
+            $this->validate($notification, $app);
             $this->oauthConsumerKey = $app->get('oauth_consumer_key');
             $this->oauthConsumerSecret = Crypto::decrypt($app->get('oauth_consumer_secret'), $this->key);
             $this->oauthToken = $app->get('oauth_token');
             $this->oauthTokenSecret = Crypto::decrypt($app->get('oauth_token_secret'), $this->key);
+            $tweet = $this->generateTweet($notification, $app, $content);
+            if (empty($tweet)) {
+                return NotifierResultV1::create()
+                    ->set('ok', false)
+                    ->set('code', Code::INVALID_ARGUMENT)
+                    ->set('error_name', 'NullContent')
+                    ->set('error_message', 'Tweet cannot be null');
+            }
 
-            $result = $this->postTweet($this->generateTweet($notification, $app, $content));
+            $result = $this->postTweet($tweet);
         } catch (\Throwable $e) {
             $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN;
             return NotifierResultV1::create()
@@ -72,18 +75,50 @@ class TwitterNotifier implements Notifier
                 ->set('error_message', substr($e->getMessage(), 0, 2048));
         }
 
-        $notifierResult = NotifierResultV1::fromArray($result);
-        if (isset($result['response'])) {
-            $tweet_id = $result['response']['id_str'] ?? null;
-            $twitterScreenName = $result['response']['user']['screen_name'] ?? null;
-            $tweetUrl = null !== $tweet_id && null !== $twitterScreenName  ? "https://twitter.com/{$twitterScreenName }/status/{$tweet_id}" : null;
+        $response = $result['response'] ?? [];
+        $result = NotifierResultV1::fromArray($result);
 
-            $notifierResult->addToMap('tags', 'tweet_id', $tweet_id);
-            $notifierResult->addToMap('tags', 'tweet_url', $tweetUrl);
-            $notifierResult->addToMap('tags', 'twitter_screen_name', $twitterScreenName);
+        if (isset($response['id_str'])) {
+            $tweetId = (string)$response['id_str'];
+            $result->addToMap('tags', 'tweet_id', $tweetId);
+
+            $screenName = $response['user']['screen_name'] ?? null;
+            if ($screenName) {
+                $result->addToMap('tags', 'twitter_screen_name', (string)$screenName);
+                $tweetUrl = "https://twitter.com/{$screenName}/status/{$tweetId}";
+                $result->addToMap('tags', 'tweet_url', $tweetUrl);
+            }
         }
 
-        return $notifierResult;
+        return $result;
+    }
+
+    protected function validate(Message $notification, Message $app): void
+    {
+        foreach (['oauth_consumer_key', 'oauth_consumer_secret', 'oauth_token', 'oauth_token_secret'] as $field) {
+            if (!$app->has($field)) {
+                throw new RequiredFieldNotSet("[{$field}] is required");
+            }
+        }
+    }
+
+    protected function generateTweet(Message $notification, Message $app, ?Message $content = null): ?string
+    {
+        if (null === $content) {
+            return $notification->get('body');
+        }
+
+        $tweet = $notification->get('body', $content->get('meta_description', $content->get('title')))
+            . ' ' . $this->getCanonicalUrl($content);
+        return trim($tweet);
+    }
+
+    protected function getCanonicalUrl(Message $message): ?string
+    {
+        return UriTemplateService::expand(
+            "{$message::schema()->getQName()}.canonical",
+            $message->getUriTemplateVars()
+        );
     }
 
     protected function postTweet(string $tweet): array
@@ -95,27 +130,20 @@ class TwitterNotifier implements Notifier
         ];
 
         try {
-            $response = $this->getGuzzleClient()->post('statuses/update.json', $options);
-            $content = (string)$response->getBody()->getContents();
+            $response = $this->getGuzzleClient()->post('/statuses/update.json', $options);
             $httpCode = $response->getStatusCode();
-            $json = json_decode($content, true);
+            $content = (string)$response->getBody()->getContents();
 
             return [
-                'ok' => HttpCode::HTTP_OK === $httpCode,
-                'code' => StatusCodeUtil::httpToVendor($httpCode),
-                'http_code' => $httpCode,
+                'ok'           => HttpCode::HTTP_OK === $httpCode || HttpCode::HTTP_CREATED === $httpCode,
+                'code'         => StatusCodeUtil::httpToVendor($httpCode),
+                'http_code'    => $httpCode,
                 'raw_response' => $content,
-                'response' => $json,
+                'response'     => json_decode($content, true),
             ];
         } catch (\Throwable $e) {
             return $this->convertException($e);
         }
-    }
-
-    protected function generateTweet(Message $notification, Message $app, ?Message $content = null): string
-    {
-        return $notification->get('body', $content->get('meta_description', $content->get('title')))
-            . ' ' . $this->getCanonicalUrl($content);
     }
 
     protected function convertException(\Throwable $exception): array
@@ -138,19 +166,10 @@ class TwitterNotifier implements Notifier
         ];
     }
 
-    protected function getCanonicalUrl(Message $message): string
-    {
-        return UriTemplateService::expand(
-            "{$message::schema()->getQName()}.canonical",
-            $message->getUriTemplateVars()
-        );
-    }
-
     protected function getGuzzleClient(): GuzzleClient
     {
         if (null === $this->guzzleClient) {
             $stack = HandlerStack::create();
-            // Use Guzzle Oauth Subscriber https://github.com/guzzle/oauth-subscriber
             $middleware = new Oauth1([
                 'consumer_key'    => $this->oauthConsumerKey,
                 'consumer_secret' => $this->oauthConsumerSecret,
@@ -160,9 +179,9 @@ class TwitterNotifier implements Notifier
             $stack->push($middleware);
 
             $this->guzzleClient = new GuzzleClient([
-                'base_uri' => self::ENDPOINT,
+                'base_uri' => self::API_ENDPOINT,
                 'handler'  => $stack,
-                'auth' => 'oauth'
+                'auth'     => 'oauth',
             ]);
         }
 

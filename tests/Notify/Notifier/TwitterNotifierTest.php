@@ -11,6 +11,7 @@ use Acme\Schemas\Sys\Node\FlagsetV1;
 use Defuse\Crypto\Crypto;
 use Defuse\Crypto\Key;
 use Gdbots\Ncr\Repository\InMemoryNcr;
+use Gdbots\Pbj\Message;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\RequestException;
@@ -27,11 +28,12 @@ class TwitterNotifierTest extends AbstractPbjxTest
     protected Key $key;
     private TwitterNotifier $notifier;
     protected InMemoryNcr $ncr;
-    protected TwitterAppV1 $app;
-    protected TwitterNotificationV1 $notification;
-    protected ArticleV1 $content;
+    protected Message $app;
+    protected Message $notification;
+    protected Message $content;
 
-    public function setup(): void {
+    public function setup(): void
+    {
         parent::setup();
         $this->ncr = new InMemoryNcr();
         $this->key = Key::createNewRandomKey();
@@ -43,8 +45,7 @@ class TwitterNotifierTest extends AbstractPbjxTest
         $this->ncr->putNode($flagset);
         $flags = new Flags($this->ncr, 'acme:flagset:test');
 
-        $this->notifier = new class($flags, $this->key) extends TwitterNotifier
-        {
+        $this->notifier = new class($flags, $this->key) extends TwitterNotifier {
             protected string $status;
 
             public function setFlags(Flags $flags): void
@@ -86,14 +87,6 @@ class TwitterNotifierTest extends AbstractPbjxTest
         };
     }
 
-    public function testSendWithoutContent()
-    {
-        $result = $this->notifier->send($this->notification, $this->app);
-
-        $this->assertFalse($result->get('ok'));
-        $this->assertSame('NullContent', $result->get('error_name'));
-    }
-
     public function testSendWithTwitterNotifierDisabled()
     {
         $flagset = FlagsetV1::fromArray(
@@ -112,10 +105,10 @@ class TwitterNotifierTest extends AbstractPbjxTest
 
     public function testSend()
     {
-       $result = $this->notifier->send($this->notification, $this->app, $this->content);
-       $this->assertSame('123', $result->getFromMap('tags', 'tweet_id'));
-       $this->assertSame("https://twitter.com/tester/status/123", $result->getFromMap('tags', 'tweet_url'));
-       $this->assertSame('tester', $result->getFromMap('tags', 'twitter_screen_name'));
+        $result = $this->notifier->send($this->notification, $this->app, $this->content);
+        $this->assertSame('123', $result->getFromMap('tags', 'tweet_id'));
+        $this->assertSame("https://twitter.com/tester/status/123", $result->getFromMap('tags', 'tweet_url'));
+        $this->assertSame('tester', $result->getFromMap('tags', 'twitter_screen_name'));
     }
 
     public function testSendStatusOverride()
@@ -142,11 +135,7 @@ class TwitterNotifierTest extends AbstractPbjxTest
         $this->ncr->putNode($flagset);
         $flags = new Flags($this->ncr, 'acme:flagset:twitter');
         $this->notifier->setFlags($flags);
-        $this->notifier = new class($flags, $this->key) extends TwitterNotifier
-        {
-            /**
-             * @param Flags $flags
-             */
+        $this->notifier = new class($flags, $this->key) extends TwitterNotifier {
             public function setFlags(Flags $flags): void
             {
                 $this->flags = $flags;
@@ -167,7 +156,7 @@ class TwitterNotifierTest extends AbstractPbjxTest
                                 ['Content-Type' => 'application/json'],
                                 json_encode(['id_str' => '123'])
                             ),
-                        )
+                        ),
 
                     ]
                 );
@@ -185,13 +174,10 @@ class TwitterNotifierTest extends AbstractPbjxTest
         $this->assertSame('RequestException', $result->get('error_name'));
     }
 
-    /**
-     * @return TwitterNotificationV1
-     */
-    protected function getNotification(): TwitterNotificationV1
+    protected function getNotification(): Message
     {
         return TwitterNotificationV1::create()
-            ->set('content_ref',  $this->content->generateNodeRef())
+            ->set('content_ref', $this->content->generateNodeRef())
             ->set('status', NodeStatus::PUBLISHED())
             ->set('title', 'Lorem ipsum dolor sit amet')
             ->set(
@@ -200,10 +186,7 @@ class TwitterNotifierTest extends AbstractPbjxTest
             );
     }
 
-    /**
-     * @return TwitterAppV1
-     */
-    protected function getApp(): TwitterAppV1
+    protected function getApp(): Message
     {
         return TwitterAppV1::create()
             ->set('status', NodeStatus::PUBLISHED())
@@ -220,10 +203,7 @@ class TwitterNotifierTest extends AbstractPbjxTest
             );
     }
 
-    /**
-     * @return ArticleV1
-     */
-    protected function getContent(): ArticleV1
+    protected function getContent(): Message
     {
         return ArticleV1::create()
             ->set('title', 'Lorem Ipsum')

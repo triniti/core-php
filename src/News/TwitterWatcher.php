@@ -14,7 +14,7 @@ use Gdbots\Schemas\Ncr\Command\CreateNodeV1;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Gdbots\Schemas\Pbjx\Enum\Code;
 use Ramsey\Uuid\Uuid;
-use Triniti\Notify\Exception\NotificationAlreadyScheduled;
+use Triniti\Ncr\Search\Elastica\MappingBuilder;
 
 class TwitterWatcher implements EventSubscriber
 {
@@ -35,7 +35,6 @@ class TwitterWatcher implements EventSubscriber
 
     protected function createTwitterNotification(Message $event, Message $article, Pbjx $pbjx): Message
     {
-
         $date = $event->get('occurred_at')->toDateTime();
         $contentRef = $article->generateNodeRef();
         $id = UuidIdentifier::fromString(
@@ -46,20 +45,26 @@ class TwitterWatcher implements EventSubscriber
         );
 
         return MessageResolver::resolveCurie('*:notify:node:twitter-notification:v1')::create()
-            ->set('content_ref',  $contentRef)
             ->set('_id', $id)
+            ->set('title', $article->get('title'))
             ->set('send_at', $date)
-            ->set('title', $article->get('title'));
+            ->set('content_ref', $contentRef);
     }
 
     protected function getApp(Message $article, Message $event, Pbjx $pbjx): ?Message
     {
+        $typeField = MappingBuilder::TYPE_FIELD;
         $request = SearchAppsRequestV1::create()
-            ->set('q', 'd__type:twitter-app')
+            ->set('status', NodeStatus::PUBLISHED())
+            ->set('q', "+{$typeField}:twitter-app")
             ->set('count', 1);
-        $response = $pbjx->copyContext($event, $request)->request($request);
 
-        return $response->get('nodes')[0] ?? null;
+        try {
+            $response = $pbjx->copyContext($event, $request)->request($request);
+            return $response->getFromListAt('nodes', 0);
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     protected function notifyTwitter(Message $event, Message $article, Pbjx $pbjx): void
@@ -73,7 +78,7 @@ class TwitterWatcher implements EventSubscriber
         }
 
         if (!$this->shouldNotifyTwitter($event, $article)) {
-          return;
+            return;
         }
 
         $app = $this->getApp($article, $event, $pbjx);
@@ -103,4 +108,4 @@ class TwitterWatcher implements EventSubscriber
         // based on the event or article
         return true;
     }
-  }
+}
