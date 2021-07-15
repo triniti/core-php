@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 1.x versions.
 
 
+## v1.1.1
+* Add 3 minute buffer to twitter notification `send_at` to allow users the chance to edit notification before it is sent.
+
+
 ## v1.1.0
 * Support auto post to twitter on article publish.
 
