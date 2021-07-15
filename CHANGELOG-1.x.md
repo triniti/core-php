@@ -3,7 +3,7 @@ This changelog references the relevant changes done in 1.x versions.
 
 
 ## v1.1.1
-* Delay sending twitter notification for 3 minutes to allow users the chance to edit notification before it is sent.
+* Add 3 minute buffer to twitter notification `send_at` to allow users the chance to edit notification before it is sent.
 
 
 ## v1.1.0
