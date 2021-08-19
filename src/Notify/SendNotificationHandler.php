@@ -13,13 +13,17 @@ use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Gdbots\Schemas\Pbjx\Enum\Code;
+use Psr\Cache\CacheItemPoolInterface;
 use Triniti\Schemas\Notify\Enum\NotificationSendStatus;
 use Triniti\Schemas\Notify\NotifierResultV1;
 
 class SendNotificationHandler implements CommandHandler
 {
+    protected const TTL = 60;
+
     protected Ncr $ncr;
     protected NotifierLocator $locator;
+    protected CacheItemPoolInterface $cache;
 
     public static function handlesCuries(): array
     {
@@ -29,10 +33,11 @@ class SendNotificationHandler implements CommandHandler
         return $curies;
     }
 
-    public function __construct(Ncr $ncr, NotifierLocator $locator)
+    public function __construct(Ncr $ncr, NotifierLocator $locator, CacheItemPoolInterface $cache)
     {
         $this->ncr = $ncr;
         $this->locator = $locator;
+        $this->cache = $cache;
     }
 
     public function handleCommand(Message $command, Pbjx $pbjx): void
@@ -50,12 +55,22 @@ class SendNotificationHandler implements CommandHandler
             throw $e;
         }
 
+        $lockItem = $this->cache->getItem($this->getLockKey($notification));
+        if ($lockItem->isHit()) {
+            // another process is running on this notification item right now
+            return;
+        }
+
+        $lockItem->set(time())->expiresAfter(self::TTL);
+        $this->cache->save($lockItem);
+
         /** @var NotificationAggregate $aggregate */
         $aggregate = AggregateResolver::resolve($nodeRef->getQName())::fromNode($notification, $pbjx);
         $aggregate->sync($context);
         $notification = $aggregate->getNode();
 
         if (NotificationSendStatus::SCHEDULED !== $notification->fget('send_status')) {
+            $this->cache->deleteItem($lockItem->getKey());
             return;
         }
 
@@ -133,6 +148,7 @@ class SendNotificationHandler implements CommandHandler
             $newCommand->set('ctx_retries', $retries);
             $pbjx->copyContext($command, $newCommand);
             $pbjx->sendAt($newCommand, $timestamp, "{$nodeRef}.send");
+            $this->cache->deleteItem($lockItem->getKey());
             return;
         }
 
@@ -143,5 +159,18 @@ class SendNotificationHandler implements CommandHandler
         }
 
         $aggregate->commit($context);
+    }
+
+    protected function getLockKey(Message $notification): string
+    {
+        $qname = $notification::schema()->getQName();
+        $key = $notification->generateNodeRef() . $notification->get('apple_news_operation', '');
+        // snh (send notification handler) prefix is to avoid collision
+        return str_replace('-', '_', sprintf(
+            'snh.%s.%s.%s',
+            $qname->getVendor(),
+            $qname->getMessage(),
+            md5($key)
+        ));
     }
 }
