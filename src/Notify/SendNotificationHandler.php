@@ -14,6 +14,7 @@ use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Gdbots\Schemas\Pbjx\Enum\Code;
 use Psr\Cache\CacheItemPoolInterface;
+use Psr\Cache\InvalidArgumentException;
 use Triniti\Schemas\Notify\Enum\NotificationSendStatus;
 use Triniti\Schemas\Notify\NotifierResultV1;
 
@@ -55,7 +56,10 @@ class SendNotificationHandler implements CommandHandler
             throw $e;
         }
 
-        $lockItem = $this->cache->getItem($this->getLockKey($notification));
+        try {
+            $lockItem = $this->cache->getItem($this->getLockKey($notification));
+        } catch (InvalidArgumentException $e) {
+        }
         if ($lockItem->isHit()) {
             // another process is running on this notification item right now
             return;
@@ -159,6 +163,7 @@ class SendNotificationHandler implements CommandHandler
         }
 
         $aggregate->commit($context);
+        $this->cache->deleteItem($lockItem->getKey());
     }
 
     protected function getLockKey(Message $notification): string
