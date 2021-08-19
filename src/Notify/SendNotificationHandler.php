@@ -56,10 +56,7 @@ class SendNotificationHandler implements CommandHandler
             throw $e;
         }
 
-        try {
-            $lockItem = $this->cache->getItem($this->getLockKey($notification));
-        } catch (InvalidArgumentException $e) {
-        }
+        $lockItem = $this->cache->getItem($this->getLockKey($notification));
         if ($lockItem->isHit()) {
             // another process is running on this notification item right now
             return;
