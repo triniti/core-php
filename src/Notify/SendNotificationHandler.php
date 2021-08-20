@@ -14,7 +14,6 @@ use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Gdbots\Schemas\Pbjx\Enum\Code;
 use Psr\Cache\CacheItemPoolInterface;
-use Psr\Cache\InvalidArgumentException;
 use Triniti\Schemas\Notify\Enum\NotificationSendStatus;
 use Triniti\Schemas\Notify\NotifierResultV1;
 
