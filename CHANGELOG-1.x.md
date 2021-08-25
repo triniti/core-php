@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 1.x versions.
 
 
+## v1.1.2
+* Reduce max gallery image count to 130 in `Triniti\AppleNews\ArticleDocumentMarshaler`
+
+
 ## v1.1.1
 * Add 3 minute buffer to twitter notification `send_at` to allow users the chance to edit notification before it is sent.
 

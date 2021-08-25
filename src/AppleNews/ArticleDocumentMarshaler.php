@@ -711,7 +711,7 @@ class ArticleDocumentMarshaler
             ->set('gallery_ref', $nodeRef)
             ->set('status', NodeStatus::PUBLISHED())
             ->set('sort', SearchAssetsSort::GALLERY_SEQ_DESC())
-            ->set('count', 150)
+            ->set('count', 130)
             ->addToSet('types', ['image-asset']);
 
         $request->set('ctx_causator_ref', $request->generateMessageRef());
