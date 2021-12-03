@@ -12,7 +12,7 @@
     "ext-zlib": "*",
     "aws/aws-sdk-php-symfony": "^2.2",
     "gdbots/app-bundle": "dev-sy6",
-    "gdbots/crypto-bundle": "^2.0",
+    "gdbots/crypto-bundle": "dev-sy6",
     "gdbots/enrichments": "^2.0",
     "gdbots/iam-bundle": "^2.1",
     "guzzlehttp/oauth-subscriber": "~0.5",
