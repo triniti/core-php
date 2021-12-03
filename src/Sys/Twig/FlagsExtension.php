@@ -18,7 +18,7 @@ final class FlagsExtension extends AbstractExtension
         $this->flags = $flags;
     }
 
-    public function getFunctions()
+    public function getFunctions(): array
     {
         return [
             new TwigFunction('flags_get_all', [$this, 'getAll']),
