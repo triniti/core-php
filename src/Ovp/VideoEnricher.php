@@ -15,7 +15,7 @@ class VideoEnricher implements EventSubscriber, PbjxEnricher
     protected DamUrlProvider $damUrlProvider;
     protected ArtifactUrlProvider $artifactUrlProvider;
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:ovp:mixin:video.enrich' => 'enrich',

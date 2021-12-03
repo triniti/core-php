@@ -12,7 +12,7 @@ use Triniti\Schemas\OvpJwplayer\Command\SyncMediaV1;
 
 class JwplayerWatcher implements EventSubscriber
 {
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:ovp.jwplayer:mixin:has-media.created'                 => 'onVideoCreated',

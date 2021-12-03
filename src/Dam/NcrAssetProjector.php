@@ -7,7 +7,7 @@ use Gdbots\Ncr\NcrProjector;
 
 class NcrAssetProjector extends NcrProjector
 {
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:dam:event:asset-linked'            => 'onNodeEvent',

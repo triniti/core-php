@@ -16,7 +16,7 @@ class NotificationEnricher implements EventSubscriber, PbjxEnricher
 {
     protected Ncr $ncr;
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:notify:mixin:notification.enrich' => 'enrich',

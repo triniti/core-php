@@ -21,7 +21,7 @@ class AppleNewsWatcher implements EventSubscriber
 {
     protected Ncr $ncr;
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:news:mixin:article.deleted'                               => 'onArticleRemoval',

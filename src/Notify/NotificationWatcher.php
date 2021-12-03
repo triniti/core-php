@@ -12,7 +12,7 @@ use Triniti\Schemas\Notify\Enum\NotificationSendStatus;
 
 class NotificationWatcher implements EventSubscriber
 {
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:notify:mixin:notification.created'             => 'schedule',

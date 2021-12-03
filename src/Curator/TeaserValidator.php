@@ -18,7 +18,7 @@ class TeaserValidator implements EventSubscriber, PbjxValidator
 {
     protected Ncr $ncr;
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'gdbots:ncr:command:publish-node.validate' => 'validatePublishNode',

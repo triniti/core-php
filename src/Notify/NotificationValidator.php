@@ -17,7 +17,7 @@ use Triniti\Schemas\Notify\Request\SearchNotificationsRequestV1;
 
 class NotificationValidator implements EventSubscriber, PbjxValidator
 {
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:notify:mixin:notification.validate' => 'validate',

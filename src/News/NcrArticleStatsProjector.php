@@ -24,7 +24,7 @@ class NcrArticleStatsProjector implements EventSubscriber, PbjxProjector
     protected NcrSearch $ncrSearch;
     protected bool $enabled;
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:news:mixin:article.projected'       => 'onArticleProjected',

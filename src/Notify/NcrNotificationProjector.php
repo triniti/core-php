@@ -7,7 +7,7 @@ use Gdbots\Ncr\NcrProjector;
 
 class NcrNotificationProjector extends NcrProjector
 {
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:notify:event:notification-failed' => 'onNodeEvent',

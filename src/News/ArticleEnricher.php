@@ -10,7 +10,7 @@ use Gdbots\Pbjx\EventSubscriber;
 
 final class ArticleEnricher implements EventSubscriber, PbjxEnricher
 {
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:news:mixin:article.enrich' => 'enrichWithWordCount',

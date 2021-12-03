@@ -24,7 +24,7 @@ class HasNotificationsWatcher implements EventSubscriber
 {
     protected LoggerInterface $logger;
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:notify:mixin:has-notifications.deleted'     => 'cancel',

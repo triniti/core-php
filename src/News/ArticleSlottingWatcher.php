@@ -15,7 +15,7 @@ class ArticleSlottingWatcher implements EventSubscriber
 {
     protected CacheItemPoolInterface $cache;
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:news:mixin:article.published'        => 'onArticlePublished',

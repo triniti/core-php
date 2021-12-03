@@ -24,7 +24,7 @@ class TeaserableWatcher implements EventSubscriber
 {
     use SyncTeaserTrait;
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:curator:mixin:teaserable.created'     => 'syncTeasers',

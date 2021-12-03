@@ -12,7 +12,7 @@ use Triniti\Sys\Exception\RedirectLoopProblem;
 
 class RedirectValidator implements EventSubscriber, PbjxValidator
 {
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:sys:mixin:redirect.validate' => 'validate',
