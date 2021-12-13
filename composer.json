@@ -13,7 +13,7 @@
     "aws/aws-sdk-php-symfony": "^2.2",
     "gdbots/app-bundle": "^2.3",
     "gdbots/crypto-bundle": "^3.0",
-    "gdbots/enrichments": "^2.0",
+    "gdbots/enrichments": "^3.0",
     "gdbots/iam-bundle": "dev-sy6",
     "guzzlehttp/oauth-subscriber": "~0.5",
     "ruflin/elastica": "^7.1",
