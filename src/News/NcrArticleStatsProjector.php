@@ -145,7 +145,7 @@ class NcrArticleStatsProjector implements EventSubscriber, PbjxProjector
 
         $this->ncr->putNode($stats, null, $context);
         $this->ncrSearch->indexNodes([$stats], $context);
-        $pbjx->trigger($stats, 'projected', new NodeProjectedEvent($stats, $event), false);
+        $pbjx->trigger($stats, 'projected', new NodeProjectedEvent($stats, $event), false, false);
         $this->cancelOrCreateCollectArticleStatsJob($stats, $event, $pbjx);
     }
 

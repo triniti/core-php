@@ -91,7 +91,7 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
 
         $this->ncr->putNode($stats, $expectedEtag, $context);
         $this->ncrSearch->indexNodes([$stats], $context);
-        $pbjx->trigger($stats, 'projected', new NodeProjectedEvent($stats, $event), false);
+        $pbjx->trigger($stats, 'projected', new NodeProjectedEvent($stats, $event), false, false);
     }
 
     protected function getOrCreateStats(NodeRef $pollRef, Message $event): Message
