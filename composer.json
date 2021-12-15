@@ -14,7 +14,7 @@
     "gdbots/app-bundle": "^2.3",
     "gdbots/crypto-bundle": "^3.0",
     "gdbots/enrichments": "^3.0",
-    "gdbots/iam-bundle": "dev-sy6",
+    "gdbots/iam-bundle": "^3.0",
     "guzzlehttp/oauth-subscriber": "~0.5",
     "ruflin/elastica": "^7.1",
     "sensio/framework-extra-bundle": "^6.2",
