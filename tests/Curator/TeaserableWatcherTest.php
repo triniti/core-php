@@ -64,7 +64,7 @@ final class TeaserableWatcherTest extends AbstractPbjxTest
         $nodeRef = $node->generateNodeRef();
         $teaser = ArticleTeaserV1::create()
             ->set('target_ref', $nodeRef)
-            ->set('status', NodeStatus::PUBLISHED());
+            ->set('status', NodeStatus::PUBLISHED);
         $this->ncr->putNode($teaser);
         $watcher = new TeaserableWatcher($this->ncr);
 
@@ -81,7 +81,7 @@ final class TeaserableWatcherTest extends AbstractPbjxTest
         $nodeRef = $node->generateNodeRef();
         $teaser = ArticleTeaserV1::create()
             ->set('target_ref', $nodeRef)
-            ->set('status', NodeStatus::PUBLISHED());
+            ->set('status', NodeStatus::PUBLISHED);
         $this->ncr->putNode($teaser);
         $watcher = new TeaserableWatcher($this->ncr);
         $event = ArticleDeletedV1::create()->set('node_ref', $nodeRef);
@@ -98,7 +98,7 @@ final class TeaserableWatcherTest extends AbstractPbjxTest
         $nodeRef = $node->generateNodeRef();
         $teaser = ArticleTeaserV1::create()
             ->set('target_ref', $nodeRef)
-            ->set('status', NodeStatus::PUBLISHED());
+            ->set('status', NodeStatus::PUBLISHED);
         $this->ncr->putNode($teaser);
         $watcher = new TeaserableWatcher($this->ncr);
 
@@ -181,7 +181,7 @@ final class TeaserableWatcherTest extends AbstractPbjxTest
         $teaser = ArticleTeaserV1::create()
             ->set('target_ref', $nodeRef)
             ->set('sync_with_target', true)
-            ->set('status', NodeStatus::PUBLISHED());
+            ->set('status', NodeStatus::PUBLISHED);
         $this->ncr->putNode($teaser);
         $watcher = new TeaserableWatcher($this->ncr);
         $event = ArticleUnpublishedV1::create()

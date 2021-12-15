@@ -27,13 +27,13 @@ class SearchTimelinesRequestHandler extends AbstractSearchNodesRequestHandler
     protected function beforeSearchNodes(Message $request, ParsedQuery $parsedQuery): void
     {
         parent::beforeSearchNodes($request, $parsedQuery);
-        $required = BoolOperator::REQUIRED();
+        $required = BoolOperator::REQUIRED;
 
-        if (Trinary::UNKNOWN !== $request->get('is_unlisted')) {
+        if (Trinary::UNKNOWN->value !== $request->get('is_unlisted')) {
             $parsedQuery->addNode(
                 new Field(
                     'is_unlisted',
-                    new Word(Trinary::TRUE_VAL === $request->get('is_unlisted') ? 'true' : 'false', $required),
+                    new Word(Trinary::TRUE_VAL->value === $request->get('is_unlisted') ? 'true' : 'false', $required),
                     $required
                 )
             );

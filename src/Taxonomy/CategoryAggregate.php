@@ -16,7 +16,7 @@ class CategoryAggregate extends Aggregate
         parent::__construct($node, $pbjx, $syncAllEvents);
         // categories are only published or deleted, enforce it.
         if (NodeStatus::DELETED !== $this->node->fget('status')) {
-            $this->node->set('status', NodeStatus::PUBLISHED());
+            $this->node->set('status', NodeStatus::PUBLISHED);
         }
     }
 
@@ -27,7 +27,7 @@ class CategoryAggregate extends Aggregate
 
         // categories are only published or deleted, enforce it.
         if (NodeStatus::DELETED !== $newNode->fget('status')) {
-            $newNode->set('status', NodeStatus::PUBLISHED());
+            $newNode->set('status', NodeStatus::PUBLISHED);
         }
 
         parent::enrichNodeUpdated($event);

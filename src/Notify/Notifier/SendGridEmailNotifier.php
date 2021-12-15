@@ -45,7 +45,7 @@ class SendGridEmailNotifier implements Notifier
         if (null === $content) {
             return NotifierResultV1::create()
                 ->set('ok', false)
-                ->set('code', Code::INVALID_ARGUMENT)
+                ->set('code', Code::INVALID_ARGUMENT->value)
                 ->set('error_name', 'NullContent')
                 ->set('error_message', 'Content cannot be null');
         }
@@ -53,7 +53,7 @@ class SendGridEmailNotifier implements Notifier
         if ($this->flags->getBoolean('sendgrid_email_notifier_disabled')) {
             return NotifierResultV1::create()
                 ->set('ok', false)
-                ->set('code', Code::CANCELLED)
+                ->set('code', Code::CANCELLED->value)
                 ->set('error_name', 'SendGridEmailNotifierDisabled')
                 ->set('error_message', 'Flag [sendgrid_email_notifier_disabled] is true');
         }
@@ -66,7 +66,7 @@ class SendGridEmailNotifier implements Notifier
             $campaignId = $this->createCampaign($campaign);
             $result = $this->sendCampaign($campaignId);
         } catch (\Throwable $e) {
-            $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN;
+            $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN->value;
             return NotifierResultV1::create()
                 ->set('ok', false)
                 ->set('code', $code)
@@ -178,8 +178,8 @@ class SendGridEmailNotifier implements Notifier
             $content = (string)$response->getBody()->getContents();
 
             return [
-                'ok'           => HttpCode::HTTP_CREATED === $httpCode,
-                'code'         => StatusCodeUtil::httpToVendor($httpCode),
+                'ok'           => HttpCode::HTTP_CREATED->value === $httpCode,
+                'code'         => StatusCodeUtil::httpToVendor(HttpCode::from($httpCode)),
                 'http_code'    => $httpCode,
                 'raw_response' => $content,
                 'response'     => json_decode($content, true),

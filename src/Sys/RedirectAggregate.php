@@ -33,7 +33,7 @@ class RedirectAggregate extends Aggregate
     {
         $node->set('title', $node->get('_id')->toUri());
         if (NodeStatus::DELETED !== $node->fget('status')) {
-            $node->set('status', NodeStatus::PUBLISHED());
+            $node->set('status', NodeStatus::PUBLISHED);
         }
     }
 

@@ -71,7 +71,7 @@ class TeaserValidator implements EventSubscriber, PbjxValidator
         }
 
         $target = $this->ncr->getNode($teaser->get('target_ref'), false, $context);
-        if (NodeStatus::PUBLISHED !== $target->fget('status')) {
+        if (NodeStatus::PUBLISHED->value !== $target->fget('status')) {
             throw new TargetNotPublished();
         }
     }

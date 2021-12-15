@@ -55,7 +55,7 @@ final class FlagsExtension extends AbstractExtension
         return $this->flags->getString($flag, $default);
     }
 
-    public function getTrinary(string $flag, int $default = Trinary::UNKNOWN): int
+    public function getTrinary(string $flag, int $default = 0): int
     {
         return $this->flags->getTrinary($flag, $default);
     }

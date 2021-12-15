@@ -67,7 +67,7 @@ class TwitterNotifier implements Notifier
 
             $result = $this->postTweet($tweet);
         } catch (\Throwable $e) {
-            $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN;
+            $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN->value;
             return NotifierResultV1::create()
                 ->set('ok', false)
                 ->set('code', $code)
@@ -135,8 +135,8 @@ class TwitterNotifier implements Notifier
             $content = (string)$response->getBody()->getContents();
 
             return [
-                'ok'           => HttpCode::HTTP_OK === $httpCode || HttpCode::HTTP_CREATED === $httpCode,
-                'code'         => StatusCodeUtil::httpToVendor($httpCode),
+                'ok'           => HttpCode::HTTP_OK->value === $httpCode || HttpCode::HTTP_CREATED->value === $httpCode,
+                'code'         => StatusCodeUtil::httpToVendor(HttpCode::from($httpCode)),
                 'http_code'    => $httpCode,
                 'raw_response' => $content,
                 'response'     => json_decode($content, true),

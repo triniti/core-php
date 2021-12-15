@@ -157,7 +157,7 @@ class NcrArticleStatsProjector implements EventSubscriber, PbjxProjector
 
         $statsRef = $stats->generateNodeRef();
 
-        if (NodeStatus::PUBLISHED !== $stats->fget('status')) {
+        if (NodeStatus::PUBLISHED->value !== $stats->fget('status')) {
             $pbjx->cancelJobs(["{$statsRef}.collect", "{$statsRef}.collect-now"]);
             return;
         }

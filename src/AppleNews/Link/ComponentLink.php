@@ -36,7 +36,7 @@ class ComponentLink extends ComponentAddition
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $properties = $this->getSetProperties();
         $properties['type'] = 'link';

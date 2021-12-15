@@ -11,7 +11,7 @@ class Header extends Container
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $properties = $this->getSetProperties();
         $properties['role'] = 'header';

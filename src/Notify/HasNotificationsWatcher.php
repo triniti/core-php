@@ -88,9 +88,9 @@ class HasNotificationsWatcher implements EventSubscriber
                 ->set('send_at', $sendAt);
 
             if ($newNode->has('send_at')) {
-                $newNode->set('send_status', NotificationSendStatus::SCHEDULED());
+                $newNode->set('send_status', NotificationSendStatus::SCHEDULED);
             } else {
-                $newNode->set('send_status', NotificationSendStatus::DRAFT());
+                $newNode->set('send_status', NotificationSendStatus::DRAFT);
             }
 
             $old = serialize([

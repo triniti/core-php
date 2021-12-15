@@ -48,7 +48,7 @@ abstract class AbstractAzureNotifier implements Notifier
         if ($this->flags->getBoolean(static::DISABLED_FLAG_NAME)) {
             return NotifierResultV1::create()
                 ->set('ok', false)
-                ->set('code', Code::CANCELLED)
+                ->set('code', Code::CANCELLED->value)
                 ->set('error_name', 'AzureNotifierDisabled')
                 ->set('error_message', 'Flag [' . static::DISABLED_FLAG_NAME . '] is true');
         }
@@ -62,7 +62,7 @@ abstract class AbstractAzureNotifier implements Notifier
             $payload = $this->buildPayload($notification, $app, $content);
             $result = $this->sendNotification($payload);
         } catch (\Throwable $e) {
-            $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN;
+            $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN->value;
             return NotifierResultV1::create()
                 ->set('ok', false)
                 ->set('code', $code)

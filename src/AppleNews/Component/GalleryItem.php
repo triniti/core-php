@@ -122,7 +122,7 @@ class GalleryItem extends Component
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         return $this->getSetProperties();
     }

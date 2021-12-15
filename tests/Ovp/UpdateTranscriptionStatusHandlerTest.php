@@ -80,7 +80,7 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
         $this->ncr->putNode($node);
         $command = UpdateTranscriptionStatusV1::create()
             ->set('node_ref', $nodeRef)
-            ->set('transcription_status', TranscriptionStatus::CANCELED());
+            ->set('transcription_status', TranscriptionStatus::CANCELED);
         $this->handler->handleCommand($command, $this->pbjx);
 
         $streamId = StreamId::fromNodeRef($nodeRef);
@@ -115,7 +115,7 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
 
         $command = UpdateTranscriptionStatusV1::create()
             ->set('node_ref', $videoAssetRef)
-            ->set('transcription_status', TranscriptionStatus::COMPLETED());
+            ->set('transcription_status', TranscriptionStatus::COMPLETED);
         $this->handler->handleCommand($command, $this->pbjx);
 
         $videoAssetStreamId = StreamId::fromNodeRef($videoAssetRef);
@@ -149,7 +149,7 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
         $videoAssetRef = $videoAsset->generateNodeRef();
         $command = UpdateTranscriptionStatusV1::create()
             ->set('node_ref', $videoAssetRef)
-            ->set('transcription_status', TranscriptionStatus::FAILED());
+            ->set('transcription_status', TranscriptionStatus::FAILED);
         $this->handler->handleCommand($command, $this->pbjx);
 
         $streamId = StreamId::fromNodeRef($videoAssetRef);
@@ -169,7 +169,7 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
         $videoAssetRef = $videoAsset->generateNodeRef();
         $command = UpdateTranscriptionStatusV1::create()
             ->set('node_ref', $videoAssetRef)
-            ->set('transcription_status', TranscriptionStatus::PROCESSING());
+            ->set('transcription_status', TranscriptionStatus::PROCESSING);
         $this->handler->handleCommand($command, $this->pbjx);
 
         $streamId = StreamId::fromNodeRef($videoAssetRef);
@@ -189,7 +189,7 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
         $videoAssetRef = $videoAsset->generateNodeRef();
         $command = UpdateTranscriptionStatusV1::create()
             ->set('node_ref', $videoAssetRef)
-            ->set('transcription_status', TranscriptionStatus::UNKNOWN());
+            ->set('transcription_status', TranscriptionStatus::UNKNOWN);
         $this->handler->handleCommand($command, $this->pbjx);
 
         $streamId = StreamId::fromNodeRef($videoAssetRef);

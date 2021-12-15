@@ -13,7 +13,7 @@ class InvalidArgumentException extends \InvalidArgumentException implements Trin
      */
     public function __construct(string $message = 'Invalid argument.', ?\Throwable $previous = null)
     {
-        parent::__construct($message, Code::INVALID_ARGUMENT, $previous);
+        parent::__construct($message, Code::INVALID_ARGUMENT->value, $previous);
     }
 
     /**

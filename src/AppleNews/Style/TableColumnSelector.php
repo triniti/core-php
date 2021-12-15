@@ -103,7 +103,7 @@ class TableColumnSelector extends AppleNewsObject
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         return $this->getSetProperties();
     }

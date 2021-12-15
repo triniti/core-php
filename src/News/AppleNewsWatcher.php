@@ -62,7 +62,7 @@ class AppleNewsWatcher implements EventSubscriber
         $event = $pbjxEvent->getLastEvent();
         $node = $pbjxEvent->getNode();
 
-        if (NodeStatus::PUBLISHED !== $node->fget('status')) {
+        if (NodeStatus::PUBLISHED->value !== $node->fget('status')) {
             return;
         }
 
@@ -86,7 +86,7 @@ class AppleNewsWatcher implements EventSubscriber
         $oldNode = $event->get('old_node');
         $newNode = $node;
 
-        if (NodeStatus::PUBLISHED !== $newNode->fget('status')) {
+        if (NodeStatus::PUBLISHED->value !== $newNode->fget('status')) {
             if ($newNode->has('apple_news_id')) {
                 $operation = 'delete';
             } else {
@@ -158,7 +158,7 @@ class AppleNewsWatcher implements EventSubscriber
     {
         $typeField = MappingBuilder::TYPE_FIELD;
         $request = SearchAppsRequestV1::create()
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('status', NodeStatus::PUBLISHED)
             ->set('q', "+{$typeField}:apple-news-app")
             ->set('count', 1);
 

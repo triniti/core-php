@@ -113,8 +113,8 @@ class RenderPromotionRequestHandler implements RequestHandler
         try {
             $searchRequest = SearchPromotionsRequestV1::create()
                 ->set('count', 1)
-                ->set('status', NodeStatus::PUBLISHED())
-                ->set('sort', SearchPromotionsSort::PRIORITY_DESC())
+                ->set('status', NodeStatus::PUBLISHED)
+                ->set('sort', SearchPromotionsSort::PRIORITY_DESC)
                 ->set('slot', $request->get('slot'))
                 ->set('render_at', $request->get('render_at') ?: $request->get('occurred_at')->toDateTime());
 

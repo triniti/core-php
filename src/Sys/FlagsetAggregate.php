@@ -33,7 +33,7 @@ class FlagsetAggregate extends Aggregate
     {
         $node->set('title', $this->nodeRef->getId());
         if (NodeStatus::DELETED !== $node->fget('status')) {
-            $node->set('status', NodeStatus::PUBLISHED());
+            $node->set('status', NodeStatus::PUBLISHED);
         }
     }
 

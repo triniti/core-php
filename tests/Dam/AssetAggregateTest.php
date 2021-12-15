@@ -24,7 +24,7 @@ final class AssetAggregateTest extends AbstractPbjxTest
     {
         $node = ImageAssetV1::create();
         $aggregate = AssetAggregate::fromNode($node, $this->pbjx);
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($aggregate->getNode()->get('status')));
+        $this->assertTrue(NodeStatus::PUBLISHED === $aggregate->getNode()->get('status'));
     }
 
     public function testCreateNode(): void
@@ -36,7 +36,7 @@ final class AssetAggregateTest extends AbstractPbjxTest
         $aggregate = AssetAggregate::fromNode($node, $this->pbjx);
         $aggregate->createNode(CreateAssetV1::create()->set('node', $node));
         $events = $aggregate->getUncommittedEvents();
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($events[0]->get('node')->get('status')));
+        $this->assertTrue(NodeStatus::PUBLISHED === $events[0]->get('node')->get('status'));
     }
 
     public function testUpdateNode(): void
@@ -52,7 +52,7 @@ final class AssetAggregateTest extends AbstractPbjxTest
         $aggregate->createNode(CreateAssetV1::create()->set('node', $node));
         $aggregate->deleteNode(DeleteAssetV1::create()->set('node_ref', $nodeRef));
         $aggregate->commit();
-        $this->assertTrue(NodeStatus::DELETED()->equals($aggregate->getNode()->get('status')));
+        $this->assertTrue(NodeStatus::DELETED === $aggregate->getNode()->get('status'));
         $newNode = (clone $node)
             ->set('mime_type', 'video/mp4')
             ->set('file_size', BigInteger::fromBase('1', 10));
@@ -62,7 +62,7 @@ final class AssetAggregateTest extends AbstractPbjxTest
         $aggregate->updateNode($command);
         $aggregate->commit();
         $aggregateNode = $aggregate->getNode();
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($aggregateNode->get('status')));
+        $this->assertTrue(NodeStatus::PUBLISHED === $aggregateNode->get('status'));
         $this->assertSame('image/jpeg', $aggregateNode->get('mime_type'));
         $this->assertEquals($fileSize, $aggregateNode->get('file_size'));
     }

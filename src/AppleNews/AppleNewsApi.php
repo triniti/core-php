@@ -219,7 +219,7 @@ class AppleNewsApi
     protected function convertException(\Throwable $exception, string $operation): array
     {
         if ($exception instanceof RequestException) {
-            $httpCode = $exception->getResponse()->getStatusCode();
+            $httpCode = HttpCode::tryFrom($exception->getResponse()->getStatusCode()) ?: HttpCode::UNKNOWN;
             $response = (string)($exception->getResponse()->getBody()->getContents() ?: '{}');
         } else {
             $httpCode = HttpCode::HTTP_INTERNAL_SERVER_ERROR;

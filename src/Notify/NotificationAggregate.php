@@ -75,7 +75,7 @@ class NotificationAggregate extends Aggregate
     protected function applyNotificationSent(Message $event): void
     {
         $this->node
-            ->set('send_status', NotificationSendStatus::SENT())
+            ->set('send_status', NotificationSendStatus::SENT)
             ->set('sent_at', $event->get('occurred_at')->toDateTime())
             ->set('notifier_result', $event->get('notifier_result'));
     }
@@ -85,7 +85,7 @@ class NotificationAggregate extends Aggregate
         /** @var Message $node */
         $node = $event->get('node');
         $node
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('status', NodeStatus::PUBLISHED)
             ->clear('sent_at');
 
         parent::enrichNodeCreated($event);
@@ -107,7 +107,7 @@ class NotificationAggregate extends Aggregate
 
         // notifications are only published or deleted, enforce it.
         if (NodeStatus::DELETED !== $newNode->fget('status')) {
-            $newNode->set('status', NodeStatus::PUBLISHED());
+            $newNode->set('status', NodeStatus::PUBLISHED);
         }
 
         parent::enrichNodeUpdated($event);

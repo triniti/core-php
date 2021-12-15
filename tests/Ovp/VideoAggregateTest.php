@@ -48,7 +48,7 @@ final class VideoAggregateTest extends AbstractPbjxTest
         ));
         $command = UpdateTranscodingStatusV1::create()
             ->set('node_ref', $videoAssetRef)
-            ->set('transcoding_status', TranscodingStatus::COMPLETED())
+            ->set('transcoding_status', TranscodingStatus::COMPLETED)
             ->set('mediaconvert_job_arn', 'foo')
             ->set('mediaconvert_queue_arn', 'bar');
         $aggregate = VideoAggregate::fromNode($video, $this->pbjx);
@@ -75,7 +75,7 @@ final class VideoAggregateTest extends AbstractPbjxTest
         $videoAssetId = AssetId::fromString($videoAssetRef->getId());
         $command = UpdateTranscriptionStatusV1::create()
             ->set('node_ref', $videoAssetRef)
-            ->set('transcription_status', TranscriptionStatus::COMPLETED());
+            ->set('transcription_status', TranscriptionStatus::COMPLETED);
         $aggregate = VideoAggregate::fromNode($video, $this->pbjx);
         $aggregate->updateTranscriptionStatus($command, $videoAsset);
         $aggregate->commit();

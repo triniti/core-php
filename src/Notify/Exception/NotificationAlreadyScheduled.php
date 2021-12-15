@@ -9,6 +9,6 @@ final class NotificationAlreadyScheduled extends \RuntimeException implements Tr
 {
     public function __construct(string $message = 'Notification already scheduled.')
     {
-        parent::__construct($message, Code::ALREADY_EXISTS);
+        parent::__construct($message, Code::ALREADY_EXISTS->value);
     }
 }

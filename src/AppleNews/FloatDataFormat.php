@@ -49,7 +49,7 @@ class FloatDataFormat extends DataFormat
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $properties = $this->getSetProperties();
         $properties['type'] = 'float';

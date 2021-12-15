@@ -23,7 +23,7 @@ final class PicklistAggregateTest extends AbstractPbjxTest
         $aggregate = PicklistAggregate::fromNode($node, $this->pbjx);
         $aggregateNode = $aggregate->getNode();
         $this->assertSame('awesome-picklist-1', $aggregateNode->get('title'));
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($aggregateNode->get('status')));
+        $this->assertTrue(NodeStatus::PUBLISHED === $aggregateNode->get('status'));
     }
 
     public function testCreateNode(): void
@@ -36,7 +36,7 @@ final class PicklistAggregateTest extends AbstractPbjxTest
         $events = $aggregate->getUncommittedEvents();
         $eventNode = $events[0]->get('node');
         $this->assertSame('awesome-picklist-2', $eventNode->get('title'));
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($eventNode->get('status')));
+        $this->assertTrue(NodeStatus::PUBLISHED === $eventNode->get('status'));
     }
 
     public function testUpdateNode(): void
@@ -52,6 +52,6 @@ final class PicklistAggregateTest extends AbstractPbjxTest
         $events = $aggregate->getUncommittedEvents();
         $eventNode = $events[0]->get('new_node');
         $this->assertSame('awesome-picklist-3', $eventNode->get('title'));
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($eventNode->get('status')));
+        $this->assertTrue(NodeStatus::PUBLISHED === $eventNode->get('status'));
     }
 }

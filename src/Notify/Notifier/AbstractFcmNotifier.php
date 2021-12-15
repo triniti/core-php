@@ -42,7 +42,7 @@ abstract class AbstractFcmNotifier implements Notifier
         if ($this->flags->getBoolean(static::DISABLED_FLAG_NAME)) {
             return NotifierResultV1::create()
                 ->set('ok', false)
-                ->set('code', Code::CANCELLED)
+                ->set('code', Code::CANCELLED->value)
                 ->set('error_name', 'FcmNotifierDisabled')
                 ->set('error_message', 'Flag [' . static::DISABLED_FLAG_NAME . '] is true');
         }
@@ -60,7 +60,7 @@ abstract class AbstractFcmNotifier implements Notifier
                 $result->addToMap('tags', 'fcm_message_id', (string)$response['message_id']);
             }
         } catch (\Throwable $e) {
-            $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN;
+            $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN->value;
 
             return NotifierResultV1::create()
                 ->set('ok', false)
@@ -138,8 +138,8 @@ abstract class AbstractFcmNotifier implements Notifier
             $content = (string)$response->getBody()->getContents();
 
             return [
-                'ok'           => HttpCode::HTTP_OK === $httpCode || HttpCode::HTTP_CREATED === $httpCode,
-                'code'         => StatusCodeUtil::httpToVendor($httpCode),
+                'ok'           => HttpCode::HTTP_OK->value === $httpCode || HttpCode::HTTP_CREATED->value === $httpCode,
+                'code'         => StatusCodeUtil::httpToVendor(HttpCode::from($httpCode)),
                 'http_code'    => $httpCode,
                 'raw_response' => $content,
                 'response'     => json_decode($content, true),

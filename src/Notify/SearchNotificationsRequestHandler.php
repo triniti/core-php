@@ -51,7 +51,7 @@ class SearchNotificationsRequestHandler extends AbstractSearchNodesRequestHandle
     protected function beforeSearchNodes(Message $request, ParsedQuery $parsedQuery): void
     {
         parent::beforeSearchNodes($request, $parsedQuery);
-        $required = BoolOperator::REQUIRED();
+        $required = BoolOperator::REQUIRED;
 
         if ($request->has('app_ref')) {
             $parsedQuery->addNode(

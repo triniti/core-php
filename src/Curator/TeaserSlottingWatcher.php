@@ -68,7 +68,7 @@ class TeaserSlottingWatcher implements EventSubscriber
         $oldNode = $event->get('old_node');
         $newNode = $pbjxEvent->getNode();
 
-        if (NodeStatus::PUBLISHED !== $newNode->fget('status')) {
+        if (NodeStatus::PUBLISHED->value !== $newNode->fget('status')) {
             return;
         }
 

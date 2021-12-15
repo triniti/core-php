@@ -51,7 +51,7 @@ class Flags
         return $this->flagset->getFromMap('strings', $flag, $default);
     }
 
-    public function getTrinary(string $flag, int $default = Trinary::UNKNOWN): int
+    public function getTrinary(string $flag, int $default = 0): int
     {
         $this->loadFlagset();
         return $this->flagset->getFromMap('trinaries', $flag, $default);

@@ -47,7 +47,7 @@ class NotificationValidatorTest extends AbstractPbjxTest
             'content_ref' => NodeRef::fromString('acme:article:1234'),
         ]);
         $existingNode
-            ->set('send_status', NotificationSendStatus::SENT())
+            ->set('send_status', NotificationSendStatus::SENT)
             ->set('sent_at', new \DateTime('2018-01-01'));
 
         $newNode = IosNotificationV1::fromArray([
@@ -72,7 +72,7 @@ class NotificationValidatorTest extends AbstractPbjxTest
         $node = IosNotificationV1::create()
             ->set('app_ref', NodeRef::fromString('acme:ios-app:1234'))
             ->set('content_ref', NodeRef::fromString('acme:article:123'))
-            ->set('send_status', NotificationSendStatus::SCHEDULED());
+            ->set('send_status', NotificationSendStatus::SCHEDULED);
 
         $ncrSearch = new class extends MockNcrSearch
         {
@@ -117,7 +117,7 @@ class NotificationValidatorTest extends AbstractPbjxTest
         $existingNode = IosNotificationV1::fromArray([
             'app_ref'     => NodeRef::fromString('acme:ios-app:1234'),
             'content_ref' => NodeRef::fromString('acme:article:1234'),
-            'send_status' => NotificationSendStatus::SCHEDULED(),
+            'send_status' => NotificationSendStatus::SCHEDULED,
             'body'        => 'a notification',
         ]);
 

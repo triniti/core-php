@@ -46,9 +46,9 @@ class NotificationValidator implements EventSubscriber, PbjxValidator
     {
         $status = $notification->fget('send_status', NotificationSendStatus::DRAFT);
         $sent = [
-            NotificationSendStatus::SENT     => true,
-            NotificationSendStatus::FAILED   => true,
-            NotificationSendStatus::CANCELED => true,
+            NotificationSendStatus::SENT->value     => true,
+            NotificationSendStatus::FAILED->value   => true,
+            NotificationSendStatus::CANCELED->value => true,
         ];
 
         return $sent[$status] ?? false;
@@ -150,7 +150,7 @@ class NotificationValidator implements EventSubscriber, PbjxValidator
         $request = SearchNotificationsRequestV1::create()
             ->set('app_ref', $appRef)
             ->set('content_ref', $contentRef)
-            ->set('send_status', NotificationSendStatus::SCHEDULED())
+            ->set('send_status', NotificationSendStatus::SCHEDULED)
             ->set('count', 1);
 
         $response = $event::getPbjx()->copyContext($event->getMessage(), $request)->request($request);

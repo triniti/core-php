@@ -9,6 +9,6 @@ final class InvalidNotificationContent extends \InvalidArgumentException impleme
 {
     public function __construct(string $message = 'Selected content does not support notifications.')
     {
-        parent::__construct($message, Code::INVALID_ARGUMENT);
+        parent::__construct($message, Code::INVALID_ARGUMENT->value);
     }
 }

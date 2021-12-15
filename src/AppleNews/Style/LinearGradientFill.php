@@ -30,7 +30,7 @@ class LinearGradientFill extends GradientFill
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $properties = $this->getSetProperties();
         $properties['type'] = 'linear_gradient';

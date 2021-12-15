@@ -11,7 +11,7 @@ class BackgroundParallax extends Behavior
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $properties = $this->getSetProperties();
         $properties['type'] = 'background_parallax';

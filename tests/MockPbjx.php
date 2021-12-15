@@ -38,17 +38,17 @@ class MockPbjx implements Pbjx
         return $this->canceled;
     }
 
-    public function trigger(Message $message, string $suffix, ?PbjxEvent $event = null, bool $recursive = true): Pbjx
+    public function trigger(Message $message, string $suffix, ?PbjxEvent $event = null, bool $recursive = true, bool $throw = true): static
     {
         return $this;
     }
 
-    public function triggerLifecycle(Message $message, bool $recursive = true): Pbjx
+    public function triggerLifecycle(Message $message, bool $recursive = true): static
     {
         return $this;
     }
 
-    public function copyContext(Message $from, Message $to): Pbjx
+    public function copyContext(Message $from, Message $to): static
     {
         return $this;
     }

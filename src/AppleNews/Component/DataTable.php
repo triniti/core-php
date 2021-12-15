@@ -167,7 +167,7 @@ class DataTable extends Component
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $properties = $this->getSetProperties();
         $properties['role'] = 'datatable';

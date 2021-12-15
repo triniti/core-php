@@ -89,7 +89,7 @@ class SendGridEmailNotifierTest extends AbstractPbjxTest
     protected function getNotification(): EmailNotificationV1
     {
         return EmailNotificationV1::create()
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('status', NodeStatus::PUBLISHED)
             ->set('title', 'Lorem ipsum dolor sit amet')
             ->set('sender', 'hello@example.com')
             ->set('template', 'breaking-news')
@@ -104,7 +104,7 @@ class SendGridEmailNotifierTest extends AbstractPbjxTest
     protected function getApp(): EmailAppV1
     {
         return EmailAppV1::create()
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('status', NodeStatus::PUBLISHED)
             ->set('title', 'SendGrid Email')
             ->set(
                 'sendgrid_api_key',
@@ -135,7 +135,7 @@ class SendGridEmailNotifierTest extends AbstractPbjxTest
     {
         return ArticleV1::create()
             ->set('title', 'Lorem Ipsum')
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('status', NodeStatus::PUBLISHED)
             ->set('slug', '2018/08/08/lorem-ipsum')
             ->addToList(
                 'blocks',

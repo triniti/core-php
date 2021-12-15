@@ -19,7 +19,7 @@ class AssetAggregate extends Aggregate
         if (NodeStatus::DELETED !== $this->node->fget('status')
             && NodeStatus::EXPIRED !== $this->node->fget('status')
         ) {
-            $this->node->set('status', NodeStatus::PUBLISHED());
+            $this->node->set('status', NodeStatus::PUBLISHED);
         }
     }
 
@@ -162,7 +162,7 @@ class AssetAggregate extends Aggregate
         if (NodeStatus::DELETED !== $newNode->fget('status')
             && NodeStatus::EXPIRED !== $newNode->fget('status')
         ) {
-            $newNode->set('status', NodeStatus::PUBLISHED());
+            $newNode->set('status', NodeStatus::PUBLISHED);
         }
 
         parent::enrichNodeUpdated($event);

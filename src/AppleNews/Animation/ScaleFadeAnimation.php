@@ -67,7 +67,7 @@ class ScaleFadeAnimation extends ComponentAnimation
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $properties = $this->getSetProperties();
         $properties['type'] = 'scale_fade';

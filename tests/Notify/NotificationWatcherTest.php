@@ -30,7 +30,7 @@ final class NotificationWatcherTest extends AbstractPbjxTest
         $sendAt = new \DateTime('2031-01-01T15:03:01.012345Z');
         $node = IosNotificationV1::create()
             ->set('send_at',$sendAt)
-            ->set('send_status', NotificationSendStatus::SCHEDULED());
+            ->set('send_status', NotificationSendStatus::SCHEDULED);
         $this->watcher->schedule(new NodeProjectedEvent($node, NotificationCreatedV1::create()->set('node', $node)));
         $sentCommand = $this->pbjx->getSent()[0]['command'];
         $this->assertInstanceOf(SendNotificationV1::class, $sentCommand);
@@ -43,7 +43,7 @@ final class NotificationWatcherTest extends AbstractPbjxTest
         $sendAt = new \DateTime('2031-01-01T15:03:01.012345Z');
         $node = IosNotificationV1::create()
             ->set('send_at',$sendAt)
-            ->set('send_status', NotificationSendStatus::SCHEDULED());
+            ->set('send_status', NotificationSendStatus::SCHEDULED);
         $event = NotificationCreatedV1::create()->set('node', $node);
         $event->isReplay(true);
         $this->watcher->schedule(new NodeProjectedEvent($node, $event));
@@ -60,7 +60,7 @@ final class NotificationWatcherTest extends AbstractPbjxTest
         $this->watcher->schedule(new NodeProjectedEvent($node, NotificationCreatedV1::create()->set('node', $node)));
         $this->assertEmpty($this->pbjx->getSent());
 
-        $node->set('send_status', NotificationSendStatus::DRAFT());
+        $node->set('send_status', NotificationSendStatus::DRAFT);
         $this->watcher->schedule(new NodeProjectedEvent($node, NotificationCreatedV1::create()->set('node', $node)));
         $this->assertEmpty($this->pbjx->getSent());
     }
@@ -87,7 +87,7 @@ final class NotificationWatcherTest extends AbstractPbjxTest
     {
         $oldNode = IosNotificationV1::create()
             ->set('send_at', new \DateTime('2031-01-01T15:03:01.012345Z'))
-            ->set('send_status', NotificationSendStatus::SCHEDULED());
+            ->set('send_status', NotificationSendStatus::SCHEDULED);
         $newSendAt = new \DateTime('2041-01-01T15:03:01.012345Z');
         $newNode = (clone $oldNode)->set('send_at', $newSendAt);
         $event = NotificationUpdatedV1::create()
@@ -105,7 +105,7 @@ final class NotificationWatcherTest extends AbstractPbjxTest
     {
         $oldNode = IosNotificationV1::create()
             ->set('send_at', new \DateTime('2031-01-01T15:03:01.012345Z'))
-            ->set('send_status', NotificationSendStatus::SCHEDULED());
+            ->set('send_status', NotificationSendStatus::SCHEDULED);
         $newSendAt = new \DateTime('2041-01-01T15:03:01.012345Z');
         $newNode = (clone $oldNode)->set('send_at', $newSendAt);
         $event = NotificationUpdatedV1::create()
@@ -122,7 +122,7 @@ final class NotificationWatcherTest extends AbstractPbjxTest
         $sendAt = new \DateTime('2031-01-01T15:03:01.012345Z');
         $oldNode = IosNotificationV1::create()
             ->set('send_at', $sendAt)
-            ->set('send_status', NotificationSendStatus::SCHEDULED());
+            ->set('send_status', NotificationSendStatus::SCHEDULED);
         $newNode = (clone $oldNode)->set('send_at', $sendAt);
         $event = NotificationUpdatedV1::create()
             ->set('old_node', $oldNode)
@@ -134,7 +134,7 @@ final class NotificationWatcherTest extends AbstractPbjxTest
     public function testOnNotificationUpdatedNoSendAt(): void
     {
         $oldNode = IosNotificationV1::create()
-            ->set('send_status', NotificationSendStatus::SCHEDULED());
+            ->set('send_status', NotificationSendStatus::SCHEDULED);
         $newNode = clone $oldNode;
         $event = NotificationUpdatedV1::create()
             ->set('old_node', $oldNode)
@@ -147,7 +147,7 @@ final class NotificationWatcherTest extends AbstractPbjxTest
     {
         $oldNode = IosNotificationV1::create()
             ->set('send_at', new \DateTime('2031-01-01T15:03:01.012345Z'))
-            ->set('send_status', NotificationSendStatus::SCHEDULED());
+            ->set('send_status', NotificationSendStatus::SCHEDULED);
         $newNode = (clone $oldNode)->clear('send_at');
         $event = NotificationUpdatedV1::create()
             ->set('old_node', $oldNode)

@@ -186,7 +186,7 @@ class AppleNewsNotifier implements Notifier
         $request = SearchNotificationsRequestV1::create()
             ->addToSet('types', ['apple-news-notification'])
             ->set('q', '+apple_news_operation:(update OR create)')
-            ->set('send_status', NotificationSendStatus::SENT())
+            ->set('send_status', NotificationSendStatus::SENT)
             ->set('app_ref', $notification->get('app_ref'))
             ->set('content_ref', $notification->get('content_ref'))
             ->set('ctx_causator_ref', $notification->generateMessageRef())

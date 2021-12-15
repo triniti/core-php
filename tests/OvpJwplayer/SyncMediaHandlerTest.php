@@ -705,7 +705,7 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
             'order_date'        => new \DateTime(),
             'mezzanine_url'     => 'https://dam.test.acme.com/video/63/o/2020/01/23/63b44768ab1946ff99e42593e30816ee.mp4',
             'jwplayer_media_id' => 'delete',
-            'status'            => NodeStatus::DELETED()
+            'status'            => NodeStatus::DELETED
         ]);
         $this->ncr->putNode($node);
         $nodeRef = $node->generateNodeRef();

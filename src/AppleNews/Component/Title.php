@@ -11,7 +11,7 @@ class Title extends Text
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         $properties = $this->getSetProperties();
         $properties['role'] = 'title';

@@ -14,7 +14,7 @@ class NullNotifier implements Notifier
     {
         return NotifierResultV1::create()
             ->set('ok', false)
-            ->set('code', Code::UNIMPLEMENTED)
+            ->set('code', Code::UNIMPLEMENTED->value)
             ->set('error_name', 'NotifierNotFound')
             ->set('error_message', "NotifierLocator did not find a notifier for [{$notification::schema()->getCurie()}].");
     }

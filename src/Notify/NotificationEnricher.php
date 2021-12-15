@@ -100,9 +100,9 @@ class NotificationEnricher implements EventSubscriber, PbjxEnricher
         }
 
         if ($notification->has('send_at')) {
-            $notification->set('send_status', NotificationSendStatus::SCHEDULED());
+            $notification->set('send_status', NotificationSendStatus::SCHEDULED);
         } else {
-            $notification->set('send_status', NotificationSendStatus::DRAFT());
+            $notification->set('send_status', NotificationSendStatus::DRAFT);
         }
     }
 }

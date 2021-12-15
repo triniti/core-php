@@ -26,7 +26,7 @@ class SearchPollsRequestHandler extends AbstractSearchNodesRequestHandler
     protected function beforeSearchNodes(Message $request, ParsedQuery $parsedQuery): void
     {
         parent::beforeSearchNodes($request, $parsedQuery);
-        $required = BoolOperator::REQUIRED();
+        $required = BoolOperator::REQUIRED;
 
         if ($request->has('channel_ref')) {
             $parsedQuery->addNode(

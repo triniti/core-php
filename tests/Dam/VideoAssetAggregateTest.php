@@ -19,12 +19,12 @@ final class VideoAssetAggregateTest extends AbstractPbjxTest
             '_id'       => AssetId::create('video', 'mp4'),
             'mime_type' => 'application/mxf',
         ]);
-        $errorCode = Code::ALREADY_EXISTS();
+        $errorCode = Code::ALREADY_EXISTS;
         $command = UpdateTranscodingStatusV1::create()
             ->set('node_ref', $asset->generateNodeRef())
             ->set('mediaconvert_job_arn', 'foo')
             ->set('mediaconvert_queue_arn', 'bar')
-            ->set('transcoding_status', TranscodingStatus::CANCELED())
+            ->set('transcoding_status', TranscodingStatus::CANCELED)
             ->set('error_code', $errorCode);
         $aggregate = VideoAssetAggregate::fromNode($asset, $this->pbjx);
         $aggregate->sync();
@@ -33,9 +33,9 @@ final class VideoAssetAggregateTest extends AbstractPbjxTest
         $aggregateNode = $aggregate->getNode();
         $this->assertSame($aggregateNode->getFromMap('tags', 'mediaconvert_job_arn'), 'foo');
         $this->assertSame($aggregateNode->getFromMap('tags', 'mediaconvert_queue_arn'), 'bar');
-        $this->assertSame($aggregateNode->getFromMap('tags', 'transcode_error_name'), $errorCode->getName());
-        $this->assertSame($aggregateNode->getFromMap('tags', 'transcode_error_code'), (string)$errorCode->getValue());
-        $this->assertTrue($aggregateNode->get('transcoding_status')->equals(TranscodingStatus::FAILED));
+        $this->assertSame($aggregateNode->getFromMap('tags', 'transcode_error_name'), $errorCode->name);
+        $this->assertSame($aggregateNode->getFromMap('tags', 'transcode_error_code'), (string)$errorCode->value);
+        $this->assertTrue($aggregateNode->get('transcoding_status') === TranscodingStatus::FAILED);
     }
 
     public function testUpdateTranscodingStatusFailed(): void
@@ -44,12 +44,12 @@ final class VideoAssetAggregateTest extends AbstractPbjxTest
             '_id'       => AssetId::create('video', 'mp4'),
             'mime_type' => 'application/mxf',
         ]);
-        $errorCode = Code::ALREADY_EXISTS();
+        $errorCode = Code::ALREADY_EXISTS;
         $command = UpdateTranscodingStatusV1::create()
             ->set('node_ref', $asset->generateNodeRef())
             ->set('mediaconvert_job_arn', 'foo')
             ->set('mediaconvert_queue_arn', 'bar')
-            ->set('transcoding_status', TranscodingStatus::FAILED())
+            ->set('transcoding_status', TranscodingStatus::FAILED)
             ->set('error_code', $errorCode);
         $aggregate = VideoAssetAggregate::fromNode($asset, $this->pbjx);
         $aggregate->sync();
@@ -58,9 +58,9 @@ final class VideoAssetAggregateTest extends AbstractPbjxTest
         $aggregateNode = $aggregate->getNode();
         $this->assertSame($aggregateNode->getFromMap('tags', 'mediaconvert_job_arn'), 'foo');
         $this->assertSame($aggregateNode->getFromMap('tags', 'mediaconvert_queue_arn'), 'bar');
-        $this->assertSame($aggregateNode->getFromMap('tags', 'transcode_error_name'), $errorCode->getName());
-        $this->assertSame($aggregateNode->getFromMap('tags', 'transcode_error_code'), (string)$errorCode->getValue());
-        $this->assertTrue($aggregateNode->get('transcoding_status')->equals(TranscodingStatus::FAILED));
+        $this->assertSame($aggregateNode->getFromMap('tags', 'transcode_error_name'), $errorCode->name);
+        $this->assertSame($aggregateNode->getFromMap('tags', 'transcode_error_code'), (string)$errorCode->value);
+        $this->assertTrue($aggregateNode->get('transcoding_status') === TranscodingStatus::FAILED);
     }
 
     public function testUpdateTranscodingStatusUnknown(): void
@@ -69,12 +69,12 @@ final class VideoAssetAggregateTest extends AbstractPbjxTest
             '_id'       => AssetId::create('video', 'mp4'),
             'mime_type' => 'application/mxf',
         ]);
-        $errorCode = Code::ALREADY_EXISTS();
+        $errorCode = Code::ALREADY_EXISTS;
         $command = UpdateTranscodingStatusV1::create()
             ->set('node_ref', $asset->generateNodeRef())
             ->set('mediaconvert_job_arn', 'foo')
             ->set('mediaconvert_queue_arn', 'bar')
-            ->set('transcoding_status', TranscodingStatus::UNKNOWN())
+            ->set('transcoding_status', TranscodingStatus::UNKNOWN)
             ->set('error_code', $errorCode);
         $aggregate = VideoAssetAggregate::fromNode($asset, $this->pbjx);
         $aggregate->sync();
@@ -83,9 +83,9 @@ final class VideoAssetAggregateTest extends AbstractPbjxTest
         $aggregateNode = $aggregate->getNode();
         $this->assertSame($aggregateNode->getFromMap('tags', 'mediaconvert_job_arn'), 'foo');
         $this->assertSame($aggregateNode->getFromMap('tags', 'mediaconvert_queue_arn'), 'bar');
-        $this->assertSame($aggregateNode->getFromMap('tags', 'transcode_error_name'), $errorCode->getName());
-        $this->assertSame($aggregateNode->getFromMap('tags', 'transcode_error_code'), (string)$errorCode->getValue());
-        $this->assertTrue($aggregateNode->get('transcoding_status')->equals(TranscodingStatus::FAILED));
+        $this->assertSame($aggregateNode->getFromMap('tags', 'transcode_error_name'), $errorCode->name);
+        $this->assertSame($aggregateNode->getFromMap('tags', 'transcode_error_code'), (string)$errorCode->value);
+        $this->assertTrue($aggregateNode->get('transcoding_status') === TranscodingStatus::FAILED);
     }
 
     public function testUpdateTranscodingStatusCompleted(): void
@@ -94,12 +94,12 @@ final class VideoAssetAggregateTest extends AbstractPbjxTest
             '_id'       => AssetId::create('video', 'mp4'),
             'mime_type' => 'application/mxf',
         ]);
-        $errorCode = Code::ALREADY_EXISTS();
+        $errorCode = Code::ALREADY_EXISTS;
         $command = UpdateTranscodingStatusV1::create()
             ->set('node_ref', $asset->generateNodeRef())
             ->set('mediaconvert_job_arn', 'foo')
             ->set('mediaconvert_queue_arn', 'bar')
-            ->set('transcoding_status', TranscodingStatus::COMPLETED())
+            ->set('transcoding_status', TranscodingStatus::COMPLETED)
             ->set('error_code', $errorCode);
         $aggregate = VideoAssetAggregate::fromNode($asset, $this->pbjx);
         $aggregate->sync();
@@ -108,7 +108,7 @@ final class VideoAssetAggregateTest extends AbstractPbjxTest
         $aggregateNode = $aggregate->getNode();
         $this->assertSame($aggregateNode->getFromMap('tags', 'mediaconvert_job_arn'), 'foo');
         $this->assertSame($aggregateNode->getFromMap('tags', 'mediaconvert_queue_arn'), 'bar');
-        $this->assertTrue($aggregateNode->get('transcoding_status')->equals(TranscodingStatus::COMPLETED()));
+        $this->assertTrue($aggregateNode->get('transcoding_status') === TranscodingStatus::COMPLETED);
     }
 
     public function testUpdateTranscodingStatusProcessing(): void
@@ -117,12 +117,12 @@ final class VideoAssetAggregateTest extends AbstractPbjxTest
             '_id'       => AssetId::create('video', 'mp4'),
             'mime_type' => 'application/mxf',
         ]);
-        $errorCode = Code::ALREADY_EXISTS();
+        $errorCode = Code::ALREADY_EXISTS;
         $command = UpdateTranscodingStatusV1::create()
             ->set('node_ref', $asset->generateNodeRef())
             ->set('mediaconvert_job_arn', 'foo')
             ->set('mediaconvert_queue_arn', 'bar')
-            ->set('transcoding_status', TranscodingStatus::PROCESSING())
+            ->set('transcoding_status', TranscodingStatus::PROCESSING)
             ->set('error_code', $errorCode);
         $aggregate = VideoAssetAggregate::fromNode($asset, $this->pbjx);
         $aggregate->sync();
@@ -131,6 +131,6 @@ final class VideoAssetAggregateTest extends AbstractPbjxTest
         $aggregateNode = $aggregate->getNode();
         $this->assertSame($aggregateNode->getFromMap('tags', 'mediaconvert_job_arn'), 'foo');
         $this->assertSame($aggregateNode->getFromMap('tags', 'mediaconvert_queue_arn'), 'bar');
-        $this->assertTrue($aggregateNode->get('transcoding_status')->equals(TranscodingStatus::PROCESSING()));
+        $this->assertTrue($aggregateNode->get('transcoding_status') === TranscodingStatus::PROCESSING);
     }
 }

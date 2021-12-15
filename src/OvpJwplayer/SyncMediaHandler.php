@@ -488,7 +488,7 @@ class SyncMediaHandler implements CommandHandler
             'title'        => $node->get('title'),
         ];
 
-        $parameters['date'] = NodeStatus::PUBLISHED === $node->fget('status')
+        $parameters['date'] = NodeStatus::PUBLISHED->value === $node->fget('status')
             ? $node->get('published_at')->getTimeStamp()
             : $node->get('created_at')->getSeconds();
 

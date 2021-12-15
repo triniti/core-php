@@ -82,7 +82,7 @@ final class RenderPromotionRequestHandlerTest extends AbstractPbjxTest
 
         $widget = BlogrollWidgetV1::create();
         $promotion = PromotionV1::create()
-            ->set('status', NodeStatus::DELETED())
+            ->set('status', NodeStatus::DELETED)
             ->addToList('widget_refs', [$widget->generateNodeRef()]);
         $this->ncr->putNode($promotion);
         $request = RenderPromotionRequestV1::create()
