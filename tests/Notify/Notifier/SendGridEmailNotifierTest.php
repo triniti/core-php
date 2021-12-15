@@ -128,7 +128,7 @@ class SendGridEmailNotifierTest extends AbstractPbjxTest
         $result = $this->notifier->send($this->getNotification(), $this->getApp(), $this->getContent());
 
         $this->assertFalse($result->get('ok'));
-        $this->assertSame(Code::CANCELLED, $result->get('code'));
+        $this->assertSame(Code::CANCELLED->value, $result->get('code'));
     }
 
     protected function getContent(): ArticleV1
@@ -152,7 +152,7 @@ class SendGridEmailNotifierTest extends AbstractPbjxTest
         $notification->clear('sender');
         $result = $this->notifier->send($notification, $this->getApp(), $this->getContent());
         $this->assertFalse($result->get('ok'));
-        $this->assertEquals(Code::INVALID_ARGUMENT, $result->get('code'));
+        $this->assertEquals(Code::INVALID_ARGUMENT->value, $result->get('code'));
     }
 
     public function testSend()
