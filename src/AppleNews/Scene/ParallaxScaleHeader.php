@@ -8,7 +8,7 @@ class ParallaxScaleHeader extends Scene
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize(): mixed
+    public function jsonSerialize(): array
     {
         $properties = $this->getSetProperties();
         $properties['type'] = 'parallax_scale';

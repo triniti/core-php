@@ -11,7 +11,7 @@ class PullQuote extends Text
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize(): mixed
+    public function jsonSerialize(): array
     {
         $properties = $this->getSetProperties();
         $properties['role'] = 'pullquote';

@@ -44,7 +44,7 @@ class Instagram extends Component
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize(): mixed
+    public function jsonSerialize(): array
     {
         $properties = $this->getSetProperties();
         $properties['role'] = 'instagram';

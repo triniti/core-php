@@ -11,7 +11,7 @@ class BackgroundMotion extends Behavior
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize(): mixed
+    public function jsonSerialize(): array
     {
         $properties = $this->getSetProperties();
         $properties['type'] = 'background_motion';

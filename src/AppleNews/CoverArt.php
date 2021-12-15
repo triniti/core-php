@@ -58,7 +58,7 @@ class CoverArt extends AppleNewsObject
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize(): mixed
+    public function jsonSerialize(): array
     {
         $properties = $this->getSetProperties();
         $properties['type'] = 'image';

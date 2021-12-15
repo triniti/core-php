@@ -184,7 +184,7 @@ class VideoFill extends Fill
     /**
      * @return array
      */
-    public function jsonSerialize(): mixed
+    public function jsonSerialize(): array
     {
         $properties = $this->getSetProperties();
         $properties['type'] = 'video';

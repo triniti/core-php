@@ -39,7 +39,7 @@ class MoveInAnimation extends ComponentAnimation
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize(): mixed
+    public function jsonSerialize(): array
     {
         $properties = $this->getSetProperties();
         $properties['type'] = 'move_in';

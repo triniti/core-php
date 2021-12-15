@@ -8,7 +8,7 @@ class AppearAnimation extends ComponentAnimation
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize(): mixed
+    public function jsonSerialize(): array
     {
         $properties = $this->getSetProperties();
         $properties['type'] = 'appear';

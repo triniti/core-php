@@ -67,7 +67,7 @@ class Margin extends AppleNewsObject
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize(): mixed
+    public function jsonSerialize(): array
     {
         return $this->getSetProperties();
     }

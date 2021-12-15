@@ -40,7 +40,7 @@ class FadeInAnimation extends ComponentAnimation
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize(): mixed
+    public function jsonSerialize(): array
     {
         $properties = $this->getSetProperties();
         $properties['type'] = 'fade_in';

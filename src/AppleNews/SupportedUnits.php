@@ -25,7 +25,7 @@ class SupportedUnits extends AppleNewsObject
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize(): mixed
+    public function jsonSerialize(): array
     {
         return $this->units;
     }
