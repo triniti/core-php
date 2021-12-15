@@ -49,7 +49,7 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
         // todo: implement popularity sorting on teasers
         /*
         $sort = $request->get('sort');
-        if (SearchTeasersSort::POPULARITY->value === $sort)) {
+        if (SearchTeasersSort::POPULARITY === $sort)) {
             return $this->handleUsingStats($request, $pbjx);
         }
         */

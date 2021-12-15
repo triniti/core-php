@@ -77,7 +77,7 @@ class SearchNotificationsRequestHandler extends AbstractSearchNodesRequestHandle
             $parsedQuery->addNode(
                 new Field(
                     'send_status',
-                    new Word((string)$request->get('send_status'), $required),
+                    new Word($request->get('send_status')->value, $required),
                     $required
                 )
             );
