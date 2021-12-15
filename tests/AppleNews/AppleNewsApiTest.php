@@ -79,7 +79,7 @@ class AppleNewsApiTest extends TestCase
         $response = $this->mockAppleNewsApi->createArticle('11', $articleDocument, ['token' => '12']);
 
         $this->assertFalse($response['ok']);
-        $this->assertEquals($statusCode, $response['http_code']->value);
+        $this->assertEquals($statusCode, $response['http_code']);
     }
 
     /**
@@ -109,7 +109,7 @@ class AppleNewsApiTest extends TestCase
         $response = $this->mockAppleNewsApi->updateArticle('11', $articleDocument, ['rev' => '12']);
 
         $this->assertFalse($response['ok']);
-        $this->assertEquals($statusCode, $response['http_code']->value);
+        $this->assertEquals($statusCode, $response['http_code']);
     }
 
     /**
@@ -138,7 +138,7 @@ class AppleNewsApiTest extends TestCase
         $response = $this->mockAppleNewsApi->deleteArticle('11');
 
         $this->assertFalse($response['ok']);
-        $this->assertEquals($statusCode, $response['http_code']->value);
+        $this->assertEquals($statusCode, $response['http_code']);
     }
 
     /**
@@ -167,7 +167,7 @@ class AppleNewsApiTest extends TestCase
         $response = $this->mockAppleNewsApi->createArticleNotification('11', ['alertBody' => 'alert']);
 
         $this->assertFalse($response['ok']);
-        $this->assertEquals($statusCode, $response['http_code']->value);
+        $this->assertEquals($statusCode, $response['http_code']);
     }
 
     public function testCreateArticle(): void

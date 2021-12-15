@@ -44,8 +44,8 @@ final class NotificationAggregateTest extends AbstractPbjxTest
         $notificationAggregate->createNode(CreateNotificationV1::create()->set('node', $notification));
         $aggregateNode = $notificationAggregate->getUncommittedEvents()[0]->get('node');
 
-        $this->assertTrue(NodeStatus::PUBLISHED->value === $aggregateNode->get('status'));
-        $this->assertTrue(NotificationSendStatus::DRAFT->value === $aggregateNode->get('send_status'));
+        $this->assertTrue(NodeStatus::PUBLISHED === $aggregateNode->get('status'));
+        $this->assertTrue(NotificationSendStatus::DRAFT === $aggregateNode->get('send_status'));
         $this->assertFalse($aggregateNode->has('sent_at'));
     }
 
@@ -82,9 +82,9 @@ final class NotificationAggregateTest extends AbstractPbjxTest
         $notificationAggregate->createNode(CreateNotificationV1::create()->set('node', $notification));
         $aggregateNode = $notificationAggregate->getUncommittedEvents()[0]->get('node');
 
-        $this->assertTrue(NodeStatus::PUBLISHED->value === $aggregateNode->get('status'));
+        $this->assertTrue(NodeStatus::PUBLISHED === $aggregateNode->get('status'));
         $this->assertFalse($aggregateNode->has('sent_at'));
-        $this->assertTrue(NotificationSendStatus::SCHEDULED->value === $aggregateNode->get('send_status'));
+        $this->assertTrue(NotificationSendStatus::SCHEDULED === $aggregateNode->get('send_status'));
         $this->assertSame('foo', $aggregateNode->get('title'));
         $this->assertEquals($publishedAt->add(\DateInterval::createFromDateString('10 seconds'))->getTimestamp(), $aggregateNode->get('send_at')->getTimestamp());
     }
@@ -110,8 +110,8 @@ final class NotificationAggregateTest extends AbstractPbjxTest
         $notificationAggregate->createNode(CreateNotificationV1::create()->set('node', $notification));
         $aggregateNode = $notificationAggregate->getUncommittedEvents()[0]->get('node');
 
-        $this->assertTrue(NodeStatus::PUBLISHED->value === $aggregateNode->get('status'));
-        $this->assertTrue(NotificationSendStatus::SENT->value === $aggregateNode->get('send_status'));
+        $this->assertTrue(NodeStatus::PUBLISHED === $aggregateNode->get('status'));
+        $this->assertTrue(NotificationSendStatus::SENT === $aggregateNode->get('send_status'));
         $this->assertFalse($aggregateNode->has('sent_at'));
         $this->assertSame('bar', $aggregateNode->get('title'));
         $this->assertFalse($aggregateNode->has('send_at'));

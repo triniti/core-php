@@ -83,7 +83,7 @@ final class SyncTeaserHandlerTest extends AbstractPbjxTest
         $ncr = new MockNcr();
         $article = ArticleV1::create()
             ->set('title', 'article title')
-            ->set('status', NodeStatus::from('published'));
+            ->set('status', NodeStatus::PUBLISHED);
         $teaser1 = ArticleTeaserV1::create()
             ->set('target_ref', NodeRef::fromNode($article))
             ->set('sync_with_target', true)
@@ -118,7 +118,7 @@ final class SyncTeaserHandlerTest extends AbstractPbjxTest
         $ncr = new MockNcr();
         $article = ArticleV1::create()
             ->set('title', 'article title')
-            ->set('status', NodeStatus::from('deleted'));
+            ->set('status', NodeStatus::DELETED);
 
         $teaser = ArticleTeaserV1::create()
             ->set('target_ref', NodeRef::fromNode($article))

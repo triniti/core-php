@@ -11,6 +11,7 @@ use Acme\Schemas\Sys\Node\FlagsetV1;
 use Defuse\Crypto\Key;
 use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Pbj\Message;
+use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbj\WellKnown\UuidIdentifier;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Gdbots\UriTemplate\UriTemplateService;
@@ -90,7 +91,7 @@ class AppleNewsNotifierTest extends AbstractPbjxTest
 
         $this->videoNode = VideoV1::create()
             ->set('status', NodeStatus::PUBLISHED)
-            ->set('_id', VideoId::fromString('83a6e989-0704-474c-bea5-a5df46965d0a'))
+            ->set('_id', UuidIdentifier::fromString('83a6e989-0704-474c-bea5-a5df46965d0a'))
             ->set('kaltura_mp4_url', 'http://www.test.com/test.mp4')
             ->set('description', 'test')
             ->set('slug', 'test-video')

@@ -51,7 +51,7 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
             '_id'         => AssetId::create('image', 'jpg'),
             'mime_type'   => 'image/jpeg',
             'gallery_ref' => $galleryRef,
-            'status'      => NodeStatus::PUBLISHED,
+            'status'      => NodeStatus::PUBLISHED->value,
         ]);
 
         $event = AssetCreatedV1::create()->set('node', $image);
@@ -81,7 +81,7 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         $image = ImageAssetV1::fromArray([
             '_id'       => AssetId::create('image', 'jpg'),
             'mime_type' => 'image/jpeg',
-            'status'    => NodeStatus::PUBLISHED,
+            'status'    => NodeStatus::PUBLISHED->value,
         ]);
 
         $event = AssetCreatedV1::create()->set('node', $image);
@@ -99,7 +99,7 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
             '_id'         => AssetId::create('image', 'jpg'),
             'mime_type'   => 'image/jpeg',
             'gallery_ref' => $galleryRef,
-            'status'      => NodeStatus::PUBLISHED,
+            'status'      => NodeStatus::PUBLISHED->value,
         ]);
 
         $event = GalleryAssetReorderedV1::create()
