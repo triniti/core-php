@@ -54,7 +54,7 @@ class UpdateTranscriptionStatusHandler implements CommandHandler
         $aggregate->commit($context);
         $videoAsset = $aggregate->getNode();
 
-        if (TranscriptionStatus::COMPLETED !== $command->fget('transcription_status')) {
+        if (TranscriptionStatus::COMPLETED->value !== $command->fget('transcription_status')) {
             // we only update the document and video if transcription completed
             return;
         }

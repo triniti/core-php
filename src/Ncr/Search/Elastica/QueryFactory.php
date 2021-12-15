@@ -49,7 +49,7 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        return match ($request->fget('sort', SearchAppsSort::TITLE_ASC)) {
+        return match ($request->get('sort', SearchAppsSort::TITLE_ASC)) {
             SearchAppsSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
             SearchAppsSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
             SearchAppsSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
@@ -86,7 +86,7 @@ class QueryFactory extends BaseQueryFactory
             }
         }
 
-        return match ($request->fget('sort', SearchArticlesSort::RELEVANCE)) {
+        return match ($request->get('sort', SearchArticlesSort::RELEVANCE)) {
             SearchArticlesSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
             SearchArticlesSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
             SearchArticlesSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
@@ -120,7 +120,7 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        return match ($request->fget('sort', SearchAssetsSort::RELEVANCE)) {
+        return match ($request->get('sort', SearchAssetsSort::RELEVANCE)) {
             SearchAssetsSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
             SearchAssetsSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
             SearchAssetsSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
@@ -148,7 +148,7 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        return match ($request->fget('sort', SearchCategoriesSort::RELEVANCE)) {
+        return match ($request->get('sort', SearchCategoriesSort::RELEVANCE)) {
             SearchCategoriesSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
             SearchCategoriesSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
             SearchCategoriesSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
@@ -171,7 +171,7 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        return match ($request->fget('sort', SearchChannelsSort::TITLE_ASC)) {
+        return match ($request->get('sort', SearchChannelsSort::TITLE_ASC)) {
             SearchChannelsSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
             SearchChannelsSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
             SearchChannelsSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
@@ -194,7 +194,7 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        return match ($request->fget('sort', SearchFlagsetsSort::TITLE_ASC)) {
+        return match ($request->get('sort', SearchFlagsetsSort::TITLE_ASC)) {
             SearchFlagsetsSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
             SearchFlagsetsSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
             SearchFlagsetsSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
@@ -228,7 +228,7 @@ class QueryFactory extends BaseQueryFactory
             }
         }
 
-        return match ($request->fget('sort', SearchGalleriesSort::RELEVANCE)) {
+        return match ($request->get('sort', SearchGalleriesSort::RELEVANCE)) {
             SearchGalleriesSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
             SearchGalleriesSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
             SearchGalleriesSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
@@ -255,7 +255,7 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        return match ($request->fget('sort', SearchNotificationsSort::SENT_AT_DESC)) {
+        return match ($request->get('sort', SearchNotificationsSort::SENT_AT_DESC)) {
             SearchNotificationsSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
             SearchNotificationsSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
             SearchNotificationsSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
@@ -283,7 +283,7 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        return match ($request->fget('sort', SearchPagesSort::RELEVANCE)) {
+        return match ($request->get('sort', SearchPagesSort::RELEVANCE)) {
             SearchPagesSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
             SearchPagesSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
             SearchPagesSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),
@@ -314,7 +314,7 @@ class QueryFactory extends BaseQueryFactory
         $this->filterQNames($request, $query, $qnames);
         $this->filterStatuses($request, $query);
 
-        return match ($request->fget('sort', SearchPeopleSort::RELEVANCE)) {
+        return match ($request->get('sort', SearchPeopleSort::RELEVANCE)) {
             SearchPeopleSort::CREATED_AT_ASC => Query::create($query)->setSort(['created_at' => 'asc']),
             SearchPeopleSort::CREATED_AT_DESC => Query::create($query)->setSort(['created_at' => 'desc']),
             SearchPeopleSort::UPDATED_AT_ASC => Query::create($query)->setSort(['updated_at' => 'asc']),

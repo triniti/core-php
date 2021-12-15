@@ -77,7 +77,7 @@ class GetRedirectRequestHandler extends GetNodeRequestHandler
                 'count'  => 1,
                 'q'      => '+redirect_ref:' . NodeRef::fromNode($redirect)->toString(),
                 'sort'   => 'published-at-desc',
-                'status' => NodeStatus::PUBLISHED,
+                'status' => NodeStatus::PUBLISHED->value,
             ]);
 
             $searchResponse = $pbjx->copyContext($request, $searchRequest)->request($searchRequest);

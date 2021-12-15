@@ -191,7 +191,7 @@ class AppleNewsNotifier implements Notifier
             ->set('content_ref', $notification->get('content_ref'))
             ->set('ctx_causator_ref', $notification->generateMessageRef())
             ->set('count', 1)
-            ->set('sort', SearchNotificationsSort::SENT_AT_DESC());
+            ->set('sort', SearchNotificationsSort::SENT_AT_DESC);
 
         $response = $this->pbjx->request($request);
         if (!$response->has('nodes')) {

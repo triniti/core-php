@@ -113,7 +113,7 @@ class SearchAssetsRequestHandler extends AbstractSearchNodesRequestHandler
             $parsedQuery->addNode(
                 new Field(
                     'gallery_seq',
-                    new Numbr($request->get('gallery_seq_min'), ComparisonOperator::GTE()),
+                    new Numbr($request->get('gallery_seq_min'), ComparisonOperator::GTE),
                     $required
                 )
             );
@@ -121,7 +121,7 @@ class SearchAssetsRequestHandler extends AbstractSearchNodesRequestHandler
             $parsedQuery->addNode(
                 new Field(
                     'gallery_seq',
-                    new Numbr($request->get('gallery_seq_max'), ComparisonOperator::LTE()),
+                    new Numbr($request->get('gallery_seq_max'), ComparisonOperator::LTE),
                     $required
                 )
             );

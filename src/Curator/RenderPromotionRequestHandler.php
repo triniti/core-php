@@ -46,7 +46,7 @@ class RenderPromotionRequestHandler implements RequestHandler
 
         $response->set('promotion', $promotion);
 
-        if (NodeStatus::DELETED === $promotion->fget('status')) {
+        if (NodeStatus::DELETED->value === $promotion->fget('status')) {
             // a deleted promotion cannot promote
             return $response;
         }

@@ -14,7 +14,7 @@ class FlagsAwareNcrSearch implements NcrSearch
 {
     protected Flags $flags;
     protected NcrSearch $next;
-    protected int $readOnly = 0;
+    protected Trinary $readOnly = Trinary::UNKNOWN;
 
     public function __construct(Flags $flags, NcrSearch $next)
     {
@@ -57,19 +57,19 @@ class FlagsAwareNcrSearch implements NcrSearch
 
     protected function isReadOnly(): bool
     {
-        if (Trinary::UNKNOWN->value === $this->readOnly) {
+        if (Trinary::UNKNOWN === $this->readOnly) {
             if ('cli' === PHP_SAPI) {
                 // allows us to run indexing when called via symfony console command
                 // even when the ncr_indexing_disabled flag is true, unless an env
                 // variable is present, in which case, still readonly.
-                $this->readOnly = getenv('NCR_INDEXING_DISABLED') ? Trinary::TRUE_VAL->value : Trinary::FALSE_VAL->value;
+                $this->readOnly = getenv('NCR_INDEXING_DISABLED') ? Trinary::TRUE_VAL : Trinary::FALSE_VAL;
             } else {
                 $this->readOnly = $this->flags->getBoolean('ncr_indexing_disabled')
-                    ? Trinary::TRUE_VAL->value
-                    : Trinary::FALSE_VAL->value;
+                    ? Trinary::TRUE_VAL
+                    : Trinary::FALSE_VAL;
             }
         }
 
-        return Trinary::TRUE_VAL->value === $this->readOnly;
+        return Trinary::TRUE_VAL === $this->readOnly;
     }
 }

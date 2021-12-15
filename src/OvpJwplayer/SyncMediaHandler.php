@@ -80,7 +80,7 @@ class SyncMediaHandler implements CommandHandler
             ));
         }
 
-        if ($node->fget('status') === NodeStatus::DELETED && $node->has('jwplayer_media_id')) {
+        if ($node->fget('status') === NodeStatus::DELETED->value && $node->has('jwplayer_media_id')) {
             $this->deleteVideo($command, $pbjx, $node);
             return;
         }
@@ -504,7 +504,7 @@ class SyncMediaHandler implements CommandHandler
         $tags = [
             'id:' . $node->get('_id'),
             'is_unlisted:' . ($node->get('is_unlisted') ? 'true' : 'false'),
-            'status:' . $node->get('status'),
+            'status:' . $node->fget('status'),
         ];
 
         $refs = array_unique(array_merge(
@@ -576,7 +576,7 @@ class SyncMediaHandler implements CommandHandler
         }
 
         $parameters['custom.id'] = $node->get('_id');
-        $parameters['custom.status'] = $node->get('status');
+        $parameters['custom.status'] = $node->fget('status');
         $parameters['custom.has_music'] = $node->get('has_music');
 
         foreach ($node->get('tags', []) as $key => $value) {

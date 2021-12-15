@@ -173,7 +173,7 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
             ->set('q', $query)
             ->addToSet('fields_used', $parsedQuery->getFieldsUsed())
             ->set('parsed_query_json', json_encode($parsedQuery))
-            ->set('sort', SearchArticlesSort::ORDER_DATE_DESC())
+            ->set('sort', SearchArticlesSort::ORDER_DATE_DESC)
             ->set('status', NodeStatus::PUBLISHED)
             ->set('count', min($request->get('count'), self::SLOTTING_MAX))
             ->set('is_unlisted', Trinary::FALSE_VAL->value)
@@ -277,7 +277,7 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
             $node = $nodes[$key];
 
             if (
-                !NodeStatus::PUBLISHED->equals($node->get('status'))
+                NodeStatus::PUBLISHED->value !== $node->fget('status')
                 || $node->get('is_unlisted', false)
                 || $node->get('is_locked', false)
             ) {

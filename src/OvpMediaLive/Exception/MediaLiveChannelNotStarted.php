@@ -10,6 +10,6 @@ final class MediaLiveChannelNotStarted extends \RuntimeException implements Trin
 {
     public function __construct(string $message = 'The MediaLive Channel was not started.')
     {
-        parent::__construct($message, Code::INTERNAL);
+        parent::__construct($message, Code::INTERNAL->value);
     }
 }

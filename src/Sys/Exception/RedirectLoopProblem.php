@@ -9,6 +9,6 @@ final class RedirectLoopProblem extends \InvalidArgumentException implements Tri
 {
     public function __construct(string $message = 'Request URI and destination cannot be the same.')
     {
-        parent::__construct($message, Code::INVALID_ARGUMENT);
+        parent::__construct($message, Code::INVALID_ARGUMENT->value);
     }
 }

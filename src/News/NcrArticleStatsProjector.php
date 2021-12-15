@@ -53,7 +53,7 @@ class NcrArticleStatsProjector implements EventSubscriber, PbjxProjector
         $articleRef = $article->generateNodeRef();
         $lastEvent = $pbjxEvent->getLastEvent();
 
-        if (NodeStatus::DELETED === $article->fget('status')) {
+        if (NodeStatus::DELETED->value === $article->fget('status')) {
             $context = ['causator' => $lastEvent];
             $statsRef = $this->createStatsRef($articleRef);
             $this->ncr->deleteNode($statsRef, $context);

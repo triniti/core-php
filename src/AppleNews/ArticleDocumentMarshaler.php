@@ -92,7 +92,7 @@ class ArticleDocumentMarshaler
      */
     public function marshal(Message $article): ArticleDocument
     {
-        if (!NodeStatus::PUBLISHED === $article->get('status')) {
+        if (NodeStatus::PUBLISHED !== $article->get('status')) {
             throw new ArticleNotPublished();
         }
 
@@ -377,11 +377,6 @@ class ArticleDocumentMarshaler
         return $this->urlProvider->getUrl(AssetId::fromString($nodeRef->getId()), $version, 'lg');
     }
 
-    /**
-     * @param NodeRef $nodeRef
-     *
-     * @return Message
-     */
     protected function getNode(NodeRef $nodeRef): ?Message
     {
         try {

@@ -184,10 +184,10 @@ class HasNotificationsWatcher implements EventSubscriber
         return $request
             ->set('q', sprintf(
                 '+send_status:(%s OR %s)',
-                NotificationSendStatus::DRAFT,
-                NotificationSendStatus::SCHEDULED
+                NotificationSendStatus::DRAFT->value,
+                NotificationSendStatus::SCHEDULED->value
             ))
-            ->set('sort', SearchNotificationsSort::CREATED_AT_ASC())
+            ->set('sort', SearchNotificationsSort::CREATED_AT_ASC)
             ->set('count', 255);
     }
 }

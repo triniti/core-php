@@ -58,7 +58,7 @@ class NotificationAggregate extends Aggregate
     {
         parent::applyNodeDeleted($event);
 
-        $sendStatus = $this->node->fget('send_status');
+        $sendStatus = $this->node->get('send_status');
         if ($sendStatus !== NotificationSendStatus::SENT && $sendStatus !== NotificationSendStatus::FAILED) {
             $this->node->set('send_status', NotificationSendStatus::CANCELED);
         }
@@ -106,7 +106,7 @@ class NotificationAggregate extends Aggregate
             ->set('content_ref', $oldNode->get('content_ref'));
 
         // notifications are only published or deleted, enforce it.
-        if (NodeStatus::DELETED !== $newNode->fget('status')) {
+        if (NodeStatus::DELETED->value !== $newNode->fget('status')) {
             $newNode->set('status', NodeStatus::PUBLISHED);
         }
 

@@ -51,7 +51,7 @@ class UpdateTranscodingStatusHandler implements CommandHandler
         $aggregate->commit($context);
         $videoAsset = $aggregate->getNode();
 
-        if (TranscodingStatus::COMPLETED !== $command->fget('transcoding_status')) {
+        if (TranscodingStatus::COMPLETED->value !== $command->fget('transcoding_status')) {
             // we only update the linked_refs (just videos atm) if transcoding completed
             return;
         }

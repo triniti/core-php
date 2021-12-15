@@ -158,11 +158,11 @@ abstract class AbstractAzureNotifier implements Notifier
                 RequestOptions::JSON    => $payload,
             ]);
 
-            $httpCode = $response->getStatusCode();
+            $httpCode = HttpCode::from($response->getStatusCode());
             return [
-                'ok'              => HttpCode::HTTP_OK->value === $httpCode || HttpCode::HTTP_CREATED->value === $httpCode,
-                'code'            => StatusCodeUtil::httpToVendor(HttpCode::tryFrom($response->getStatusCode()) ?: HttpCode::UNKNOWN)->value,
-                'http_code'       => $httpCode,
+                'ok'              => HttpCode::HTTP_OK === $httpCode || HttpCode::HTTP_CREATED === $httpCode,
+                'code'            => StatusCodeUtil::httpToVendor($httpCode)->value,
+                'http_code'       => $httpCode->value,
                 'response'        => json_decode((string)$response->getBody()->getContents(), true),
                 'location_header' => $response->getHeader('Location'),
             ];
@@ -174,7 +174,7 @@ abstract class AbstractAzureNotifier implements Notifier
     protected function convertException(\Throwable $exception): array
     {
         if ($exception instanceof RequestException) {
-            $httpCode = $exception->getResponse()->getStatusCode();
+            $httpCode = HttpCode::from($exception->getResponse()->getStatusCode());
             $response = (string)($exception->getResponse()->getBody()->getContents() ?: '{}');
         } else {
             $httpCode = HttpCode::HTTP_INTERNAL_SERVER_ERROR;
@@ -183,8 +183,8 @@ abstract class AbstractAzureNotifier implements Notifier
 
         return [
             'ok'            => false,
-            'code'          => StatusCodeUtil::httpToVendor($httpCode),
-            'http_code'     => $httpCode,
+            'code'          => StatusCodeUtil::httpToVendor($httpCode)->value,
+            'http_code'     => $httpCode->value,
             'raw_response'  => $response,
             'error_name'    => ClassUtil::getShortName($exception),
             'error_message' => substr($exception->getMessage(), 0, 2048),

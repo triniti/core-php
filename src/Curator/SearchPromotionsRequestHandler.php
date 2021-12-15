@@ -65,13 +65,13 @@ class SearchPromotionsRequestHandler extends AbstractSearchNodesRequestHandler
                 ->addNode(
                     new Field(
                         "d__{$dow}_start_at",
-                        new Numbr($sod, ComparisonOperator::LTE()),
+                        new Numbr($sod, ComparisonOperator::LTE),
                         $required
                     )
                 )->addNode(
                     new Field(
                         "d__{$dow}_end_at",
-                        new Numbr($sod, ComparisonOperator::GTE()),
+                        new Numbr($sod, ComparisonOperator::GTE),
                         $required
                     )
                 );

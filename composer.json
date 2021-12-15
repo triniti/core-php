@@ -18,12 +18,12 @@
     "guzzlehttp/oauth-subscriber": "~0.5",
     "ruflin/elastica": "^7.1",
     "sensio/framework-extra-bundle": "^6.2",
-    "symfony/asset": "^6.0",
-    "symfony/expression-language": "^6.0",
+    "symfony/asset": "^5.4|^6.0",
+    "symfony/expression-language": "^5.4|^6.0",
     "symfony/monolog-bundle": "^3.7",
-    "symfony/twig-bundle": "^6.0",
-    "symfony/web-link": "^6.0",
-    "symfony/yaml": "^6.0",
+    "symfony/twig-bundle": "^5.4|^6.0",
+    "symfony/web-link": "^5.4|^6.0",
+    "symfony/yaml": "^5.4|^6.0",
     "triniti/schemas": "^3.0"
   },
   "require-dev": {

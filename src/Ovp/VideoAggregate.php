@@ -43,7 +43,7 @@ class VideoAggregate extends Aggregate
 
     public function updateTranscodingStatus(Message $command, Message $videoAsset): void
     {
-        if (TranscodingStatus::COMPLETED !== $command->fget('transcoding_status')) {
+        if (TranscodingStatus::COMPLETED->value !== $command->fget('transcoding_status')) {
             // we only care about completed for now.
             return;
         }
@@ -81,7 +81,7 @@ class VideoAggregate extends Aggregate
 
     public function updateTranscriptionStatus(Message $command, Message $videoAsset): void
     {
-        if (TranscriptionStatus::COMPLETED !== $command->fget('transcription_status')) {
+        if (TranscriptionStatus::COMPLETED->value !== $command->fget('transcription_status')) {
             // we only care about completed for now.
             return;
         }

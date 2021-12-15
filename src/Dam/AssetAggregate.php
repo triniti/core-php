@@ -16,8 +16,8 @@ class AssetAggregate extends Aggregate
     {
         parent::__construct($node, $pbjx, $syncAllEvents);
         // assets are only published, deleted, expired, enforce it.
-        if (NodeStatus::DELETED !== $this->node->fget('status')
-            && NodeStatus::EXPIRED !== $this->node->fget('status')
+        if (NodeStatus::DELETED->value !== $this->node->fget('status')
+            && NodeStatus::EXPIRED->value !== $this->node->fget('status')
         ) {
             $this->node->set('status', NodeStatus::PUBLISHED);
         }
@@ -159,8 +159,8 @@ class AssetAggregate extends Aggregate
             ->set('file_etag', $oldNode->get('file_etag'));
 
         // assets are only published, deleted, expired, enforce it.
-        if (NodeStatus::DELETED !== $newNode->fget('status')
-            && NodeStatus::EXPIRED !== $newNode->fget('status')
+        if (NodeStatus::DELETED->value !== $newNode->fget('status')
+            && NodeStatus::EXPIRED->value !== $newNode->fget('status')
         ) {
             $newNode->set('status', NodeStatus::PUBLISHED);
         }

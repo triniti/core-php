@@ -175,7 +175,7 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
             ->set('q', $query)
             ->addToSet('fields_used', $parsedQuery->getFieldsUsed())
             ->set('parsed_query_json', json_encode($parsedQuery))
-            ->set('sort', SearchTeasersSort::ORDER_DATE_DESC())
+            ->set('sort', SearchTeasersSort::ORDER_DATE_DESC)
             ->set('status', NodeStatus::PUBLISHED)
             ->set('count', min($request->get('count'), self::SLOTTING_MAX))
             ->set('is_unlisted', Trinary::FALSE_VAL->value);

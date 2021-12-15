@@ -30,7 +30,7 @@ class VideoAssetAggregate extends AssetAggregate
         $nodeRef = $command->get('node_ref');
         $this->assertNodeRefMatches($nodeRef);
 
-        $event = match ($command->fget('transcoding_status')) {
+        $event = match ($command->get('transcoding_status')) {
             TranscodingStatus::COMPLETED => TranscodingCompletedV1::create(),
             TranscodingStatus::PROCESSING => TranscodingStartedV1::create(),
             default => TranscodingFailedV1::create()
@@ -59,7 +59,7 @@ class VideoAssetAggregate extends AssetAggregate
         $nodeRef = $command->get('node_ref');
         $this->assertNodeRefMatches($nodeRef);
 
-        $event = match ($command->fget('transcription_status')) {
+        $event = match ($command->get('transcription_status')) {
             TranscriptionStatus::COMPLETED => TranscriptionCompletedV1::create(),
             TranscriptionStatus::PROCESSING => TranscriptionStartedV1::create(),
             default => TranscriptionFailedV1::create()

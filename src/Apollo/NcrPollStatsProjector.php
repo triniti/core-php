@@ -51,7 +51,7 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
         $pollRef = $poll->generateNodeRef();
         $lastEvent = $pbjxEvent->getLastEvent();
 
-        if (NodeStatus::DELETED === $poll->fget('status')) {
+        if (NodeStatus::DELETED->value === $poll->fget('status')) {
             $context = ['causator' => $lastEvent];
             $statsRef = $this->createStatsRef($pollRef);
             $this->ncr->deleteNode($statsRef, $context);

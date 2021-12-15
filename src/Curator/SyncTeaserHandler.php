@@ -101,7 +101,7 @@ class SyncTeaserHandler implements CommandHandler
             return;
         }
 
-        if (NodeStatus::PUBLISHED === $target->fget('status')) {
+        if (NodeStatus::PUBLISHED->value === $target->fget('status')) {
             /*
              * for now we don't create teasers for already published targets
              * simply because we are not yet handling the auto publishing
