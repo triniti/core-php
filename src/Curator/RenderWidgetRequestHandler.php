@@ -60,7 +60,7 @@ class RenderWidgetRequestHandler implements RequestHandler
         $curie = $widget::schema()->getCurie();
         $widgetName = str_replace('-', '_', $curie->getMessage());
         $template = $this->findTemplate($context, $widgetName);
-        $hasNodes = null !== $searchResponse ? $searchResponse->has('nodes') : false;
+        $hasNodes = null !== $searchResponse && $searchResponse->has('nodes');
         try {
             $html = $this->twig->render($template, [
                 'pbj'             => $widget,

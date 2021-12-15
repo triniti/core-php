@@ -7,7 +7,6 @@ use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbj\WellKnown\NodeRef;
-use Gdbots\Schemas\Common\Enum\Trinary;
 
 class Flags
 {

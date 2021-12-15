@@ -347,32 +347,13 @@ class ArticleDocumentMarshaler
         $this->document->addComponent($component);
     }
 
-    /**
-     * @param NodeRef     $nodeRef
-     * @param AspectRatio $aspectRatio
-     * @param Message     $block
-     *
-     * @return string
-     */
     protected function getImageUrl(NodeRef $nodeRef, AspectRatio $aspectRatio, ?Message $block = null): string
     {
-        $aspectRatio = $aspectRatio->value;
-
-        switch ($aspectRatio) {
-            case AspectRatio::UNKNOWN;
-            case AspectRatio::AUTO;
-                $version = AspectRatio::R4BY3;
-                break;
-
-            case AspectRatio::CUSTOM;
-            case AspectRatio::ORIGINAL;
-                $version = 'o';
-                break;
-
-            default:
-                $version = $aspectRatio;
-                break;
-        }
+        $version = match ($aspectRatio) {
+            AspectRatio::UNKNOWN, AspectRatio::AUTO => AspectRatio::R4BY3->value,
+            AspectRatio::CUSTOM, AspectRatio::ORIGINAL => 'o',
+            default => $aspectRatio->value,
+        };
 
         return $this->urlProvider->getUrl(AssetId::fromString($nodeRef->getId()), $version, 'lg');
     }

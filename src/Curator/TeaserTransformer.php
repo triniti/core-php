@@ -21,12 +21,9 @@ class TeaserTransformer
         $targetRef = NodeRef::fromNode($target);
 
         if (null === $teaser) {
-            static $teaserClass = null;
-            if (null === $teaserClass) {
-                $teaserClass = MessageResolver::resolveCurie(
-                    SchemaCurie::fromstring("{$targetRef->getVendor()}:curator:node:{$targetRef->getLabel()}-teaser")
-                );
-            }
+            $teaserClass = MessageResolver::resolveCurie(
+                SchemaCurie::fromstring("{$targetRef->getVendor()}:curator:node:{$targetRef->getLabel()}-teaser")
+            );
 
             $teaser = $teaserClass::create()->set('sync_with_target', true);
         }
