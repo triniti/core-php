@@ -81,8 +81,8 @@ class AppleNewsApi
             $response = $this->getGuzzleClient()->post($uri, $options);
             return [
                 'operation' => $operation,
-                'ok'        => HttpCode::HTTP_CREATED === $response->getStatusCode(),
-                'code'      => StatusCodeUtil::httpToVendor($response->getStatusCode()),
+                'ok'        => HttpCode::HTTP_CREATED->value === $response->getStatusCode(),
+                'code'      => StatusCodeUtil::httpToVendor(HttpCode::tryFrom($response->getStatusCode()) ?: HttpCode::UNKNOWN),
                 'http_code' => $response->getStatusCode(),
                 'response'  => json_decode((string)$response->getBody()->getContents(), true),
             ];
@@ -133,8 +133,8 @@ class AppleNewsApi
             $response = $this->getGuzzleClient()->post($uri, $options);
             return [
                 'operation' => $operation,
-                'ok'        => HttpCode::HTTP_OK === $response->getStatusCode(),
-                'code'      => StatusCodeUtil::httpToVendor($response->getStatusCode()),
+                'ok'        => HttpCode::HTTP_OK->value === $response->getStatusCode(),
+                'code'      => StatusCodeUtil::httpToVendor(HttpCode::tryFrom($response->getStatusCode()) ?: HttpCode::UNKNOWN),
                 'http_code' => $response->getStatusCode(),
                 'response'  => json_decode((string)$response->getBody()->getContents(), true),
             ];
@@ -164,8 +164,8 @@ class AppleNewsApi
             $response = $this->getGuzzleClient()->delete($uri, $options);
             return [
                 'operation' => $operation,
-                'ok'        => HttpCode::HTTP_NO_CONTENT === $response->getStatusCode(),
-                'code'      => StatusCodeUtil::httpToVendor($response->getStatusCode()),
+                'ok'        => HttpCode::HTTP_NO_CONTENT->value === $response->getStatusCode(),
+                'code'      => StatusCodeUtil::httpToVendor(HttpCode::tryFrom($response->getStatusCode()) ?: HttpCode::UNKNOWN),
                 'http_code' => $response->getStatusCode(),
                 'response'  => [],
             ];
@@ -200,8 +200,8 @@ class AppleNewsApi
             $response = $this->getGuzzleClient()->post($uri, $options);
             return [
                 'operation' => $operation,
-                'ok'        => HttpCode::HTTP_CREATED === $response->getStatusCode(),
-                'code'      => StatusCodeUtil::httpToVendor($response->getStatusCode()),
+                'ok'        => HttpCode::HTTP_CREATED->value === $response->getStatusCode(),
+                'code'      => StatusCodeUtil::httpToVendor(HttpCode::tryFrom($response->getStatusCode()) ?: HttpCode::UNKNOWN),
                 'http_code' => $response->getStatusCode(),
                 'response'  => json_decode((string)$response->getBody()->getContents(), true),
             ];

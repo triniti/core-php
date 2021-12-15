@@ -179,7 +179,7 @@ class SendGridEmailNotifier implements Notifier
 
             return [
                 'ok'           => HttpCode::HTTP_CREATED->value === $httpCode,
-                'code'         => StatusCodeUtil::httpToVendor(HttpCode::from($httpCode)),
+                'code'         => StatusCodeUtil::httpToVendor(HttpCode::from($httpCode))->value,
                 'http_code'    => $httpCode,
                 'raw_response' => $content,
                 'response'     => json_decode($content, true),

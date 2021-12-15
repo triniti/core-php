@@ -505,7 +505,7 @@ class ArticleDocumentMarshalerTest extends AbstractPbjxTest
         $expected = new Gallery();
         $expected->setIdentifier('1230');
         $item = new GalleryItem();
-        $item->setURL($this->urlProvider->getUrl($imageNode->get('_id'), 'o', 'lg'));
+        $item->setURL($this->urlProvider->getUrl($imageNode->get('_id'), 'original', 'lg'));
         $expected->setItems([$item]);
 
         $galleryArticleDocumentMarshaler = new ArticleDocumentMarshaler($this->ncr, $mockPbjx, $this->urlProvider);
@@ -584,7 +584,7 @@ class ArticleDocumentMarshalerTest extends AbstractPbjxTest
 
         $imageRef = NodeRef::fromString('acme:image-block:image_jpg_20180906_78337d01b62e46c3ac4019b35810a834');
         $imageUrl = $this->urlProvider->getUrl(AssetId::fromString('image_jpg_20180906_78337d01b62e46c3ac4019b35810a834'),
-            '4by3',
+            'unknown',
             'lg');
         $imageBlock = ImageBlockV1::create()
             ->set('node_ref', $imageRef)
@@ -613,7 +613,7 @@ class ArticleDocumentMarshalerTest extends AbstractPbjxTest
 
         $imageRef = NodeRef::fromString('acme:image-block:image_jpg_20180906_78337d01b62e46c3ac4019b35810a834');
         $imageUrl = $this->urlProvider->getUrl(AssetId::fromString('image_jpg_20180906_78337d01b62e46c3ac4019b35810a834'),
-            '4by3',
+            'unknown',
             'lg');
 
         $imageBlock = ImageBlockV1::create();

@@ -44,7 +44,7 @@ class NotificationValidator implements EventSubscriber, PbjxValidator
 
     public static function alreadySent(Message $notification): bool
     {
-        $status = $notification->fget('send_status', NotificationSendStatus::DRAFT);
+        $status = $notification->fget('send_status', NotificationSendStatus::DRAFT->value);
         $sent = [
             NotificationSendStatus::SENT->value     => true,
             NotificationSendStatus::FAILED->value   => true,

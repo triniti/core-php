@@ -221,7 +221,7 @@ class AppleNewsWatcher implements EventSubscriber
         try {
             $pbjx->sendAt($command, $timestamp, $jobId);
         } catch (\Throwable $e) {
-            if ($e->getCode() !== Code::ALREADY_EXISTS) {
+            if ($e->getCode() !== Code::ALREADY_EXISTS->value) {
                 throw $e;
             }
         }

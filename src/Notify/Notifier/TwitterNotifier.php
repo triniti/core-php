@@ -44,7 +44,7 @@ class TwitterNotifier implements Notifier
         if ($this->flags->getBoolean('twitter_notifier_disabled')) {
             return NotifierResultV1::create()
                 ->set('ok', false)
-                ->set('code', Code::CANCELLED)
+                ->set('code', Code::CANCELLED->value)
                 ->set('error_name', 'TwitterNotifierDisabled')
                 ->set('error_message', 'Flag [twitter_notifier_disabled] is true');
         }
@@ -60,7 +60,7 @@ class TwitterNotifier implements Notifier
             if (empty($tweet)) {
                 return NotifierResultV1::create()
                     ->set('ok', false)
-                    ->set('code', Code::INVALID_ARGUMENT)
+                    ->set('code', Code::INVALID_ARGUMENT->value)
                     ->set('error_name', 'NullContent')
                     ->set('error_message', 'Tweet cannot be null');
             }
@@ -136,7 +136,7 @@ class TwitterNotifier implements Notifier
 
             return [
                 'ok'           => HttpCode::HTTP_OK->value === $httpCode || HttpCode::HTTP_CREATED->value === $httpCode,
-                'code'         => StatusCodeUtil::httpToVendor(HttpCode::from($httpCode)),
+                'code'         => StatusCodeUtil::httpToVendor(HttpCode::from($httpCode))->value,
                 'http_code'    => $httpCode,
                 'raw_response' => $content,
                 'response'     => json_decode($content, true),
@@ -152,7 +152,7 @@ class TwitterNotifier implements Notifier
             $httpCode = $exception->getResponse()->getStatusCode();
             $response = (string)($exception->getResponse()->getBody()->getContents() ?: '{}');
         } else {
-            $httpCode = HttpCode::HTTP_INTERNAL_SERVER_ERROR;
+            $httpCode = HttpCode::HTTP_INTERNAL_SERVER_ERROR->value;
             $response = '{}';
         }
 

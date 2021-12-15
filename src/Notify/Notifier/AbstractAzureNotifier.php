@@ -160,8 +160,8 @@ abstract class AbstractAzureNotifier implements Notifier
 
             $httpCode = $response->getStatusCode();
             return [
-                'ok'              => HttpCode::HTTP_OK === $httpCode || HttpCode::HTTP_CREATED === $httpCode,
-                'code'            => StatusCodeUtil::httpToVendor($httpCode),
+                'ok'              => HttpCode::HTTP_OK->value === $httpCode || HttpCode::HTTP_CREATED->value === $httpCode,
+                'code'            => StatusCodeUtil::httpToVendor(HttpCode::tryFrom($response->getStatusCode()) ?: HttpCode::UNKNOWN)->value,
                 'http_code'       => $httpCode,
                 'response'        => json_decode((string)$response->getBody()->getContents(), true),
                 'location_header' => $response->getHeader('Location'),

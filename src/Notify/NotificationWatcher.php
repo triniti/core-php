@@ -79,7 +79,7 @@ class NotificationWatcher implements EventSubscriber
             return;
         }
 
-        if (NotificationSendStatus::SCHEDULED !== $node->fget('send_status')) {
+        if (NotificationSendStatus::SCHEDULED->value !== $node->fget('send_status')) {
             // only a scheduled notification should create a job
             return;
         }

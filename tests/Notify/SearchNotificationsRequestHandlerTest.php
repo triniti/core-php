@@ -100,7 +100,7 @@ final class SearchNotificationsRequestHandlerTest extends AbstractPbjxTest
         $handler->handleRequest($request, $this->pbjx);
         $request = SearchNotificationsRequestV1::create();
         $request->set('parsed_query_json', $parsedQueryJson);
-        $request->addToSet('statuses', [NodeStatus::PENDING->value]);
+        $request->addToSet('statuses', [NodeStatus::PENDING]);
 
         $ncrSearch->addStatusField = false;
         $handler->handleRequest($request, $this->pbjx);

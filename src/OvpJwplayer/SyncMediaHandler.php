@@ -152,7 +152,7 @@ class SyncMediaHandler implements CommandHandler
         }
 
         $statusCode = $response->getStatusCode();
-        if ($statusCode !== HttpCode::HTTP_OK) {
+        if ($statusCode !== HttpCode::HTTP_OK->value) {
             throw new JwplayerMediaNotSynced(sprintf(
                 'The Jwplayer Media was not synced: failed to create Jwplayer Media. node_ref: [%s]. Status code: [%s]. Reason: ["%s"]',
                 $node->generateNodeRef(),
@@ -183,7 +183,7 @@ class SyncMediaHandler implements CommandHandler
         }
 
         $statusCode = $response->getStatusCode();
-        if ($statusCode !== HttpCode::HTTP_OK) {
+        if ($statusCode !== HttpCode::HTTP_OK->value) {
             throw new JwplayerMediaNotSynced(sprintf(
                 'The Jwplayer Media was not synced: failed to update Jwplayer Media. node_ref: [%s]. Status Code: [%s]. Reason: ["%s"]',
                 $node->generateNodeRef(),
@@ -217,7 +217,7 @@ class SyncMediaHandler implements CommandHandler
         }
 
         $statusCode = $response->getStatusCode();
-        if ($statusCode !== HttpCode::HTTP_OK) {
+        if ($statusCode !== HttpCode::HTTP_OK->value) {
             throw new JwplayerMediaNotSynced(sprintf(
                 'The Jwplayer Media was not synced: failed to delete Jwplayer Media. node_ref: [%s]. Status Code: [%s]. Reason: ["%s"]',
                 $node->generateNodeRef(),
@@ -425,7 +425,7 @@ class SyncMediaHandler implements CommandHandler
         }
 
         $statusCode = $response->getStatusCode();
-        if ($statusCode !== HttpCode::HTTP_OK) {
+        if ($statusCode !== HttpCode::HTTP_OK->value) {
             throw new JwplayerMediaNotSynced(sprintf(
                 'The Jwplayer Media was not synced: failed to GET existing jwplayer media. node_ref: [%s]. jwplayer_media_id: [%s]. Status code: [%s]. Reason: ["%s"]',
                 $node->generateNodeRef(),
