@@ -22,7 +22,7 @@ final class RedirectAggregateTest extends AbstractPbjxTest
         $aggregate = RedirectAggregate::fromNode($node, $this->pbjx);
         $aggregateNode = $aggregate->getNode();
         $this->assertSame('/awesome-redirect-1', $aggregateNode->get('title'));
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($aggregateNode->get('status')));
+        $this->assertTrue(NodeStatus::PUBLISHED === $aggregateNode->get('status'));
     }
 
     public function testCreateNode(): void
@@ -35,7 +35,7 @@ final class RedirectAggregateTest extends AbstractPbjxTest
         $events = $aggregate->getUncommittedEvents();
         $eventNode = $events[0]->get('node');
         $this->assertSame('/awesome-redirect-2', $eventNode->get('title'));
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($eventNode->get('status')));
+        $this->assertTrue(NodeStatus::PUBLISHED === $eventNode->get('status'));
     }
 
     public function testUpdateNode(): void
@@ -51,6 +51,6 @@ final class RedirectAggregateTest extends AbstractPbjxTest
         $events = $aggregate->getUncommittedEvents();
         $eventNode = $events[0]->get('new_node');
         $this->assertSame('/awesome-redirect-3', $eventNode->get('title'));
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($eventNode->get('status')));
+        $this->assertTrue(NodeStatus::PUBLISHED === $eventNode->get('status'));
     }
 }

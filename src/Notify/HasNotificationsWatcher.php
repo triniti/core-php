@@ -24,7 +24,7 @@ class HasNotificationsWatcher implements EventSubscriber
 {
     protected LoggerInterface $logger;
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:notify:mixin:has-notifications.deleted'     => 'cancel',
@@ -88,9 +88,9 @@ class HasNotificationsWatcher implements EventSubscriber
                 ->set('send_at', $sendAt);
 
             if ($newNode->has('send_at')) {
-                $newNode->set('send_status', NotificationSendStatus::SCHEDULED());
+                $newNode->set('send_status', NotificationSendStatus::SCHEDULED);
             } else {
-                $newNode->set('send_status', NotificationSendStatus::DRAFT());
+                $newNode->set('send_status', NotificationSendStatus::DRAFT);
             }
 
             $old = serialize([
@@ -184,10 +184,10 @@ class HasNotificationsWatcher implements EventSubscriber
         return $request
             ->set('q', sprintf(
                 '+send_status:(%s OR %s)',
-                NotificationSendStatus::DRAFT,
-                NotificationSendStatus::SCHEDULED
+                NotificationSendStatus::DRAFT->value,
+                NotificationSendStatus::SCHEDULED->value
             ))
-            ->set('sort', SearchNotificationsSort::CREATED_AT_ASC())
+            ->set('sort', SearchNotificationsSort::CREATED_AT_ASC)
             ->set('count', 255);
     }
 }

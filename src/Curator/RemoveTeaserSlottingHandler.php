@@ -38,7 +38,7 @@ class RemoveTeaserSlottingHandler implements CommandHandler
 
         $request = SearchTeasersRequestV1::create()
             ->set('q', implode(' OR ', $query))
-            ->set('status', NodeStatus::PUBLISHED());
+            ->set('status', NodeStatus::PUBLISHED);
         $response = $pbjx->copyContext($command, $request)->request($request);
 
         /** @var Message $node */

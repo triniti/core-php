@@ -17,19 +17,10 @@ class AppleNewsApi
 {
     const ENDPOINT = 'https://news-api.apple.com';
 
-    /* @var GuzzleClient */
-    protected $guzzleClient;
+    protected ?GuzzleClient $guzzleClient;
+    protected string $apiKey;
+    protected string $apiSecret;
 
-    /* @var string */
-    protected $apiKey;
-
-    /* @var string */
-    protected $apiSecret;
-
-    /**
-     * @param string $apiKey
-     * @param string $apiSecret
-     */
     public function __construct(string $apiKey, string $apiSecret)
     {
         $this->apiKey = $apiKey;
@@ -79,11 +70,12 @@ class AppleNewsApi
 
         try {
             $response = $this->getGuzzleClient()->post($uri, $options);
+            $httpCode = HttpCode::from($response->getStatusCode());
             return [
                 'operation' => $operation,
-                'ok'        => HttpCode::HTTP_CREATED === $response->getStatusCode(),
-                'code'      => StatusCodeUtil::httpToVendor($response->getStatusCode()),
-                'http_code' => $response->getStatusCode(),
+                'ok'        => HttpCode::HTTP_CREATED === $httpCode,
+                'code'      => StatusCodeUtil::httpToVendor($httpCode)->value,
+                'http_code' => $httpCode->value,
                 'response'  => json_decode((string)$response->getBody()->getContents(), true),
             ];
         } catch (\Throwable $e) {
@@ -131,11 +123,12 @@ class AppleNewsApi
 
         try {
             $response = $this->getGuzzleClient()->post($uri, $options);
+            $httpCode = HttpCode::from($response->getStatusCode());
             return [
                 'operation' => $operation,
-                'ok'        => HttpCode::HTTP_OK === $response->getStatusCode(),
-                'code'      => StatusCodeUtil::httpToVendor($response->getStatusCode()),
-                'http_code' => $response->getStatusCode(),
+                'ok'        => HttpCode::HTTP_OK === $httpCode,
+                'code'      => StatusCodeUtil::httpToVendor($httpCode)->value,
+                'http_code' => $httpCode->value,
                 'response'  => json_decode((string)$response->getBody()->getContents(), true),
             ];
         } catch (\Throwable $e) {
@@ -162,11 +155,12 @@ class AppleNewsApi
 
         try {
             $response = $this->getGuzzleClient()->delete($uri, $options);
+            $httpCode = HttpCode::from($response->getStatusCode());
             return [
                 'operation' => $operation,
-                'ok'        => HttpCode::HTTP_NO_CONTENT === $response->getStatusCode(),
-                'code'      => StatusCodeUtil::httpToVendor($response->getStatusCode()),
-                'http_code' => $response->getStatusCode(),
+                'ok'        => HttpCode::HTTP_NO_CONTENT === $httpCode,
+                'code'      => StatusCodeUtil::httpToVendor($httpCode)->value,
+                'http_code' => $httpCode->value,
                 'response'  => [],
             ];
         } catch (\Throwable $e) {
@@ -198,11 +192,12 @@ class AppleNewsApi
 
         try {
             $response = $this->getGuzzleClient()->post($uri, $options);
+            $httpCode = HttpCode::from($response->getStatusCode());
             return [
                 'operation' => $operation,
-                'ok'        => HttpCode::HTTP_CREATED === $response->getStatusCode(),
-                'code'      => StatusCodeUtil::httpToVendor($response->getStatusCode()),
-                'http_code' => $response->getStatusCode(),
+                'ok'        => HttpCode::HTTP_CREATED === $httpCode,
+                'code'      => StatusCodeUtil::httpToVendor($httpCode)->value,
+                'http_code' => $httpCode->value,
                 'response'  => json_decode((string)$response->getBody()->getContents(), true),
             ];
         } catch (\Throwable $e) {
@@ -210,16 +205,10 @@ class AppleNewsApi
         }
     }
 
-    /**
-     * @param \Throwable $exception
-     * @param string     $operation
-     *
-     * @return array
-     */
     protected function convertException(\Throwable $exception, string $operation): array
     {
         if ($exception instanceof RequestException) {
-            $httpCode = $exception->getResponse()->getStatusCode();
+            $httpCode = HttpCode::from($exception->getResponse()->getStatusCode());
             $response = (string)($exception->getResponse()->getBody()->getContents() ?: '{}');
         } else {
             $httpCode = HttpCode::HTTP_INTERNAL_SERVER_ERROR;
@@ -229,17 +218,14 @@ class AppleNewsApi
         return [
             'operation'     => $operation,
             'ok'            => false,
-            'code'          => StatusCodeUtil::httpToVendor($httpCode),
-            'http_code'     => $httpCode,
+            'code'          => StatusCodeUtil::httpToVendor($httpCode)->value,
+            'http_code'     => $httpCode->value,
             'response'      => json_decode($response, true),
             'error_name'    => ClassUtil::getShortName($exception),
             'error_message' => substr($exception->getMessage(), 0, 2048),
         ];
     }
 
-    /**
-     * @return GuzzleClient
-     */
     protected function getGuzzleClient(): GuzzleClient
     {
         if (null === $this->guzzleClient) {

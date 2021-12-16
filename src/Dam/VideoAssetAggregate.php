@@ -30,7 +30,7 @@ class VideoAssetAggregate extends AssetAggregate
         $nodeRef = $command->get('node_ref');
         $this->assertNodeRefMatches($nodeRef);
 
-        $event = match ($command->fget('transcoding_status')) {
+        $event = match ($command->get('transcoding_status')) {
             TranscodingStatus::COMPLETED => TranscodingCompletedV1::create(),
             TranscodingStatus::PROCESSING => TranscodingStartedV1::create(),
             default => TranscodingFailedV1::create()
@@ -59,7 +59,7 @@ class VideoAssetAggregate extends AssetAggregate
         $nodeRef = $command->get('node_ref');
         $this->assertNodeRefMatches($nodeRef);
 
-        $event = match ($command->fget('transcription_status')) {
+        $event = match ($command->get('transcription_status')) {
             TranscriptionStatus::COMPLETED => TranscriptionCompletedV1::create(),
             TranscriptionStatus::PROCESSING => TranscriptionStartedV1::create(),
             default => TranscriptionFailedV1::create()
@@ -80,7 +80,7 @@ class VideoAssetAggregate extends AssetAggregate
     protected function applyTranscodingCompleted(Message $event): void
     {
         $this->node
-            ->set('transcoding_status', TranscodingStatus::COMPLETED())
+            ->set('transcoding_status', TranscodingStatus::COMPLETED)
             ->removeFromMap('tags', 'transcode_error_code')
             ->removeFromMap('tags', 'transcode_error_name');
 
@@ -92,7 +92,7 @@ class VideoAssetAggregate extends AssetAggregate
     protected function applyTranscodingFailed(Message $event): void
     {
         $this->node
-            ->set('transcoding_status', TranscodingStatus::FAILED())
+            ->set('transcoding_status', TranscodingStatus::FAILED)
             ->removeFromMap('tags', 'transcode_error_code')
             ->removeFromMap('tags', 'transcode_error_name');
 
@@ -101,16 +101,16 @@ class VideoAssetAggregate extends AssetAggregate
         }
 
         if ($event->has('error_code')) {
-            $code = $event->get('error_code') ?: Code::UNKNOWN();
-            $this->node->addToMap('tags', 'transcode_error_code', (string)$code->getValue());
-            $this->node->addToMap('tags', 'transcode_error_name', $code->getName());
+            $code = $event->get('error_code') ?: Code::UNKNOWN;
+            $this->node->addToMap('tags', 'transcode_error_code', (string)$code->value);
+            $this->node->addToMap('tags', 'transcode_error_name', $code->name);
         }
     }
 
     protected function applyTranscodingStarted(Message $event): void
     {
         $this->node
-            ->set('transcoding_status', TranscodingStatus::PROCESSING())
+            ->set('transcoding_status', TranscodingStatus::PROCESSING)
             ->removeFromMap('tags', 'transcode_error_code')
             ->removeFromMap('tags', 'transcode_error_name');
 
@@ -122,7 +122,7 @@ class VideoAssetAggregate extends AssetAggregate
     protected function applyTranscriptionCompleted(Message $event): void
     {
         $this->node
-            ->set('transcription_status', TranscriptionStatus::COMPLETED())
+            ->set('transcription_status', TranscriptionStatus::COMPLETED)
             ->removeFromMap('tags', 'transcribe_error_code')
             ->removeFromMap('tags', 'transcribe_error_name');
 
@@ -134,7 +134,7 @@ class VideoAssetAggregate extends AssetAggregate
     protected function applyTranscriptionFailed(Message $event): void
     {
         $this->node
-            ->set('transcription_status', TranscriptionStatus::FAILED())
+            ->set('transcription_status', TranscriptionStatus::FAILED)
             ->removeFromMap('tags', 'transcribe_error_code')
             ->removeFromMap('tags', 'transcribe_error_name');
 
@@ -143,16 +143,16 @@ class VideoAssetAggregate extends AssetAggregate
         }
 
         if ($event->has('error_code')) {
-            $code = $event->get('error_code') ?: Code::UNKNOWN();
-            $this->node->addToMap('tags', 'transcribe_error_code', (string)$code->getValue());
-            $this->node->addToMap('tags', 'transcribe_error_name', $code->getName());
+            $code = $event->get('error_code') ?: Code::UNKNOWN;
+            $this->node->addToMap('tags', 'transcribe_error_code', (string)$code->value);
+            $this->node->addToMap('tags', 'transcribe_error_name', $code->name);
         }
     }
 
     protected function applyTranscriptionStarted(Message $event): void
     {
         $this->node
-            ->set('transcription_status', TranscriptionStatus::PROCESSING())
+            ->set('transcription_status', TranscriptionStatus::PROCESSING)
             ->removeFromMap('tags', 'transcribe_error_code')
             ->removeFromMap('tags', 'transcribe_error_name');
 

@@ -11,7 +11,7 @@ class Caption extends Text
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         $properties = $this->getSetProperties();
         $properties['role'] = 'caption';

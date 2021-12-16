@@ -39,9 +39,9 @@ final class FlagsTest extends TestCase
                 'string_2' => 'val2',
             ],
             'trinaries' => [
-                'trinary_unknown' => Trinary::UNKNOWN,
-                'trinary_true'    => Trinary::TRUE_VAL,
-                'trinary_false'   => Trinary::FALSE_VAL,
+                'trinary_unknown' => Trinary::UNKNOWN->value,
+                'trinary_true'    => Trinary::TRUE_VAL->value,
+                'trinary_false'   => Trinary::FALSE_VAL->value,
             ],
         ]);
 
@@ -124,7 +124,7 @@ final class FlagsTest extends TestCase
         $actual = $flags->getString('missing', $expected);
         $this->assertSame($expected, $actual);
 
-        $expected = Trinary::FALSE_VAL;
+        $expected = Trinary::FALSE_VAL->value;
         $actual = $flags->getTrinary('missing', $expected);
         $this->assertSame($expected, $actual);
     }

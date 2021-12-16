@@ -9,6 +9,6 @@ final class RequiredFieldNotSet extends \InvalidArgumentException implements Tri
 {
     public function __construct(string $message = 'Required field is missing')
     {
-        parent::__construct($message, Code::INVALID_ARGUMENT);
+        parent::__construct($message, Code::INVALID_ARGUMENT->value);
     }
 }

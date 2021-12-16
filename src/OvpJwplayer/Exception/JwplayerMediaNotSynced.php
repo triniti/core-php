@@ -10,6 +10,6 @@ final class JwplayerMediaNotSynced extends \RuntimeException implements TrinitiO
 {
     public function __construct(string $message = 'The Jwplayer Media was not synced.')
     {
-        parent::__construct($message, Code::INTERNAL);
+        parent::__construct($message, Code::INTERNAL->value);
     }
 }

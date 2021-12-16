@@ -9,7 +9,7 @@ use Gdbots\Pbjx\EventSubscriber;
 
 final class HasPeopleEnricher implements EventSubscriber, PbjxEnricher
 {
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:people:mixin:has-people.enrich' => 'enrich',

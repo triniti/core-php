@@ -178,7 +178,7 @@ class TwitterNotifierTest extends AbstractPbjxTest
     {
         return TwitterNotificationV1::create()
             ->set('content_ref', $this->content->generateNodeRef())
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('status', NodeStatus::PUBLISHED)
             ->set('title', 'Lorem ipsum dolor sit amet')
             ->set(
                 'body',
@@ -189,7 +189,7 @@ class TwitterNotifierTest extends AbstractPbjxTest
     protected function getApp(): Message
     {
         return TwitterAppV1::create()
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('status', NodeStatus::PUBLISHED)
             ->set('title', 'Twitter App')
             ->set('oauth_consumer_key', 'oauth_consumer_key')
             ->set(
@@ -207,7 +207,7 @@ class TwitterNotifierTest extends AbstractPbjxTest
     {
         return ArticleV1::create()
             ->set('title', 'Lorem Ipsum')
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('status', NodeStatus::PUBLISHED)
             ->set('slug', '2018/08/08/lorem-ipsum')
             ->addToList(
                 'blocks',

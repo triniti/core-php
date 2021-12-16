@@ -55,7 +55,7 @@ class TwitterWatcher implements EventSubscriber
     {
         $typeField = MappingBuilder::TYPE_FIELD;
         $request = SearchAppsRequestV1::create()
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('status', NodeStatus::PUBLISHED)
             ->set('q', "+{$typeField}:twitter-app")
             ->set('count', 1);
 
@@ -96,7 +96,7 @@ class TwitterWatcher implements EventSubscriber
         try {
             $pbjx->sendAt($command, strtotime('+3 seconds'), "{$nodeRef}.post-tweet");
         } catch (\Throwable $e) {
-            if ($e->getCode() !== Code::ALREADY_EXISTS) {
+            if ($e->getCode() !== Code::ALREADY_EXISTS->value) {
                 throw $e;
             }
         }

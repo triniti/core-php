@@ -42,7 +42,7 @@ abstract class AbstractFcmNotifier implements Notifier
         if ($this->flags->getBoolean(static::DISABLED_FLAG_NAME)) {
             return NotifierResultV1::create()
                 ->set('ok', false)
-                ->set('code', Code::CANCELLED)
+                ->set('code', Code::CANCELLED->value)
                 ->set('error_name', 'FcmNotifierDisabled')
                 ->set('error_message', 'Flag [' . static::DISABLED_FLAG_NAME . '] is true');
         }
@@ -60,7 +60,7 @@ abstract class AbstractFcmNotifier implements Notifier
                 $result->addToMap('tags', 'fcm_message_id', (string)$response['message_id']);
             }
         } catch (\Throwable $e) {
-            $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN;
+            $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN->value;
 
             return NotifierResultV1::create()
                 ->set('ok', false)
@@ -134,13 +134,13 @@ abstract class AbstractFcmNotifier implements Notifier
     {
         try {
             $response = $this->getGuzzleClient()->post('/fcm/send', [RequestOptions::JSON => $payload]);
-            $httpCode = $response->getStatusCode();
+            $httpCode = HttpCode::from($response->getStatusCode());
             $content = (string)$response->getBody()->getContents();
 
             return [
                 'ok'           => HttpCode::HTTP_OK === $httpCode || HttpCode::HTTP_CREATED === $httpCode,
-                'code'         => StatusCodeUtil::httpToVendor($httpCode),
-                'http_code'    => $httpCode,
+                'code'         => StatusCodeUtil::httpToVendor($httpCode)->value,
+                'http_code'    => $httpCode->value,
                 'raw_response' => $content,
                 'response'     => json_decode($content, true),
             ];
@@ -152,7 +152,7 @@ abstract class AbstractFcmNotifier implements Notifier
     protected function convertException(\Throwable $exception): array
     {
         if ($exception instanceof RequestException) {
-            $httpCode = $exception->getResponse()->getStatusCode();
+            $httpCode = HttpCode::from($exception->getResponse()->getStatusCode());
             $response = (string)($exception->getResponse()->getBody()->getContents() ?: '{}');
         } else {
             $httpCode = HttpCode::HTTP_INTERNAL_SERVER_ERROR;
@@ -161,8 +161,8 @@ abstract class AbstractFcmNotifier implements Notifier
 
         return [
             'ok'            => false,
-            'code'          => StatusCodeUtil::httpToVendor($httpCode),
-            'http_code'     => $httpCode,
+            'code'          => StatusCodeUtil::httpToVendor($httpCode)->value,
+            'http_code'     => $httpCode->value,
             'raw_response'  => $response,
             'error_name'    => ClassUtil::getShortName($exception),
             'error_message' => substr($exception->getMessage(), 0, 2048),

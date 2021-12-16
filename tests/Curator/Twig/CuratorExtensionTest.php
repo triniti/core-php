@@ -63,7 +63,7 @@ final class CuratorExtensionTest extends AbstractPbjxTest
         $context = RenderContextV1::create()
             ->set('platform', 'web')
             ->set('device_view', 'smartphone')
-            ->addToMap('strings', 'rendering', SlotRendering::LAZY);
+            ->addToMap('strings', 'rendering', SlotRendering::LAZY->value);
 
         $actual = $this->twig->render('curator_render_widget.twig', [
             'pbj'     => NodeRef::fromNode($widget),
@@ -82,7 +82,7 @@ final class CuratorExtensionTest extends AbstractPbjxTest
         $context = RenderContextV1::create()
             ->set('platform', 'web')
             ->set('device_view', 'desktop')
-            ->addToMap('strings', 'rendering', SlotRendering::LAZY);
+            ->addToMap('strings', 'rendering', SlotRendering::LAZY->value);
 
         $actual = $this->twig->render('curator_render_widget.twig', [
             'pbj'     => NodeRef::fromNode($widget),

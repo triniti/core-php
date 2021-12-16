@@ -51,7 +51,7 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
             '_id'         => AssetId::create('image', 'jpg'),
             'mime_type'   => 'image/jpeg',
             'gallery_ref' => $galleryRef,
-            'status'      => NodeStatus::PUBLISHED(),
+            'status'      => NodeStatus::PUBLISHED->value,
         ]);
 
         $event = AssetCreatedV1::create()->set('node', $image);
@@ -81,7 +81,7 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         $image = ImageAssetV1::fromArray([
             '_id'       => AssetId::create('image', 'jpg'),
             'mime_type' => 'image/jpeg',
-            'status'    => NodeStatus::PUBLISHED(),
+            'status'    => NodeStatus::PUBLISHED->value,
         ]);
 
         $event = AssetCreatedV1::create()->set('node', $image);
@@ -99,7 +99,7 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
             '_id'         => AssetId::create('image', 'jpg'),
             'mime_type'   => 'image/jpeg',
             'gallery_ref' => $galleryRef,
-            'status'      => NodeStatus::PUBLISHED(),
+            'status'      => NodeStatus::PUBLISHED->value,
         ]);
 
         $event = GalleryAssetReorderedV1::create()
@@ -190,12 +190,12 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         $this->projector->onNodeEvent($events[0], $this->pbjx);
         $this->projector->onGalleryProjected($pbjxEvent);
         $ncrNode = $this->ncr->getNode($nodeRef);
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($ncrNode->get('status')));
+        $this->assertTrue(NodeStatus::PUBLISHED === $ncrNode->get('status'));
         $this->assertSame($events[0]->get('published_at')->getTimestamp(), $ncrNode->get('published_at')->getTimestamp());
         $response = SearchGalleriesResponseV1::create();
         $this->ncrSearch->searchNodes(SearchGalleriesRequestV1::create(), new ParsedQuery(), $response);
         $indexedNode = $response->get('nodes', [])[0];
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($indexedNode->get('status')));
+        $this->assertTrue(NodeStatus::PUBLISHED === $indexedNode->get('status'));
         $this->assertSame($events[0]->get('published_at')->getTimestamp(), $indexedNode->get('published_at')->getTimestamp());
 
         $sentCommand = $this->pbjx->getSent()[0]['command'];
@@ -229,7 +229,7 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         $image = ImageAssetV1::fromArray([
             '_id'         => AssetId::create('image', 'jpg'),
             'mime_type'   => 'image/jpeg',
-            'status'      => NodeStatus::PUBLISHED(),
+            'status'      => NodeStatus::PUBLISHED,
             'gallery_ref' => $nodeRef,
         ]);
         $this->ncr->putNode($image);
@@ -250,7 +250,7 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         $image = ImageAssetV1::fromArray([
             '_id'         => AssetId::create('image', 'jpg'),
             'mime_type'   => 'image/jpeg',
-            'status'      => NodeStatus::PUBLISHED(),
+            'status'      => NodeStatus::PUBLISHED,
             'gallery_ref' => $nodeRef,
         ]);
         $this->ncr->putNode($image);
@@ -268,7 +268,7 @@ final class NcrGalleryProjectorTest extends AbstractPbjxTest
         $image = ImageAssetV1::fromArray([
             '_id'       => AssetId::create('image', 'jpg'),
             'mime_type' => 'image/jpeg',
-            'status'    => NodeStatus::PUBLISHED(),
+            'status'    => NodeStatus::PUBLISHED,
         ]);
 
         $event = AssetDeletedV1::create()->set('node_ref', $image->generateNodeRef());

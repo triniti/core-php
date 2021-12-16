@@ -155,7 +155,7 @@ class Video extends Component
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         $properties = $this->getSetProperties();
         $properties['role'] = 'video';

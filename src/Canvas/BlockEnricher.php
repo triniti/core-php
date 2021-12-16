@@ -9,7 +9,7 @@ use Gdbots\Pbjx\EventSubscriber;
 
 final class BlockEnricher implements EventSubscriber, PbjxEnricher
 {
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:canvas:mixin:block.enrich' => ['enrichWithEtag', -5000],

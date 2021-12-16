@@ -9,6 +9,6 @@ final class NotificationAlreadySent extends \RuntimeException implements Triniti
 {
     public function __construct(string $message = 'Notification already sent.')
     {
-        parent::__construct($message, Code::FAILED_PRECONDITION);
+        parent::__construct($message, Code::FAILED_PRECONDITION->value);
     }
 }

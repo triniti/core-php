@@ -24,7 +24,7 @@ class TeaserableWatcher implements EventSubscriber
 {
     use SyncTeaserTrait;
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:curator:mixin:teaserable.created'     => 'syncTeasers',
@@ -55,7 +55,7 @@ class TeaserableWatcher implements EventSubscriber
         }
 
         $targetRef = $pbjxEvent->getNode()->generateNodeRef();
-        foreach ($this->getTeasers($targetRef, NodeStatus::DRAFT())['sync'] as $index => $teaser) {
+        foreach ($this->getTeasers($targetRef, NodeStatus::DRAFT)['sync'] as $index => $teaser) {
             $teaserRef = NodeRef::fromNode($teaser);
             $command = PublishNodeV1::create()
                 ->set('node_ref', $teaserRef)
@@ -91,7 +91,7 @@ class TeaserableWatcher implements EventSubscriber
         }
 
         $targetRef = $pbjxEvent->getNode()->generateNodeRef();
-        foreach ($this->getTeasers($targetRef, NodeStatus::PUBLISHED())['all'] as $index => $teaser) {
+        foreach ($this->getTeasers($targetRef, NodeStatus::PUBLISHED)['all'] as $index => $teaser) {
             $teaserRef = NodeRef::fromNode($teaser);
             /** @var Message $class */
             $command = $class::create()->set('node_ref', $teaserRef);

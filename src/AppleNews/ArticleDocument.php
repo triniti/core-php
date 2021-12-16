@@ -389,7 +389,7 @@ class ArticleDocument extends AppleNewsObject
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         $properties = $this->getSetProperties();
         $properties['version'] = '1.10';

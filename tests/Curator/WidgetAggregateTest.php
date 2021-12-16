@@ -17,7 +17,7 @@ final class WidgetAggregateTest extends AbstractPbjxTest
     {
         $node = AdWidgetV1::create();
         $aggregate = WidgetAggregate::fromNode($node, $this->pbjx);
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($aggregate->getNode()->get('status')));
+        $this->assertTrue(NodeStatus::PUBLISHED === $aggregate->getNode()->get('status'));
     }
 
     public function testCreateNode(): void
@@ -26,7 +26,7 @@ final class WidgetAggregateTest extends AbstractPbjxTest
         $aggregate = WidgetAggregate::fromNode($node, $this->pbjx);
         $aggregate->createNode(CreateWidgetV1::create()->set('node', $node));
         $events = $aggregate->getUncommittedEvents();
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($events[0]->get('node')->get('status')));
+        $this->assertTrue(NodeStatus::PUBLISHED === $events[0]->get('node')->get('status'));
     }
 
     public function testUpdateNode(): void
@@ -38,6 +38,6 @@ final class WidgetAggregateTest extends AbstractPbjxTest
             ->set('new_node', (clone $node)->set('title', 'foo'));
         $aggregate->updateNode($command);
         $events = $aggregate->getUncommittedEvents();
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($events[0]->get('new_node')->get('status')));
+        $this->assertTrue(NodeStatus::PUBLISHED === $events[0]->get('new_node')->get('status'));
     }
 }

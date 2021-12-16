@@ -145,7 +145,7 @@ class ImageDataFormat extends DataFormat
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         $properties = $this->getSetProperties();
         $properties['type'] = 'image';

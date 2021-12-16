@@ -212,7 +212,7 @@ class FormattedText extends AppleNewsObject
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         $properties = $this->getSetProperties();
         $properties['type'] = 'formatted_text';

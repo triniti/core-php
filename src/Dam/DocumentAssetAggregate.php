@@ -11,7 +11,7 @@ class DocumentAssetAggregate extends AssetAggregate
 {
     public function updateTranscriptionStatus(Message $command, Message $videoAsset): void
     {
-        if (TranscriptionStatus::COMPLETED !== $command->fget('transcription_status')) {
+        if (TranscriptionStatus::COMPLETED->value !== $command->fget('transcription_status')) {
             // we only care about completed for now.
             return;
         }

@@ -252,7 +252,7 @@ class CollectionDisplay extends AppleNewsObject
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         $properties = $this->getSetProperties();
         $properties['type'] = 'collection';

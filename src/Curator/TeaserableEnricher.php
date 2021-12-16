@@ -9,7 +9,7 @@ use Gdbots\Pbjx\EventSubscriber;
 
 final class TeaserableEnricher implements EventSubscriber, PbjxEnricher
 {
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:curator:mixin:teaser.enrich'     => 'enrichWithOrderDate',

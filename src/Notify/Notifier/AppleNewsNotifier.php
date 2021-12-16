@@ -45,7 +45,7 @@ class AppleNewsNotifier implements Notifier
         if (null === $content) {
             return NotifierResultV1::create()
                 ->set('ok', false)
-                ->set('code', Code::INVALID_ARGUMENT)
+                ->set('code', Code::INVALID_ARGUMENT->value)
                 ->set('error_name', 'NullContent')
                 ->set('error_message', 'Content cannot be null');
         }
@@ -53,7 +53,7 @@ class AppleNewsNotifier implements Notifier
         if ($this->flags->getBoolean('apple_news_notifier_disabled')) {
             return NotifierResultV1::create()
                 ->set('ok', false)
-                ->set('code', Code::CANCELLED)
+                ->set('code', Code::CANCELLED->value)
                 ->set('error_name', 'AppleNewsNotifierDisabled')
                 ->set('error_message', 'Flag [apple_news_notifier_disabled] is true');
         }
@@ -82,7 +82,7 @@ class AppleNewsNotifier implements Notifier
                     throw new InvalidNotificationContent("AppleNews operation [{$operation}] is not supported.");
             }
         } catch (\Throwable $e) {
-            $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN;
+            $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN->value;
             return NotifierResultV1::create()
                 ->set('ok', false)
                 ->set('code', $code)
@@ -186,12 +186,12 @@ class AppleNewsNotifier implements Notifier
         $request = SearchNotificationsRequestV1::create()
             ->addToSet('types', ['apple-news-notification'])
             ->set('q', '+apple_news_operation:(update OR create)')
-            ->set('send_status', NotificationSendStatus::SENT())
+            ->set('send_status', NotificationSendStatus::SENT)
             ->set('app_ref', $notification->get('app_ref'))
             ->set('content_ref', $notification->get('content_ref'))
             ->set('ctx_causator_ref', $notification->generateMessageRef())
             ->set('count', 1)
-            ->set('sort', SearchNotificationsSort::SENT_AT_DESC());
+            ->set('sort', SearchNotificationsSort::SENT_AT_DESC);
 
         $response = $this->pbjx->request($request);
         if (!$response->has('nodes')) {

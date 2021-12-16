@@ -24,7 +24,7 @@ class NcrArticleStatsProjector implements EventSubscriber, PbjxProjector
     protected NcrSearch $ncrSearch;
     protected bool $enabled;
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:news:mixin:article.projected'       => 'onArticleProjected',
@@ -53,7 +53,7 @@ class NcrArticleStatsProjector implements EventSubscriber, PbjxProjector
         $articleRef = $article->generateNodeRef();
         $lastEvent = $pbjxEvent->getLastEvent();
 
-        if (NodeStatus::DELETED === $article->fget('status')) {
+        if (NodeStatus::DELETED->value === $article->fget('status')) {
             $context = ['causator' => $lastEvent];
             $statsRef = $this->createStatsRef($articleRef);
             $this->ncr->deleteNode($statsRef, $context);
@@ -145,7 +145,7 @@ class NcrArticleStatsProjector implements EventSubscriber, PbjxProjector
 
         $this->ncr->putNode($stats, null, $context);
         $this->ncrSearch->indexNodes([$stats], $context);
-        $pbjx->trigger($stats, 'projected', new NodeProjectedEvent($stats, $event), false);
+        $pbjx->trigger($stats, 'projected', new NodeProjectedEvent($stats, $event), false, false);
         $this->cancelOrCreateCollectArticleStatsJob($stats, $event, $pbjx);
     }
 
@@ -157,7 +157,7 @@ class NcrArticleStatsProjector implements EventSubscriber, PbjxProjector
 
         $statsRef = $stats->generateNodeRef();
 
-        if (NodeStatus::PUBLISHED !== $stats->fget('status')) {
+        if (NodeStatus::PUBLISHED->value !== $stats->fget('status')) {
             $pbjx->cancelJobs(["{$statsRef}.collect", "{$statsRef}.collect-now"]);
             return;
         }

@@ -55,7 +55,7 @@ class SendNotificationHandler implements CommandHandler
         $aggregate->sync($context);
         $notification = $aggregate->getNode();
 
-        if (NotificationSendStatus::SCHEDULED !== $notification->fget('send_status')) {
+        if (NotificationSendStatus::SCHEDULED->value !== $notification->fget('send_status')) {
             return;
         }
 
@@ -82,7 +82,7 @@ class SendNotificationHandler implements CommandHandler
         ) {
             $result = NotifierResultV1::create()
                 ->set('ok', false)
-                ->set('code', Code::NOT_FOUND)
+                ->set('code', Code::NOT_FOUND->value)
                 ->set('error_name', 'NodeNotFound')
                 ->set('error_message', "App [{$appRef}] was not found.");
         }
@@ -91,17 +91,17 @@ class SendNotificationHandler implements CommandHandler
             if (null === $content || !$content::schema()->hasMixin('triniti:notify:mixin:has-notifications')) {
                 $result = NotifierResultV1::create()
                     ->set('ok', false)
-                    ->set('code', Code::INVALID_ARGUMENT)
+                    ->set('code', Code::INVALID_ARGUMENT->value)
                     ->set('error_name', 'InvalidNotificationContent')
                     ->set('error_message', "Selected content [{$contentRef}] does not support notifications.");
-            } elseif (NodeStatus::PUBLISHED !== $content->fget('status')
+            } elseif (NodeStatus::PUBLISHED->value !== $content->fget('status')
                 && 'delete' !== $notification->get('apple_news_operation')
             ) {
                 // If notification is an apple news delete operation then it's ok the send
                 // notification against and unpublished article
                 $result = NotifierResultV1::create()
                     ->set('ok', false)
-                    ->set('code', Code::ABORTED)
+                    ->set('code', Code::ABORTED->value)
                     ->set('error_name', 'UnpublishedNotificationContent')
                     ->set('error_message', "Selected content [{$contentRef}] is [{$content->fget('status')}].");
             }
@@ -113,12 +113,12 @@ class SendNotificationHandler implements CommandHandler
         }
 
         $retryCodes = [
-            Code::ABORTED            => true,
-            Code::DEADLINE_EXCEEDED  => true,
-            Code::INTERNAL           => true,
-            Code::RESOURCE_EXHAUSTED => true,
-            Code::UNAVAILABLE        => true,
-            Code::UNKNOWN            => true,
+            Code::ABORTED->value            => true,
+            Code::DEADLINE_EXCEEDED->value  => true,
+            Code::INTERNAL->value           => true,
+            Code::RESOURCE_EXHAUSTED->value => true,
+            Code::UNAVAILABLE->value        => true,
+            Code::UNKNOWN->value            => true,
         ];
 
         if (

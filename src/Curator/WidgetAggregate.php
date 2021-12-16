@@ -15,8 +15,8 @@ class WidgetAggregate extends Aggregate
     {
         parent::__construct($node, $pbjx, $syncAllEvents);
         // widgets are only published or deleted, enforce it.
-        if (NodeStatus::DELETED !== $this->node->fget('status')) {
-            $this->node->set('status', NodeStatus::PUBLISHED());
+        if (NodeStatus::DELETED->value !== $this->node->fget('status')) {
+            $this->node->set('status', NodeStatus::PUBLISHED);
         }
     }
 
@@ -26,8 +26,8 @@ class WidgetAggregate extends Aggregate
         $newNode = $event->get('new_node');
 
         // widgets are only published or deleted, enforce it.
-        if (NodeStatus::DELETED !== $newNode->fget('status')) {
-            $newNode->set('status', NodeStatus::PUBLISHED());
+        if (NodeStatus::DELETED->value !== $newNode->fget('status')) {
+            $newNode->set('status', NodeStatus::PUBLISHED);
         }
 
         parent::enrichNodeUpdated($event);

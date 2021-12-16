@@ -46,7 +46,7 @@ class RenderPromotionRequestHandler implements RequestHandler
 
         $response->set('promotion', $promotion);
 
-        if (NodeStatus::DELETED === $promotion->fget('status')) {
+        if (NodeStatus::DELETED->value === $promotion->fget('status')) {
             // a deleted promotion cannot promote
             return $response;
         }
@@ -70,7 +70,7 @@ class RenderPromotionRequestHandler implements RequestHandler
             }
 
             $context = clone $context;
-            $context->addToMap('strings', 'rendering', (string)$slot->get('rendering'));
+            $context->addToMap('strings', 'rendering', $slot->get('rendering')->value);
             $widget = $this->renderWidget($slot->get('widget_ref'), $request, $context, $pbjx);
             if (null !== $widget) {
                 $widgets[] = $widget;
@@ -113,8 +113,8 @@ class RenderPromotionRequestHandler implements RequestHandler
         try {
             $searchRequest = SearchPromotionsRequestV1::create()
                 ->set('count', 1)
-                ->set('status', NodeStatus::PUBLISHED())
-                ->set('sort', SearchPromotionsSort::PRIORITY_DESC())
+                ->set('status', NodeStatus::PUBLISHED)
+                ->set('sort', SearchPromotionsSort::PRIORITY_DESC)
                 ->set('slot', $request->get('slot'))
                 ->set('render_at', $request->get('render_at') ?: $request->get('occurred_at')->toDateTime());
 

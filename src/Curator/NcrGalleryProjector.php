@@ -12,7 +12,7 @@ use Triniti\Schemas\Curator\Command\UpdateGalleryImageCountV1;
 
 class NcrGalleryProjector extends NcrProjector
 {
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:curator:event:gallery-image-count-updated' => 'onNodeEvent',

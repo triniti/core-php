@@ -80,7 +80,7 @@ class SyncMediaHandler implements CommandHandler
             ));
         }
 
-        if ($node->fget('status') === NodeStatus::DELETED && $node->has('jwplayer_media_id')) {
+        if ($node->fget('status') === NodeStatus::DELETED->value && $node->has('jwplayer_media_id')) {
             $this->deleteVideo($command, $pbjx, $node);
             return;
         }
@@ -152,7 +152,7 @@ class SyncMediaHandler implements CommandHandler
         }
 
         $statusCode = $response->getStatusCode();
-        if ($statusCode !== HttpCode::HTTP_OK) {
+        if ($statusCode !== HttpCode::HTTP_OK->value) {
             throw new JwplayerMediaNotSynced(sprintf(
                 'The Jwplayer Media was not synced: failed to create Jwplayer Media. node_ref: [%s]. Status code: [%s]. Reason: ["%s"]',
                 $node->generateNodeRef(),
@@ -183,7 +183,7 @@ class SyncMediaHandler implements CommandHandler
         }
 
         $statusCode = $response->getStatusCode();
-        if ($statusCode !== HttpCode::HTTP_OK) {
+        if ($statusCode !== HttpCode::HTTP_OK->value) {
             throw new JwplayerMediaNotSynced(sprintf(
                 'The Jwplayer Media was not synced: failed to update Jwplayer Media. node_ref: [%s]. Status Code: [%s]. Reason: ["%s"]',
                 $node->generateNodeRef(),
@@ -217,7 +217,7 @@ class SyncMediaHandler implements CommandHandler
         }
 
         $statusCode = $response->getStatusCode();
-        if ($statusCode !== HttpCode::HTTP_OK) {
+        if ($statusCode !== HttpCode::HTTP_OK->value) {
             throw new JwplayerMediaNotSynced(sprintf(
                 'The Jwplayer Media was not synced: failed to delete Jwplayer Media. node_ref: [%s]. Status Code: [%s]. Reason: ["%s"]',
                 $node->generateNodeRef(),
@@ -425,7 +425,7 @@ class SyncMediaHandler implements CommandHandler
         }
 
         $statusCode = $response->getStatusCode();
-        if ($statusCode !== HttpCode::HTTP_OK) {
+        if ($statusCode !== HttpCode::HTTP_OK->value) {
             throw new JwplayerMediaNotSynced(sprintf(
                 'The Jwplayer Media was not synced: failed to GET existing jwplayer media. node_ref: [%s]. jwplayer_media_id: [%s]. Status code: [%s]. Reason: ["%s"]',
                 $node->generateNodeRef(),
@@ -488,7 +488,7 @@ class SyncMediaHandler implements CommandHandler
             'title'        => $node->get('title'),
         ];
 
-        $parameters['date'] = NodeStatus::PUBLISHED === $node->fget('status')
+        $parameters['date'] = NodeStatus::PUBLISHED->value === $node->fget('status')
             ? $node->get('published_at')->getTimeStamp()
             : $node->get('created_at')->getSeconds();
 
@@ -504,7 +504,7 @@ class SyncMediaHandler implements CommandHandler
         $tags = [
             'id:' . $node->get('_id'),
             'is_unlisted:' . ($node->get('is_unlisted') ? 'true' : 'false'),
-            'status:' . $node->get('status'),
+            'status:' . $node->fget('status'),
         ];
 
         $refs = array_unique(array_merge(
@@ -576,7 +576,7 @@ class SyncMediaHandler implements CommandHandler
         }
 
         $parameters['custom.id'] = $node->get('_id');
-        $parameters['custom.status'] = $node->get('status');
+        $parameters['custom.status'] = $node->fget('status');
         $parameters['custom.has_music'] = $node->get('has_music');
 
         foreach ($node->get('tags', []) as $key => $value) {

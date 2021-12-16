@@ -47,7 +47,7 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
     public function handleRequest(Message $request, Pbjx $pbjx): Message
     {
         $sort = $request->get('sort');
-        if (SearchArticlesSort::POPULARITY()->equals($sort) || SearchArticlesSort::COMMENTS()->equals($sort)) {
+        if (SearchArticlesSort::POPULARITY === $sort || SearchArticlesSort::COMMENTS === $sort) {
             return $this->handleUsingStats($request, $pbjx);
         }
 
@@ -122,7 +122,7 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
      */
     protected function getSlottedNodes(Message $request, Pbjx $pbjx): array
     {
-        if (!$request->has('slotting_key') || NodeStatus::PUBLISHED !== $request->fget('status')) {
+        if (!$request->has('slotting_key') || NodeStatus::PUBLISHED->value !== $request->fget('status')) {
             return [];
         }
 
@@ -144,7 +144,7 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
 
                 foreach ($nodes as $node) {
                     if (
-                        NodeStatus::PUBLISHED !== $node->fget('status')
+                        NodeStatus::PUBLISHED->value !== $node->fget('status')
                         || $node->get('is_unlisted', false)
                         || $node->get('is_locked', false)
                         || !$node->isInMap('slotting', $slottingKey)
@@ -173,11 +173,11 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
             ->set('q', $query)
             ->addToSet('fields_used', $parsedQuery->getFieldsUsed())
             ->set('parsed_query_json', json_encode($parsedQuery))
-            ->set('sort', SearchArticlesSort::ORDER_DATE_DESC())
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('sort', SearchArticlesSort::ORDER_DATE_DESC)
+            ->set('status', NodeStatus::PUBLISHED)
             ->set('count', min($request->get('count'), self::SLOTTING_MAX))
-            ->set('is_unlisted', Trinary::FALSE_VAL)
-            ->set('is_locked', Trinary::FALSE_VAL);
+            ->set('is_unlisted', Trinary::FALSE_VAL->value)
+            ->set('is_locked', Trinary::FALSE_VAL->value);
 
         $response = $this->createSearchNodesResponse($slotRequest, $pbjx);
         $this->beforeSearchNodes($slotRequest, $parsedQuery);
@@ -228,7 +228,7 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
     {
         $statsRequest = $request::schema()->createMessage();
         $statsRequest
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('status', NodeStatus::PUBLISHED)
             // the article-stats created_after is derived
             // from the article published_at
             ->set('created_after', $request->get('created_after', new \DateTime('-3 days')))
@@ -277,7 +277,7 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
             $node = $nodes[$key];
 
             if (
-                !NodeStatus::PUBLISHED()->equals($node->get('status'))
+                NodeStatus::PUBLISHED->value !== $node->fget('status')
                 || $node->get('is_unlisted', false)
                 || $node->get('is_locked', false)
             ) {
@@ -293,7 +293,7 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
     protected function beforeSearchNodes(Message $request, ParsedQuery $parsedQuery): void
     {
         parent::beforeSearchNodes($request, $parsedQuery);
-        $required = BoolOperator::REQUIRED();
+        $required = BoolOperator::REQUIRED;
 
         if ('home' === $request->get('slotting_key')
             && !$request->isInSet('fields_used', 'is_homepage_news')
@@ -302,11 +302,11 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
         }
 
         foreach (['is_unlisted', 'is_locked'] as $trinary) {
-            if (Trinary::UNKNOWN !== $request->get($trinary)) {
+            if (Trinary::UNKNOWN->value !== $request->get($trinary)) {
                 $parsedQuery->addNode(
                     new Field(
                         $trinary,
-                        new Word(Trinary::TRUE_VAL === $request->get($trinary) ? 'true' : 'false', $required),
+                        new Word(Trinary::TRUE_VAL->value === $request->get($trinary) ? 'true' : 'false', $required),
                         $required
                     )
                 );

@@ -248,7 +248,7 @@ class AppleNewsApiTest extends TestCase
         $this->mockAppleNewsApi->method('getGuzzleClient')->willReturn($guzzleClient);
         $response = $this->mockAppleNewsApi->deleteArticle('11');
 
-        $this->assertTrue($response['ok']);
+        $this->assertTrue($response['ok'], '$response[\'ok\']');
     }
 
     public function testCreateArticleNotification(): void

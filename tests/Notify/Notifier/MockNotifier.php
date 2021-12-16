@@ -26,7 +26,7 @@ class MockNotifier implements Notifier
             $result->set('ok', false);
         }
         if ($this->shouldHaveCode) {
-            $result->set('code', Code::UNAVAILABLE);
+            $result->set('code', Code::UNAVAILABLE->value);
         }
         return $result;
     }

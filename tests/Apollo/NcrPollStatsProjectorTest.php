@@ -53,7 +53,7 @@ final class NcrPollStatsProjectorTest extends AbstractPbjxTest
         $statsRef = $this->createStatsRef(NodeRef::fromNode($node));
         $stats = $this->ncr->getNode($statsRef);
 
-        $this->assertTrue($node->get('status')->equals($stats->get('status')));
+        $this->assertTrue($node->get('status') === $stats->get('status'));
         $this->assertSame((string)$node->get('_id'), (string)$stats->get('_id'));
         $this->assertSame($node->get('title'), $stats->get('title'));
         $this->assertSame((string)$node->get('created_at'), (string)$stats->get('created_at'));
@@ -71,7 +71,7 @@ final class NcrPollStatsProjectorTest extends AbstractPbjxTest
         $statsRef = $this->createStatsRef(NodeRef::fromNode($node));
         $stats = $this->ncr->getNode($statsRef);
 
-        $this->assertTrue($node->get('status')->equals($stats->get('status')));
+        $this->assertTrue($node->get('status') === $stats->get('status'));
         $this->assertSame((string)$node->get('_id'), (string)$stats->get('_id'));
         $this->assertSame($node->get('title'), $stats->get('title'));
         $this->assertSame((string)$node->get('created_at'), (string)$stats->get('created_at'));
@@ -79,7 +79,7 @@ final class NcrPollStatsProjectorTest extends AbstractPbjxTest
         $this->assertTrue($this->ncrSearch->hasIndexedNode($statsRef));
 
         $deletedEvent = PollDeletedV1::create()->set('node_ref', $nodeRef);
-        $deletedPbjxEvent = new NodeProjectedEvent((clone $node)->set('status', NodeStatus::DELETED()), $deletedEvent);
+        $deletedPbjxEvent = new NodeProjectedEvent((clone $node)->set('status', NodeStatus::DELETED), $deletedEvent);
         $this->projector->onPollProjected($deletedPbjxEvent);
 
         $this->assertFalse($this->ncrSearch->hasIndexedNode($statsRef));
@@ -91,7 +91,7 @@ final class NcrPollStatsProjectorTest extends AbstractPbjxTest
     {
         $node = PollV1::create()
             ->set('title', 'poll-title')
-            ->set('status', NodeStatus::EXPIRED());
+            ->set('status', NodeStatus::EXPIRED);
         $nodeRef = NodeRef::fromNode($node);
         $event = PollExpiredV1::create()->set('node_ref', $nodeRef);
         $createdPbjxEvent = new NodeProjectedEvent($node, $event);
@@ -99,8 +99,8 @@ final class NcrPollStatsProjectorTest extends AbstractPbjxTest
         $statsRef = $this->createStatsRef($nodeRef);
         $stats = $this->ncr->getNode($statsRef);
 
-        $this->assertTrue(NodeStatus::EXPIRED()->equals($stats->get('status')));
-        $this->assertTrue(NodeStatus::EXPIRED()->equals($this->ncrSearch->getNode($statsRef)->get('status')));
+        $this->assertTrue(NodeStatus::EXPIRED === $stats->get('status'));
+        $this->assertTrue(NodeStatus::EXPIRED === $this->ncrSearch->getNode($statsRef)->get('status'));
     }
 
     public function testNodeMarkedAsDraft(): void
@@ -113,15 +113,15 @@ final class NcrPollStatsProjectorTest extends AbstractPbjxTest
         $statsRef = $this->createStatsRef($nodeRef);
         $stats = $this->ncr->getNode($statsRef);
 
-        $this->assertTrue(NodeStatus::DRAFT()->equals($stats->get('status')));
-        $this->assertTrue(NodeStatus::DRAFT()->equals($this->ncrSearch->getNode($statsRef)->get('status')));
+        $this->assertTrue(NodeStatus::DRAFT === $stats->get('status'));
+        $this->assertTrue(NodeStatus::DRAFT === $this->ncrSearch->getNode($statsRef)->get('status'));
     }
 
     public function testNodeMarkedAsPending(): void
     {
         $node = PollV1::create()
             ->set('title', 'poll-title')
-            ->set('status', NodeStatus::PENDING());
+            ->set('status', NodeStatus::PENDING);
         $nodeRef = NodeRef::fromNode($node);
         $event = PollMarkedAsPendingV1::create()->set('node_ref', $nodeRef);
         $createdPbjxEvent = new NodeProjectedEvent($node, $event);
@@ -129,8 +129,8 @@ final class NcrPollStatsProjectorTest extends AbstractPbjxTest
         $statsRef = $this->createStatsRef($nodeRef);
         $stats = $this->ncr->getNode($statsRef);
 
-        $this->assertTrue(NodeStatus::PENDING()->equals($stats->get('status')));
-        $this->assertTrue(NodeStatus::PENDING()->equals($this->ncrSearch->getNode($statsRef)->get('status')));
+        $this->assertTrue(NodeStatus::PENDING === $stats->get('status'));
+        $this->assertTrue(NodeStatus::PENDING === $this->ncrSearch->getNode($statsRef)->get('status'));
     }
 
     public function testNodePublished(): void
@@ -138,7 +138,7 @@ final class NcrPollStatsProjectorTest extends AbstractPbjxTest
         $publishedAt = new \DateTime();
         $node = PollV1::create()
             ->set('title', 'poll-title')
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('status', NodeStatus::PUBLISHED)
             ->set('published_at', $publishedAt);
         $nodeRef = NodeRef::fromNode($node);
         $event = PollPublishedV1::create()
@@ -149,8 +149,8 @@ final class NcrPollStatsProjectorTest extends AbstractPbjxTest
         $statsRef = $this->createStatsRef($nodeRef);
         $stats = $this->ncr->getNode($statsRef);
 
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($stats->get('status')));
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($this->ncrSearch->getNode($statsRef)->get('status')));
+        $this->assertTrue(NodeStatus::PUBLISHED === $stats->get('status'));
+        $this->assertTrue(NodeStatus::PUBLISHED === $this->ncrSearch->getNode($statsRef)->get('status'));
         $this->assertSame((string)$stats->get('created_at'), (string)Microtime::fromDateTime($publishedAt));
     }
 
@@ -159,7 +159,7 @@ final class NcrPollStatsProjectorTest extends AbstractPbjxTest
         $publishAt = new \DateTime();
         $node = PollV1::create()
             ->set('title', 'poll-title')
-            ->set('status', NodeStatus::SCHEDULED())
+            ->set('status', NodeStatus::SCHEDULED)
             ->set('published_at', $publishAt);
         $nodeRef = NodeRef::fromNode($node);
         $event = PollScheduledV1::create()
@@ -171,8 +171,8 @@ final class NcrPollStatsProjectorTest extends AbstractPbjxTest
         $statsRef = $this->createStatsRef($nodeRef);
         $stats = $this->ncr->getNode($statsRef);
 
-        $this->assertTrue(NodeStatus::SCHEDULED()->equals($stats->get('status')));
-        $this->assertTrue(NodeStatus::SCHEDULED()->equals($this->ncrSearch->getNode($statsRef)->get('status')));
+        $this->assertTrue(NodeStatus::SCHEDULED === $stats->get('status'));
+        $this->assertTrue(NodeStatus::SCHEDULED === $this->ncrSearch->getNode($statsRef)->get('status'));
         $this->assertSame((string)$stats->get('created_at'), (string)Microtime::fromDateTime($publishAt));
     }
 
@@ -181,7 +181,7 @@ final class NcrPollStatsProjectorTest extends AbstractPbjxTest
         $publishedAt = new \DateTime();
         $node = PollV1::create()
             ->set('title', 'poll-title')
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('status', NodeStatus::PUBLISHED)
             ->set('published_at', $publishedAt);
         $nodeRef = NodeRef::fromNode($node);
 
@@ -193,16 +193,16 @@ final class NcrPollStatsProjectorTest extends AbstractPbjxTest
         $statsRef = $this->createStatsRef($nodeRef);
         $stats = $this->ncr->getNode($statsRef);
 
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($stats->get('status')));
-        $this->assertTrue(NodeStatus::PUBLISHED()->equals($this->ncrSearch->getNode($statsRef)->get('status')));
+        $this->assertTrue(NodeStatus::PUBLISHED === $stats->get('status'));
+        $this->assertTrue(NodeStatus::PUBLISHED === $this->ncrSearch->getNode($statsRef)->get('status'));
         $this->assertSame((string)$stats->get('created_at'), (string)Microtime::fromDateTime($publishedAt));
 
         $unpublishEvent = PollUnpublishedV1::create()->set('node_ref', $nodeRef);
-        $unpublishPbjxEvent = new NodeProjectedEvent((clone $node)->set('status', NodeStatus::DRAFT()), $unpublishEvent);
+        $unpublishPbjxEvent = new NodeProjectedEvent((clone $node)->set('status', NodeStatus::DRAFT), $unpublishEvent);
         $this->projector->onPollProjected($unpublishPbjxEvent);
 
-        $this->assertTrue(NodeStatus::DRAFT()->equals($stats->get('status')));
-        $this->assertTrue(NodeStatus::DRAFT()->equals($this->ncrSearch->getNode($statsRef)->get('status')));
+        $this->assertTrue(NodeStatus::DRAFT === $stats->get('status'));
+        $this->assertTrue(NodeStatus::DRAFT === $this->ncrSearch->getNode($statsRef)->get('status'));
     }
 
     public function testNodeUpdated(): void
@@ -232,7 +232,7 @@ final class NcrPollStatsProjectorTest extends AbstractPbjxTest
         $statsRef = $this->createStatsRef(NodeRef::fromNode($node));
         $stats = $this->ncr->getNode($statsRef);
 
-        $this->assertTrue($node->get('status')->equals($stats->get('status')));
+        $this->assertTrue($node->get('status') === $stats->get('status'));
         $this->assertSame((string)$node->get('_id'), (string)$stats->get('_id'));
         $this->assertSame($node->get('title'), $stats->get('title'));
         $this->assertSame((string)$node->get('created_at'), (string)$stats->get('created_at'));

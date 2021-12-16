@@ -92,7 +92,7 @@ class ArticleDocumentMarshaler
      */
     public function marshal(Message $article): ArticleDocument
     {
-        if (!NodeStatus::PUBLISHED()->equals($article->get('status'))) {
+        if (NodeStatus::PUBLISHED !== $article->get('status')) {
             throw new ArticleNotPublished();
         }
 
@@ -216,7 +216,7 @@ class ArticleDocumentMarshaler
             return;
         }
 
-        $imageUrl = $this->getImageUrl($this->article->get('image_ref'), AspectRatio::R4BY3());
+        $imageUrl = $this->getImageUrl($this->article->get('image_ref'), AspectRatio::R4BY3);
         $this->metadata->setThumbnailURL($imageUrl);
     }
 
@@ -347,46 +347,22 @@ class ArticleDocumentMarshaler
         $this->document->addComponent($component);
     }
 
-    /**
-     * @param NodeRef     $nodeRef
-     * @param AspectRatio $aspectRatio
-     * @param Message     $block
-     *
-     * @return string
-     */
     protected function getImageUrl(NodeRef $nodeRef, AspectRatio $aspectRatio, ?Message $block = null): string
     {
-        $aspectRatio = (string)$aspectRatio;
-
-        switch ($aspectRatio) {
-            case AspectRatio::UNKNOWN;
-            case AspectRatio::AUTO;
-                $version = AspectRatio::R4BY3;
-                break;
-
-            case AspectRatio::CUSTOM;
-            case AspectRatio::ORIGINAL;
-                $version = 'o';
-                break;
-
-            default:
-                $version = $aspectRatio;
-                break;
-        }
+        $version = match ($aspectRatio) {
+            AspectRatio::UNKNOWN, AspectRatio::AUTO => AspectRatio::R4BY3->value,
+            AspectRatio::CUSTOM, AspectRatio::ORIGINAL => 'o',
+            default => $aspectRatio->value,
+        };
 
         return $this->urlProvider->getUrl(AssetId::fromString($nodeRef->getId()), $version, 'lg');
     }
 
-    /**
-     * @param NodeRef $nodeRef
-     *
-     * @return Message
-     */
     protected function getNode(NodeRef $nodeRef): ?Message
     {
         try {
             $node = $this->ncr->getNode($nodeRef);
-            if (NodeStatus::PUBLISHED()->equals($node->get('status'))) {
+            if (NodeStatus::PUBLISHED === $node->get('status')) {
                 return $node;
             }
 
@@ -407,7 +383,7 @@ class ArticleDocumentMarshaler
     {
         $nodes = [];
         foreach ($this->ncr->getNodes($nodeRefs) as $nodeRef => $node) {
-            if (NodeStatus::PUBLISHED()->equals($node->get('status'))) {
+            if (NodeStatus::PUBLISHED === $node->get('status')) {
                 $nodes[$nodeRef] = $node;
             }
         }
@@ -477,7 +453,7 @@ class ArticleDocumentMarshaler
         $imageRef = $block->get('image_ref', $node->get('image_ref'));
 
         if ($block->get('show_image') && $imageRef) {
-            $imageUrl = $this->getImageUrl($imageRef, AspectRatio::R1BY1());
+            $imageUrl = $this->getImageUrl($imageRef, AspectRatio::R1BY1);
 
             $image = new Image();
             $image->setURL($imageUrl);
@@ -538,7 +514,7 @@ class ArticleDocumentMarshaler
         }
 
         if ($block->has('image_ref')) {
-            $imageUrl = $this->getImageUrl($block->get('image_ref'), AspectRatio::R16BY9(), $block);
+            $imageUrl = $this->getImageUrl($block->get('image_ref'), AspectRatio::R16BY9, $block);
             $component->setImageURL($imageUrl);
             if ($context['is_first']) {
                 $this->metadata->setThumbnailURL($imageUrl);
@@ -611,7 +587,7 @@ class ArticleDocumentMarshaler
                 ->setFormat('html');
         }
 
-        $imageUrl = $this->getImageUrl($block->get('image_ref'), AspectRatio::R4BY3(), $block);
+        $imageUrl = $this->getImageUrl($block->get('image_ref'), AspectRatio::R4BY3, $block);
         $component = new Photo();
         $component
             ->setIdentifier($block->get('etag') . $context['idx'])
@@ -709,8 +685,8 @@ class ArticleDocumentMarshaler
     {
         $request = SearchAssetsRequestV1::create()
             ->set('gallery_ref', $nodeRef)
-            ->set('status', NodeStatus::PUBLISHED())
-            ->set('sort', SearchAssetsSort::GALLERY_SEQ_DESC())
+            ->set('status', NodeStatus::PUBLISHED)
+            ->set('sort', SearchAssetsSort::GALLERY_SEQ_DESC)
             ->set('count', 130)
             ->addToSet('types', ['image-asset']);
 
@@ -736,7 +712,7 @@ class ArticleDocumentMarshaler
         array &$context
     ): GalleryItem {
         $item = new GalleryItem();
-        $item->setURL($this->getImageUrl(NodeRef::fromNode($imageNode), AspectRatio::ORIGINAL(), $block));
+        $item->setURL($this->getImageUrl(NodeRef::fromNode($imageNode), AspectRatio::ORIGINAL, $block));
 
         $credit = $imageNode->get('credit', $galleryNode->get('credit'));
 
@@ -919,7 +895,7 @@ class ArticleDocumentMarshaler
 
         $imageUrl = $this->getImageUrl(
             $block->get('node_ref'),
-            $block->get('aspect_ratio', AspectRatio::UNKNOWN()),
+            $block->get('aspect_ratio', AspectRatio::UNKNOWN),
             $block
         );
         $component = new Photo();
@@ -1186,7 +1162,7 @@ class ArticleDocumentMarshaler
             ?: $node->get('poster_image_ref')
                 ?: $node->get('image_ref');
 
-        $imageUrl = $this->getImageUrl($imageRef, AspectRatio::R16BY9(), $block);
+        $imageUrl = $this->getImageUrl($imageRef, AspectRatio::R16BY9, $block);
         $component->setStillURL($imageUrl);
 
         if ($context['is_first']) {

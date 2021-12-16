@@ -17,7 +17,7 @@ use Triniti\Schemas\Notify\Request\SearchNotificationsRequestV1;
 
 class NotificationValidator implements EventSubscriber, PbjxValidator
 {
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:notify:mixin:notification.validate' => 'validate',
@@ -44,11 +44,11 @@ class NotificationValidator implements EventSubscriber, PbjxValidator
 
     public static function alreadySent(Message $notification): bool
     {
-        $status = $notification->fget('send_status', NotificationSendStatus::DRAFT);
+        $status = $notification->fget('send_status', NotificationSendStatus::DRAFT->value);
         $sent = [
-            NotificationSendStatus::SENT     => true,
-            NotificationSendStatus::FAILED   => true,
-            NotificationSendStatus::CANCELED => true,
+            NotificationSendStatus::SENT->value     => true,
+            NotificationSendStatus::FAILED->value   => true,
+            NotificationSendStatus::CANCELED->value => true,
         ];
 
         return $sent[$status] ?? false;
@@ -150,7 +150,7 @@ class NotificationValidator implements EventSubscriber, PbjxValidator
         $request = SearchNotificationsRequestV1::create()
             ->set('app_ref', $appRef)
             ->set('content_ref', $contentRef)
-            ->set('send_status', NotificationSendStatus::SCHEDULED())
+            ->set('send_status', NotificationSendStatus::SCHEDULED)
             ->set('count', 1);
 
         $response = $event::getPbjx()->copyContext($event->getMessage(), $request)->request($request);

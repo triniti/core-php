@@ -53,8 +53,8 @@ final class SearchNotificationsRequestHandlerTest extends AbstractPbjxTest
                     $expectedParsedQuery->addNode(
                         new Field(
                             'status',
-                            new Word(NodeStatus::DELETED, BoolOperator::PROHIBITED()),
-                            BoolOperator::PROHIBITED()
+                            new Word(NodeStatus::DELETED->value, BoolOperator::PROHIBITED),
+                            BoolOperator::PROHIBITED
                         )
                     );
                 }
@@ -93,14 +93,14 @@ final class SearchNotificationsRequestHandlerTest extends AbstractPbjxTest
         $handler->handleRequest($request, $this->pbjx);
         $request = SearchNotificationsRequestV1::create();
         $request->set('parsed_query_json', $parsedQueryJson);
-        $request->set('status', NodeStatus::PENDING());
+        $request->set('status', NodeStatus::PENDING);
 
         $ncrSearch->addStatusField = false;
 
         $handler->handleRequest($request, $this->pbjx);
         $request = SearchNotificationsRequestV1::create();
         $request->set('parsed_query_json', $parsedQueryJson);
-        $request->addToSet('statuses', [NodeStatus::PENDING()]);
+        $request->addToSet('statuses', [NodeStatus::PENDING]);
 
         $ncrSearch->addStatusField = false;
         $handler->handleRequest($request, $this->pbjx);
@@ -201,7 +201,7 @@ final class SearchNotificationsRequestHandlerTest extends AbstractPbjxTest
                     if ('app_ref' === $field->getName()) {
                         $node = $field->getNode();
                         $this->test->assertInstanceOf(Word::class, $node);
-                        $this->test->assertSame(BoolOperator::REQUIRED(), $node->getBoolOperator());
+                        $this->test->assertSame(BoolOperator::REQUIRED, $node->getBoolOperator());
                         $this->test->assertSame((string)$this->expectedAppRef, $node->getValue());
 
                         continue;
@@ -210,7 +210,7 @@ final class SearchNotificationsRequestHandlerTest extends AbstractPbjxTest
                     if ('content_ref' === $field->getName()) {
                         $node = $field->getNode();
                         $this->test->assertInstanceOf(Word::class, $node);
-                        $this->test->assertSame(BoolOperator::REQUIRED(), $node->getBoolOperator());
+                        $this->test->assertSame(BoolOperator::REQUIRED, $node->getBoolOperator());
                         $this->test->assertSame((string)$this->expectedContentRef, $node->getValue());
 
                         continue;

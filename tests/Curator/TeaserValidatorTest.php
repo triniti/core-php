@@ -43,7 +43,7 @@ final class TeaserValidatorTest extends AbstractPbjxTest
 
     public function testValidatePublishNodeWithTargetPublished(): void
     {
-        $article = ArticleV1::create()->set('status', NodeStatus::PUBLISHED());
+        $article = ArticleV1::create()->set('status', NodeStatus::PUBLISHED);
         $this->ncr->putNode($article);
 
         $teaser = ArticleTeaserV1::create()->set('target_ref', $article->generateNodeRef());

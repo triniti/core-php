@@ -51,7 +51,7 @@ class UpdateGalleryImageCountHandler implements CommandHandler
             ->addToSet('types', ['image-asset'])
             ->set('count', 1)
             ->set('gallery_ref', $command->get('node_ref'))
-            ->set('status', NodeStatus::PUBLISHED());
+            ->set('status', NodeStatus::PUBLISHED);
 
         try {
             return (int)$pbjx->copyContext($command, $request)->request($request)->get('total', 0);

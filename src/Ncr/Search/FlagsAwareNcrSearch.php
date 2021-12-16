@@ -14,7 +14,7 @@ class FlagsAwareNcrSearch implements NcrSearch
 {
     protected Flags $flags;
     protected NcrSearch $next;
-    protected int $readOnly = Trinary::UNKNOWN;
+    protected Trinary $readOnly = Trinary::UNKNOWN;
 
     public function __construct(Flags $flags, NcrSearch $next)
     {

@@ -269,7 +269,7 @@ class ArticleDocumentMarshalerTest extends AbstractPbjxTest
     {
         $node1 = ArticleV1::create()
             ->set('title', 'Article with an Article Block')
-            ->set('status', NodeStatus::PUBLISHED());
+            ->set('status', NodeStatus::PUBLISHED);
 
         $this->ncr->putNode($node1);
 
@@ -357,7 +357,7 @@ class ArticleDocumentMarshalerTest extends AbstractPbjxTest
 
         $node = AudioAssetV1::create()
             ->set('_id', AssetId::fromString('audio_mp3_20180906_78337d01b62e46c3ac4019b35810a834'))
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('status', NodeStatus::PUBLISHED)
             ->set('mime_type', 'audio/mp3');
         $this->ncr->putNode($node);
 
@@ -436,7 +436,7 @@ class ArticleDocumentMarshalerTest extends AbstractPbjxTest
         $docUrl = $this->urlProvider->getUrl(AssetId::fromString('document_pdf_20190125_c1a42987b38048a0adf5ef965e5daa34'));
 
         $imageRef = NodeRef::fromString('acme:image-block:image_jpg_20180906_78337d01b62e46c3ac4019b35810a834');
-        $imageUrl = $this->urlProvider->getUrl(AssetId::fromString($imageRef->getId()), AspectRatio::R4BY3, 'lg');
+        $imageUrl = $this->urlProvider->getUrl(AssetId::fromString($imageRef->getId()), AspectRatio::R4BY3->value, 'lg');
 
 
         $documentBlock = new DocumentBlockV1();
@@ -487,14 +487,14 @@ class ArticleDocumentMarshalerTest extends AbstractPbjxTest
         $imageNode = ImageAssetV1::create()
             ->set('_id', AssetId::create('image', 'jpg'))
             ->set('mime_type', 'image/jpg')
-            ->set('status', NodeStatus::PUBLISHED());
+            ->set('status', NodeStatus::PUBLISHED);
 
         $mockPbjx = $this->getMockBuilder(Pbjx::class)->getMock();
         $searchAssetResponse = SearchAssetsResponseV1::create()->addToList('nodes', [$imageNode]);
         $mockPbjx->method('request')->willReturn($searchAssetResponse);
 
         //GalleryNode
-        $galleryNode = GalleryV1::create()->set('status', NodeStatus::PUBLISHED());
+        $galleryNode = GalleryV1::create()->set('status', NodeStatus::PUBLISHED);
         $galleryRef = NodeRef::fromNode($galleryNode);
         $this->ncr->putNode($galleryNode);
 
@@ -747,7 +747,7 @@ class ArticleDocumentMarshalerTest extends AbstractPbjxTest
             ->set('etag', '123')
             ->set('kaltura_mp4_url', 'http://test.com/test.mp4')
             ->set('launch_text', 'caption')
-            ->set('status', NodeStatus::PUBLISHED());
+            ->set('status', NodeStatus::PUBLISHED);
 
         $videoRef = NodeRef::fromNode($videoNode);
         $imageAssetRef = NodeRef::fromString('acme:image-block:image_jpg_20180906_78337d01b62e46c3ac4019b35810a834');
@@ -792,7 +792,7 @@ class ArticleDocumentMarshalerTest extends AbstractPbjxTest
             ->set('etag', '123')
             ->set('kaltura_mp4_url', 'http://test.com/test.mp4')
             ->set('image_ref', $imageAssetRef)
-            ->set('status', NodeStatus::PUBLISHED());
+            ->set('status', NodeStatus::PUBLISHED);
 
         $videoRef = NodeRef::fromNode($videoNode);
 

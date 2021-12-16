@@ -32,8 +32,8 @@ class RedirectAggregate extends Aggregate
     protected function enforceNodeRules(Message $node): void
     {
         $node->set('title', $node->get('_id')->toUri());
-        if (NodeStatus::DELETED !== $node->fget('status')) {
-            $node->set('status', NodeStatus::PUBLISHED());
+        if (NodeStatus::DELETED->value !== $node->fget('status')) {
+            $node->set('status', NodeStatus::PUBLISHED);
         }
     }
 

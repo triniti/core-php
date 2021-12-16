@@ -25,9 +25,9 @@ trait SyncTeaserTrait
                 ->sortAsc(false);
 
             if (null === $status) {
-                $builder->filterNe('status', NodeStatus::DELETED);
+                $builder->filterNe('status', NodeStatus::DELETED->value);
             } else {
-                $builder->filterEq('status', $status->getValue());
+                $builder->filterEq('status', $status->value);
             }
 
             $result = $this->ncr->findNodeRefs($builder->build());

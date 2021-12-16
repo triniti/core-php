@@ -36,7 +36,7 @@ final class CuratorExtension extends AbstractExtension
         $this->logger = $logger ?: new NullLogger();
     }
 
-    public function getFunctions()
+    public function getFunctions(): array
     {
         return [
             new TwigFunction(
@@ -133,8 +133,8 @@ final class CuratorExtension extends AbstractExtension
         try {
             $searchRequest = SearchPromotionsRequestV1::create()
                 ->set('count', 1)
-                ->set('status', NodeStatus::PUBLISHED())
-                ->set('sort', SearchPromotionsSort::PRIORITY_DESC())
+                ->set('status', NodeStatus::PUBLISHED)
+                ->set('sort', SearchPromotionsSort::PRIORITY_DESC)
                 ->set('slot', $slot);
 
             // ensures permission check is bypassed

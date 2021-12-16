@@ -23,7 +23,7 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
     protected NcrSearch $ncrSearch;
     protected bool $enabled;
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:apollo:mixin:poll.projected' => 'onPollProjected',
@@ -51,7 +51,7 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
         $pollRef = $poll->generateNodeRef();
         $lastEvent = $pbjxEvent->getLastEvent();
 
-        if (NodeStatus::DELETED === $poll->fget('status')) {
+        if (NodeStatus::DELETED->value === $poll->fget('status')) {
             $context = ['causator' => $lastEvent];
             $statsRef = $this->createStatsRef($pollRef);
             $this->ncr->deleteNode($statsRef, $context);
@@ -91,7 +91,7 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
 
         $this->ncr->putNode($stats, $expectedEtag, $context);
         $this->ncrSearch->indexNodes([$stats], $context);
-        $pbjx->trigger($stats, 'projected', new NodeProjectedEvent($stats, $event), false);
+        $pbjx->trigger($stats, 'projected', new NodeProjectedEvent($stats, $event), false, false);
     }
 
     protected function getOrCreateStats(NodeRef $pollRef, Message $event): Message

@@ -14,7 +14,7 @@ class AlexaNotifier implements Notifier
     {
         return NotifierResultV1::create()
             ->set('ok', false)
-            ->set('code', Code::UNIMPLEMENTED)
+            ->set('code', Code::UNIMPLEMENTED->value)
             ->set('error_name', 'AlexaNotifierNotImplemented');
     }
 }

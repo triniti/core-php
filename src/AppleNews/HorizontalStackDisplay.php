@@ -12,7 +12,7 @@ class HorizontalStackDisplay extends AppleNewsObject
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         $properties = $this->getSetProperties();
         $properties['type'] = 'horizontal_stack';

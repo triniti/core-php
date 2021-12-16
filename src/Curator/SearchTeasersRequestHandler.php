@@ -49,7 +49,7 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
         // todo: implement popularity sorting on teasers
         /*
         $sort = $request->get('sort');
-        if (SearchTeasersSort::POPULARITY()->equals($sort)) {
+        if (SearchTeasersSort::POPULARITY === $sort)) {
             return $this->handleUsingStats($request, $pbjx);
         }
         */
@@ -125,7 +125,7 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
      */
     protected function getSlottedNodes(Message $request, Pbjx $pbjx): array
     {
-        if (!$request->has('slotting_key') || NodeStatus::PUBLISHED !== $request->fget('status')) {
+        if (!$request->has('slotting_key') || NodeStatus::PUBLISHED->value !== $request->fget('status')) {
             return [];
         }
 
@@ -147,7 +147,7 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
 
                 foreach ($nodes as $node) {
                     if (
-                        NodeStatus::PUBLISHED !== $node->fget('status')
+                        NodeStatus::PUBLISHED->value !== $node->fget('status')
                         || $node->get('is_unlisted', false)
                         || !$node->isInMap('slotting', $slottingKey)
                     ) {
@@ -175,10 +175,10 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
             ->set('q', $query)
             ->addToSet('fields_used', $parsedQuery->getFieldsUsed())
             ->set('parsed_query_json', json_encode($parsedQuery))
-            ->set('sort', SearchTeasersSort::ORDER_DATE_DESC())
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('sort', SearchTeasersSort::ORDER_DATE_DESC)
+            ->set('status', NodeStatus::PUBLISHED)
             ->set('count', min($request->get('count'), self::SLOTTING_MAX))
-            ->set('is_unlisted', Trinary::FALSE_VAL);
+            ->set('is_unlisted', Trinary::FALSE_VAL->value);
 
         $response = $this->createSearchNodesResponse($slotRequest, $pbjx);
         $this->beforeSearchNodes($slotRequest, $parsedQuery);
@@ -239,13 +239,13 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
     protected function beforeSearchNodes(Message $request, ParsedQuery $parsedQuery): void
     {
         parent::beforeSearchNodes($request, $parsedQuery);
-        $required = BoolOperator::REQUIRED();
+        $required = BoolOperator::REQUIRED;
 
-        if (Trinary::UNKNOWN !== $request->get('is_unlisted')) {
+        if (Trinary::UNKNOWN->value !== $request->get('is_unlisted')) {
             $parsedQuery->addNode(
                 new Field(
                     'is_unlisted',
-                    new Word(Trinary::TRUE_VAL === $request->get('is_unlisted') ? 'true' : 'false', $required),
+                    new Word(Trinary::TRUE_VAL->value === $request->get('is_unlisted') ? 'true' : 'false', $required),
                     $required
                 )
             );

@@ -11,7 +11,7 @@ use Triniti\Schemas\Sys\Command\PurgeCacheV1;
 
 class PurgeCacheWatcher implements EventSubscriber
 {
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'gdbots:ncr:mixin:node.deleted'     => 'onNodeProjected',

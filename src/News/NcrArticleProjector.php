@@ -7,7 +7,7 @@ use Gdbots\Ncr\NcrProjector;
 
 class NcrArticleProjector extends NcrProjector
 {
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:news:mixin:article-slotting-removed'  => 'onNodeEvent',

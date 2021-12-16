@@ -7,7 +7,7 @@ use Gdbots\Ncr\NcrProjector;
 
 class NcrVideoProjector extends NcrProjector
 {
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:ovp:event:transcoding-completed'   => 'onNodeEvent',

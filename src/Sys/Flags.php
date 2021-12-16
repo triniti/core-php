@@ -7,7 +7,6 @@ use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbj\WellKnown\NodeRef;
-use Gdbots\Schemas\Common\Enum\Trinary;
 
 class Flags
 {
@@ -51,7 +50,7 @@ class Flags
         return $this->flagset->getFromMap('strings', $flag, $default);
     }
 
-    public function getTrinary(string $flag, int $default = Trinary::UNKNOWN): int
+    public function getTrinary(string $flag, int $default = 0): int
     {
         $this->loadFlagset();
         return $this->flagset->getFromMap('trinaries', $flag, $default);

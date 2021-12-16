@@ -21,7 +21,7 @@ class AssetEnricher implements EventSubscriber, PbjxEnricher
     protected S3Client $s3Client;
     protected string $bucket;
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:dam:mixin:asset.enrich' => 'enrichWithS3Object',

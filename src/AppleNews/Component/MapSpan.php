@@ -60,7 +60,7 @@ class MapSpan extends AppleNewsObject
     /**
      * {@inheritdoc}
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         return $this->getSetProperties();
     }

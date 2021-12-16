@@ -47,9 +47,9 @@ class RenderWidgetRequestHandler implements RequestHandler
 
         /** @var Message $context */
         $context = $request->get('context');
-        $rendering = $context->getFromMap('strings', 'rendering', SlotRendering::SERVER);
+        $rendering = $context->getFromMap('strings', 'rendering', SlotRendering::SERVER->value);
 
-        $searchResponse = $rendering === SlotRendering::SERVER
+        $searchResponse = $rendering === SlotRendering::SERVER->value
             ? $this->runWidgetSearchRequest($widget, $request, $pbjx)
             : null;
 
@@ -60,7 +60,7 @@ class RenderWidgetRequestHandler implements RequestHandler
         $curie = $widget::schema()->getCurie();
         $widgetName = str_replace('-', '_', $curie->getMessage());
         $template = $this->findTemplate($context, $widgetName);
-        $hasNodes = null !== $searchResponse ? $searchResponse->has('nodes') : false;
+        $hasNodes = null !== $searchResponse && $searchResponse->has('nodes');
         try {
             $html = $this->twig->render($template, [
                 'pbj'             => $widget,
@@ -99,8 +99,8 @@ class RenderWidgetRequestHandler implements RequestHandler
         $platform = $context->get('platform', 'web');
         $deviceView = $context->get('device_view', '');
         $format = $context->has('format') ? ".{$context->get('format')}" : '';
-        $rendering = $context->getFromMap('strings', 'rendering', SlotRendering::SERVER);
-        $rendering = $rendering !== SlotRendering::SERVER ? ".{$rendering}" : '';
+        $rendering = $context->getFromMap('strings', 'rendering', SlotRendering::SERVER->value);
+        $rendering = $rendering !== SlotRendering::SERVER->value ? ".{$rendering}" : '';
         $templates = [];
 
         if ($context->has('section')) {
@@ -116,7 +116,7 @@ class RenderWidgetRequestHandler implements RequestHandler
         }
         $templates[] = "{$widgetName}/{$widgetName}{$rendering}";
 
-        if ($rendering !== SlotRendering::SERVER) {
+        if ($rendering !== SlotRendering::SERVER->value) {
             if ($context->has('device_view')) {
                 $templates[] = "widget{$rendering}.{$deviceView}";
             }
@@ -206,7 +206,7 @@ class RenderWidgetRequestHandler implements RequestHandler
          * want to include published content when running the search request.
          */
         if ($searchRequest::schema()->hasMixin('gdbots:ncr:mixin:search-nodes-request')) {
-            $searchRequest->set('status', NodeStatus::PUBLISHED());
+            $searchRequest->set('status', NodeStatus::PUBLISHED);
         }
 
         try {

@@ -70,7 +70,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
         $videoAssetRef = $videoAsset->generateNodeRef();
         $command = UpdateTranscodingStatusV1::create()
             ->set('node_ref', $videoAssetRef)
-            ->set('transcoding_status', TranscodingStatus::CANCELED());
+            ->set('transcoding_status', TranscodingStatus::CANCELED);
         $this->handler->handleCommand($command, $this->pbjx);
 
         $streamId = StreamId::fromNodeRef($videoAssetRef);
@@ -103,7 +103,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
 
         $command = UpdateTranscodingStatusV1::create()
             ->set('node_ref', $videoAssetRef)
-            ->set('transcoding_status', TranscodingStatus::COMPLETED())
+            ->set('transcoding_status', TranscodingStatus::COMPLETED)
             ->set('mediaconvert_job_arn', 'foo')
             ->set('mediaconvert_queue_arn', 'bar');
         $this->handler->handleCommand($command, $this->pbjx);
@@ -155,7 +155,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
         $videoAssetRef = $videoAsset->generateNodeRef();
         $command = UpdateTranscodingStatusV1::create()
             ->set('node_ref', $videoAssetRef)
-            ->set('transcoding_status', TranscodingStatus::FAILED());
+            ->set('transcoding_status', TranscodingStatus::FAILED);
         $this->handler->handleCommand($command, $this->pbjx);
 
         $streamId = StreamId::fromNodeRef($videoAssetRef);
@@ -175,7 +175,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
         $videoAssetRef = $videoAsset->generateNodeRef();
         $command = UpdateTranscodingStatusV1::create()
             ->set('node_ref', $videoAssetRef)
-            ->set('transcoding_status', TranscodingStatus::PROCESSING());
+            ->set('transcoding_status', TranscodingStatus::PROCESSING);
         $this->handler->handleCommand($command, $this->pbjx);
 
         $streamId = StreamId::fromNodeRef($videoAssetRef);
@@ -195,7 +195,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
         $videoAssetRef = $videoAsset->generateNodeRef();
         $command = UpdateTranscodingStatusV1::create()
             ->set('node_ref', $videoAssetRef)
-            ->set('transcoding_status', TranscodingStatus::UNKNOWN());
+            ->set('transcoding_status', TranscodingStatus::UNKNOWN);
         $this->handler->handleCommand($command, $this->pbjx);
 
         $streamId = StreamId::fromNodeRef($videoAssetRef);

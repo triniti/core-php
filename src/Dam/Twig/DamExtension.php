@@ -19,7 +19,7 @@ final class DamExtension extends AbstractExtension
         $this->urlProvider = $urlProvider;
     }
 
-    public function getFunctions()
+    public function getFunctions(): array
     {
         return [
             new TwigFunction('dam_url', [$this, 'getUrl']),

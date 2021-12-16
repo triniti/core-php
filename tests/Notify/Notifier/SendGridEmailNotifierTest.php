@@ -89,7 +89,7 @@ class SendGridEmailNotifierTest extends AbstractPbjxTest
     protected function getNotification(): EmailNotificationV1
     {
         return EmailNotificationV1::create()
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('status', NodeStatus::PUBLISHED)
             ->set('title', 'Lorem ipsum dolor sit amet')
             ->set('sender', 'hello@example.com')
             ->set('template', 'breaking-news')
@@ -104,7 +104,7 @@ class SendGridEmailNotifierTest extends AbstractPbjxTest
     protected function getApp(): EmailAppV1
     {
         return EmailAppV1::create()
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('status', NodeStatus::PUBLISHED)
             ->set('title', 'SendGrid Email')
             ->set(
                 'sendgrid_api_key',
@@ -128,14 +128,14 @@ class SendGridEmailNotifierTest extends AbstractPbjxTest
         $result = $this->notifier->send($this->getNotification(), $this->getApp(), $this->getContent());
 
         $this->assertFalse($result->get('ok'));
-        $this->assertSame(Code::CANCELLED, $result->get('code'));
+        $this->assertSame(Code::CANCELLED->value, $result->get('code'));
     }
 
     protected function getContent(): ArticleV1
     {
         return ArticleV1::create()
             ->set('title', 'Lorem Ipsum')
-            ->set('status', NodeStatus::PUBLISHED())
+            ->set('status', NodeStatus::PUBLISHED)
             ->set('slug', '2018/08/08/lorem-ipsum')
             ->addToList(
                 'blocks',
@@ -152,7 +152,7 @@ class SendGridEmailNotifierTest extends AbstractPbjxTest
         $notification->clear('sender');
         $result = $this->notifier->send($notification, $this->getApp(), $this->getContent());
         $this->assertFalse($result->get('ok'));
-        $this->assertEquals(Code::INVALID_ARGUMENT, $result->get('code'));
+        $this->assertEquals(Code::INVALID_ARGUMENT->value, $result->get('code'));
     }
 
     public function testSend()

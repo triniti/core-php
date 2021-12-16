@@ -99,7 +99,7 @@ class AzureAndroidNotifierTest extends AbstractPbjxTest
         $result = $this->notifier->send($this->getNotification(), $this->getApp(), $this->getContent());
 
         $this->assertFalse($result->get('ok'), 'notifications are cancelled when flag is disabled');
-        $this->assertSame(Code::CANCELLED, $result->get('code'), 'code must be set to cancelled when flag is disabled');
+        $this->assertSame(Code::CANCELLED->value, $result->get('code'), 'code must be set to cancelled when flag is disabled');
     }
 
     public function testSendWithOutAzureNotificationHubConnectionField()
@@ -108,7 +108,7 @@ class AzureAndroidNotifierTest extends AbstractPbjxTest
         $result = $this->notifier->send($this->getNotification(), $app, $this->getContent());
         $this->assertFalse($result->get('ok'), 'notifications are not sent when all the required fields are not set');
         $this->assertSame(
-            Code::INVALID_ARGUMENT,
+            Code::INVALID_ARGUMENT->value,
             $result->get('code'),
             'code must be set to invalid argument when all the required notification fields are not set'
         );
@@ -120,7 +120,7 @@ class AzureAndroidNotifierTest extends AbstractPbjxTest
         $result = $this->notifier->send($this->getNotification(), $app, $this->getContent());
         $this->assertFalse($result->get('ok'), 'notifications are not sent when all the required fields are not set');
         $this->assertSame(
-            Code::INVALID_ARGUMENT,
+            Code::INVALID_ARGUMENT->value,
             $result->get('code'),
             'code must be set to invalid argument when all the required notification fields are not set'
         );

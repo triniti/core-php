@@ -25,7 +25,7 @@ class RenderRequestInterceptor implements EventSubscriber
      */
     protected array $cacheItems = [];
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:curator:mixin:render-promotion-request.before_handle'   => 'onRenderPromotionRequestBeforeHandle', // deprecated

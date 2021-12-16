@@ -12,7 +12,7 @@ use Triniti\Schemas\Notify\Enum\NotificationSendStatus;
 
 class NotificationWatcher implements EventSubscriber
 {
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:notify:mixin:notification.created'             => 'schedule',
@@ -79,7 +79,7 @@ class NotificationWatcher implements EventSubscriber
             return;
         }
 
-        if (NotificationSendStatus::SCHEDULED !== $node->fget('send_status')) {
+        if (NotificationSendStatus::SCHEDULED->value !== $node->fget('send_status')) {
             // only a scheduled notification should create a job
             return;
         }

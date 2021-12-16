@@ -18,7 +18,7 @@ class TeaserValidator implements EventSubscriber, PbjxValidator
 {
     protected Ncr $ncr;
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'gdbots:ncr:command:publish-node.validate' => 'validatePublishNode',
@@ -71,7 +71,7 @@ class TeaserValidator implements EventSubscriber, PbjxValidator
         }
 
         $target = $this->ncr->getNode($teaser->get('target_ref'), false, $context);
-        if (NodeStatus::PUBLISHED !== $target->fget('status')) {
+        if (NodeStatus::PUBLISHED->value !== $target->fget('status')) {
             throw new TargetNotPublished();
         }
     }

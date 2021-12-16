@@ -9,6 +9,6 @@ final class TargetNotPublished extends \RuntimeException implements TrinitiCurat
 {
     public function __construct(string $message = 'Target not published.')
     {
-        parent::__construct($message, Code::FAILED_PRECONDITION);
+        parent::__construct($message, Code::FAILED_PRECONDITION->value);
     }
 }

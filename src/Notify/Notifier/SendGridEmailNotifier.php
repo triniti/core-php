@@ -45,7 +45,7 @@ class SendGridEmailNotifier implements Notifier
         if (null === $content) {
             return NotifierResultV1::create()
                 ->set('ok', false)
-                ->set('code', Code::INVALID_ARGUMENT)
+                ->set('code', Code::INVALID_ARGUMENT->value)
                 ->set('error_name', 'NullContent')
                 ->set('error_message', 'Content cannot be null');
         }
@@ -53,7 +53,7 @@ class SendGridEmailNotifier implements Notifier
         if ($this->flags->getBoolean('sendgrid_email_notifier_disabled')) {
             return NotifierResultV1::create()
                 ->set('ok', false)
-                ->set('code', Code::CANCELLED)
+                ->set('code', Code::CANCELLED->value)
                 ->set('error_name', 'SendGridEmailNotifierDisabled')
                 ->set('error_message', 'Flag [sendgrid_email_notifier_disabled] is true');
         }
@@ -66,7 +66,7 @@ class SendGridEmailNotifier implements Notifier
             $campaignId = $this->createCampaign($campaign);
             $result = $this->sendCampaign($campaignId);
         } catch (\Throwable $e) {
-            $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN;
+            $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN->value;
             return NotifierResultV1::create()
                 ->set('ok', false)
                 ->set('code', $code)
@@ -174,13 +174,13 @@ class SendGridEmailNotifier implements Notifier
     {
         try {
             $response = $this->getGuzzleClient()->post("campaigns/{$id}/schedules/now");
-            $httpCode = $response->getStatusCode();
+            $httpCode = HttpCode::from($response->getStatusCode());
             $content = (string)$response->getBody()->getContents();
 
             return [
                 'ok'           => HttpCode::HTTP_CREATED === $httpCode,
-                'code'         => StatusCodeUtil::httpToVendor($httpCode),
-                'http_code'    => $httpCode,
+                'code'         => StatusCodeUtil::httpToVendor($httpCode)->value,
+                'http_code'    => $httpCode->value,
                 'raw_response' => $content,
                 'response'     => json_decode($content, true),
             ];
@@ -192,7 +192,7 @@ class SendGridEmailNotifier implements Notifier
     protected function convertException(\Throwable $exception): array
     {
         if ($exception instanceof RequestException) {
-            $httpCode = $exception->getResponse()->getStatusCode();
+            $httpCode = HttpCode::from($exception->getResponse()->getStatusCode());
             $response = (string)($exception->getResponse()->getBody()->getContents() ?: '{}');
         } else {
             $httpCode = HttpCode::HTTP_INTERNAL_SERVER_ERROR;
@@ -201,8 +201,8 @@ class SendGridEmailNotifier implements Notifier
 
         return [
             'ok'            => false,
-            'code'          => StatusCodeUtil::httpToVendor($httpCode),
-            'http_code'     => $httpCode,
+            'code'          => StatusCodeUtil::httpToVendor($httpCode)->value,
+            'http_code'     => $httpCode->value,
             'raw_response'  => $response,
             'error_name'    => ClassUtil::getShortName($exception),
             'error_message' => substr($exception->getMessage(), 0, 2048),

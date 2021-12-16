@@ -15,7 +15,7 @@ class ArticleSlottingWatcher implements EventSubscriber
 {
     protected CacheItemPoolInterface $cache;
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             'triniti:news:mixin:article.published'        => 'onArticlePublished',
@@ -68,7 +68,7 @@ class ArticleSlottingWatcher implements EventSubscriber
         $oldNode = $event->get('old_node');
         $newNode = $pbjxEvent->getNode();
 
-        if (NodeStatus::PUBLISHED !== $newNode->fget('status')) {
+        if (NodeStatus::PUBLISHED->value !== $newNode->fget('status')) {
             return;
         }
 

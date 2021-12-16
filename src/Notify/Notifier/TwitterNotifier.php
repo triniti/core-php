@@ -44,7 +44,7 @@ class TwitterNotifier implements Notifier
         if ($this->flags->getBoolean('twitter_notifier_disabled')) {
             return NotifierResultV1::create()
                 ->set('ok', false)
-                ->set('code', Code::CANCELLED)
+                ->set('code', Code::CANCELLED->value)
                 ->set('error_name', 'TwitterNotifierDisabled')
                 ->set('error_message', 'Flag [twitter_notifier_disabled] is true');
         }
@@ -60,14 +60,14 @@ class TwitterNotifier implements Notifier
             if (empty($tweet)) {
                 return NotifierResultV1::create()
                     ->set('ok', false)
-                    ->set('code', Code::INVALID_ARGUMENT)
+                    ->set('code', Code::INVALID_ARGUMENT->value)
                     ->set('error_name', 'NullContent')
                     ->set('error_message', 'Tweet cannot be null');
             }
 
             $result = $this->postTweet($tweet);
         } catch (\Throwable $e) {
-            $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN;
+            $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN->value;
             return NotifierResultV1::create()
                 ->set('ok', false)
                 ->set('code', $code)
@@ -131,13 +131,13 @@ class TwitterNotifier implements Notifier
 
         try {
             $response = $this->getGuzzleClient()->post('statuses/update.json', $options);
-            $httpCode = $response->getStatusCode();
+            $httpCode = HttpCode::from($response->getStatusCode());
             $content = (string)$response->getBody()->getContents();
 
             return [
                 'ok'           => HttpCode::HTTP_OK === $httpCode || HttpCode::HTTP_CREATED === $httpCode,
-                'code'         => StatusCodeUtil::httpToVendor($httpCode),
-                'http_code'    => $httpCode,
+                'code'         => StatusCodeUtil::httpToVendor($httpCode)->value,
+                'http_code'    => $httpCode->value,
                 'raw_response' => $content,
                 'response'     => json_decode($content, true),
             ];
@@ -149,7 +149,7 @@ class TwitterNotifier implements Notifier
     protected function convertException(\Throwable $exception): array
     {
         if ($exception instanceof RequestException) {
-            $httpCode = $exception->getResponse()->getStatusCode();
+            $httpCode = HttpCode::from($exception->getResponse()->getStatusCode());
             $response = (string)($exception->getResponse()->getBody()->getContents() ?: '{}');
         } else {
             $httpCode = HttpCode::HTTP_INTERNAL_SERVER_ERROR;
@@ -158,8 +158,8 @@ class TwitterNotifier implements Notifier
 
         return [
             'ok'            => false,
-            'code'          => StatusCodeUtil::httpToVendor($httpCode),
-            'http_code'     => $httpCode,
+            'code'          => StatusCodeUtil::httpToVendor($httpCode)->value,
+            'http_code'     => $httpCode->value,
             'raw_response'  => $response,
             'error_name'    => ClassUtil::getShortName($exception),
             'error_message' => substr($exception->getMessage(), 0, 2048),
