@@ -70,7 +70,7 @@ class RenderPromotionRequestHandler implements RequestHandler
             }
 
             $context = clone $context;
-            $context->addToMap('strings', 'rendering', (string)$slot->get('rendering'));
+            $context->addToMap('strings', 'rendering', $slot->get('rendering')->value);
             $widget = $this->renderWidget($slot->get('widget_ref'), $request, $context, $pbjx);
             if (null !== $widget) {
                 $widgets[] = $widget;
