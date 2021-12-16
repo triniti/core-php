@@ -21,7 +21,7 @@ final class GetUploadUrlsRequestHandler implements RequestHandler
 
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 3.x
+        // deprecated mixins, will be removed in 4.x
         $curies = MessageResolver::findAllUsingMixin('triniti:dam:mixin:get-upload-urls-request:v1', false);
         $curies[] = 'triniti:dam:request:get-upload-urls-request';
         return $curies;

@@ -17,7 +17,7 @@ class SearchPollsRequestHandler extends AbstractSearchNodesRequestHandler
 {
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 3.x
+        // deprecated mixins, will be removed in 4.x
         $curies = MessageResolver::findAllUsingMixin('triniti:apollo:mixin:search-polls-request:v1', false);
         $curies[] = 'triniti:apollo:request:search-polls-request';
         return $curies;

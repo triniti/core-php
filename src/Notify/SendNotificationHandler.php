@@ -23,7 +23,7 @@ class SendNotificationHandler implements CommandHandler
 
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 3.x
+        // deprecated mixins, will be removed in 4.x
         $curies = MessageResolver::findAllUsingMixin('triniti:notify:mixin:send-notification:v1', false);
         $curies[] = 'triniti:notify:command:send-notification';
         return $curies;

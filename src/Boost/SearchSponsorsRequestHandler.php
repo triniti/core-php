@@ -12,7 +12,7 @@ class SearchSponsorsRequestHandler extends AbstractSearchNodesRequestHandler
 {
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 3.x
+        // deprecated mixins, will be removed in 4.x
         $curies = MessageResolver::findAllUsingMixin('triniti:boost:mixin:search-sponsors-request:v1', false);
         $curies[] = 'triniti:boost:request:search-sponsors-request';
         return $curies;

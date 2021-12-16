@@ -12,7 +12,7 @@ class SearchPeopleRequestHandler extends AbstractSearchNodesRequestHandler
 {
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 3.x
+        // deprecated mixins, will be removed in 4.x
         $curies = MessageResolver::findAllUsingMixin('triniti:people:mixin:search-people-request:v1', false);
         $curies[] = 'triniti:people:request:search-people-request';
         return $curies;

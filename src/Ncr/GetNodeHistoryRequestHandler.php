@@ -12,7 +12,7 @@ use Gdbots\Pbjx\RequestHandler;
 use Gdbots\Schemas\Pbjx\StreamId;
 
 /**
- * @deprecated will be removed in 3.x
+ * @deprecated will be removed in 4.x
  */
 class GetNodeHistoryRequestHandler implements RequestHandler
 {

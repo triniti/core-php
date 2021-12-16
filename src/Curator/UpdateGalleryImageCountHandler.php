@@ -19,7 +19,7 @@ class UpdateGalleryImageCountHandler implements CommandHandler
 
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 3.x
+        // deprecated mixins, will be removed in 4.x
         $curies = MessageResolver::findAllUsingMixin('triniti:curator:mixin:update-gallery-image-count:v1', false);
         $curies[] = 'triniti:curator:command:update-gallery-image-count';
         return $curies;

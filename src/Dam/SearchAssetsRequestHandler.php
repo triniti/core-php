@@ -21,7 +21,7 @@ class SearchAssetsRequestHandler extends AbstractSearchNodesRequestHandler
 {
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 3.x
+        // deprecated mixins, will be removed in 4.x
         $curies = MessageResolver::findAllUsingMixin('triniti:dam:mixin:search-assets-request:v1', false);
         $curies[] = 'triniti:dam:request:search-assets-request';
         return $curies;

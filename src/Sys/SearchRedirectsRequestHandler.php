@@ -12,7 +12,7 @@ class SearchRedirectsRequestHandler extends AbstractSearchNodesRequestHandler
 {
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 3.x
+        // deprecated mixins, will be removed in 4.x
         $curies = MessageResolver::findAllUsingMixin('triniti:sys:mixin:search-redirects-request:v1', false);
         $curies[] = 'triniti:sys:request:search-redirects-request';
         return $curies;

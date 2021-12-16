@@ -30,7 +30,7 @@ class NcrArticleStatsProjector implements EventSubscriber, PbjxProjector
             'triniti:news:mixin:article.projected'       => 'onArticleProjected',
             'triniti:news:event:article-stats-collected' => 'onArticleStatsCollected',
 
-            // deprecated mixins, will be removed in 3.x
+            // deprecated mixins, will be removed in 4.x
             'triniti:news:mixin:article-stats-collected' => 'onArticleStatsCollected',
         ];
     }

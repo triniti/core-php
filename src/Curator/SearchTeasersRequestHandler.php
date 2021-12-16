@@ -31,7 +31,7 @@ class SearchTeasersRequestHandler extends AbstractSearchNodesRequestHandler
 
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 3.x
+        // deprecated mixins, will be removed in 4.x
         $curies = MessageResolver::findAllUsingMixin('triniti:curator:mixin:search-teasers-request:v1', false);
         $curies[] = 'triniti:curator:request:search-teasers-request';
         return $curies;

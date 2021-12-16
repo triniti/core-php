@@ -9,7 +9,7 @@ use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbjx\Pbjx;
 
 /**
- * @deprecated will be removed in 3.x
+ * @deprecated will be removed in 4.x
  */
 class GetNodeRequestHandler extends BaseGetNodeRequestHandler
 {

@@ -29,7 +29,7 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
             'triniti:apollo:mixin:poll.projected' => 'onPollProjected',
             'triniti:apollo:event:vote-casted'    => 'onVoteCasted',
 
-            // deprecated mixins, will be removed in 3.x
+            // deprecated mixins, will be removed in 4.x
             'triniti:apollo:mixin:vote-casted'    => 'onVoteCasted',
         ];
     }
