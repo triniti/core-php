@@ -17,7 +17,7 @@ class SearchNotificationsRequestHandler extends AbstractSearchNodesRequestHandle
 {
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 4.x
+        // deprecated mixins, will be removed in 3.x
         $curies = MessageResolver::findAllUsingMixin('triniti:notify:mixin:search-notifications-request:v1', false);
         $curies[] = 'triniti:notify:request:search-notifications-request';
         return $curies;

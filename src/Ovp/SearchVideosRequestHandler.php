@@ -18,7 +18,7 @@ class SearchVideosRequestHandler extends AbstractSearchNodesRequestHandler
 {
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 4.x
+        // deprecated mixins, will be removed in 3.x
         $curies = MessageResolver::findAllUsingMixin('triniti:ovp:mixin:search-videos-request:v1', false);
         $curies[] = 'triniti:ovp:request:search-videos-request';
         return $curies;

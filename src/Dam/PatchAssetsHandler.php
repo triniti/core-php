@@ -19,7 +19,7 @@ class PatchAssetsHandler implements CommandHandler
 
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 4.x
+        // deprecated mixins, will be removed in 3.x
         $curies = MessageResolver::findAllUsingMixin('triniti:dam:mixin:patch-assets:v1', false);
         $curies[] = 'triniti:dam:command:patch-assets';
         return $curies;

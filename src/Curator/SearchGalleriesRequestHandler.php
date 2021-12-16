@@ -18,7 +18,7 @@ class SearchGalleriesRequestHandler extends AbstractSearchNodesRequestHandler
 {
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 4.x
+        // deprecated mixins, will be removed in 3.x
         $curies = MessageResolver::findAllUsingMixin('triniti:curator:mixin:search-galleries-request:v1', false);
         $curies[] = 'triniti:curator:request:search-galleries-request';
         return $curies;

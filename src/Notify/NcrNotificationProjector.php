@@ -13,7 +13,7 @@ class NcrNotificationProjector extends NcrProjector
             'triniti:notify:event:notification-failed' => 'onNodeEvent',
             'triniti:notify:event:notification-sent'   => 'onNodeEvent',
 
-            // deprecated mixins, will be removed in 4.x
+            // deprecated mixins, will be removed in 3.x
             'triniti:notify:mixin:notification-failed' => 'onNodeEvent',
             'triniti:notify:mixin:notification-sent'   => 'onNodeEvent',
         ];

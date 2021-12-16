@@ -18,7 +18,7 @@ class SearchTimelinesRequestHandler extends AbstractSearchNodesRequestHandler
 {
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 4.x
+        // deprecated mixins, will be removed in 3.x
         $curies = MessageResolver::findAllUsingMixin('triniti:curator:mixin:search-timelines-request:v1', false);
         $curies[] = 'triniti:curator:request:search-timelines-request';
         return $curies;

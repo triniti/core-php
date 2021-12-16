@@ -15,7 +15,7 @@ class NcrAssetProjector extends NcrProjector
             'triniti:dam:event:asset-unlinked'          => 'onNodeEvent',
             'triniti:dam:event:gallery-asset-reordered' => 'onNodeEvent',
 
-            // deprecated mixins, will be removed in 4.x
+            // deprecated mixins, will be removed in 3.x
             'triniti:dam:mixin:asset-linked'            => 'onNodeEvent',
             'triniti:dam:mixin:asset-patched'           => 'onNodeEvent',
             'triniti:dam:mixin:asset-unlinked'          => 'onNodeEvent',

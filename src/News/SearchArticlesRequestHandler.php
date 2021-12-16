@@ -31,7 +31,7 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
 
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 4.x
+        // deprecated mixins, will be removed in 3.x
         $curies = MessageResolver::findAllUsingMixin('triniti:news:mixin:search-articles-request:v1', false);
         $curies[] = 'triniti:news:request:search-articles-request';
         return $curies;

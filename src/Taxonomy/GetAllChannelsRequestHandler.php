@@ -10,7 +10,7 @@ use Gdbots\Pbjx\RequestHandler;
 use Triniti\Schemas\Taxonomy\Request\SearchChannelsRequestV1;
 
 /**
- * @deprecated will be removed in 4.x
+ * @deprecated will be removed in 3.x
  */
 class GetAllChannelsRequestHandler implements RequestHandler
 {

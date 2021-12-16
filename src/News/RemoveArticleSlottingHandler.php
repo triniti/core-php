@@ -16,7 +16,7 @@ class RemoveArticleSlottingHandler implements CommandHandler
 {
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 4.x
+        // deprecated mixins, will be removed in 3.x
         $curies = MessageResolver::findAllUsingMixin('triniti:news:mixin:remove-article-slotting:v1', false);
         $curies[] = 'triniti:news:command:remove-article-slotting';
         return $curies;

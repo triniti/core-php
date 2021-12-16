@@ -18,7 +18,7 @@ class ReorderGalleryAssetsHandler implements CommandHandler
 
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 4.x
+        // deprecated mixins, will be removed in 3.x
         $curies = MessageResolver::findAllUsingMixin('triniti:dam:mixin:reorder-gallery-assets:v1', false);
         $curies[] = 'triniti:dam:command:reorder-gallery-assets';
         return $curies;

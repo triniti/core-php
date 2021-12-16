@@ -16,7 +16,7 @@ class GetRedirectRequestHandler extends GetNodeRequestHandler
 {
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 4.x
+        // deprecated mixins, will be removed in 3.x
         $vendor = MessageResolver::getDefaultVendor();
         return [
             "{$vendor}:sys:request:get-redirect-request",

@@ -23,7 +23,7 @@ class NcrGalleryProjector extends NcrProjector
             'triniti:dam:mixin:image-asset.deleted'             => 'onImageAssetProjected',
             'triniti:dam:mixin:image-asset.expired'             => 'onImageAssetProjected',
 
-            // deprecated mixins, will be removed in 4.x
+            // deprecated mixins, will be removed in 3.x
             'triniti:curator:mixin:gallery-image-count-updated' => 'onNodeEvent',
             'triniti:dam:mixin:gallery-asset-reordered'         => 'onGalleryAssetReordered',
         ];

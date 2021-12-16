@@ -12,7 +12,7 @@ class SearchCategoriesRequestHandler extends AbstractSearchNodesRequestHandler
 {
     public static function handlesCuries(): array
     {
-        // deprecated mixins, will be removed in 4.x
+        // deprecated mixins, will be removed in 3.x
         $curies = MessageResolver::findAllUsingMixin('triniti:taxonomy:mixin:search-categories-request:v1', false);
         $curies[] = 'triniti:taxonomy:request:search-categories-request';
         return $curies;

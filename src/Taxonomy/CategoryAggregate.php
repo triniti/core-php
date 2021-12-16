@@ -35,7 +35,7 @@ class CategoryAggregate extends Aggregate
 
     /**
      * This is for legacy uses of command/event mixins for common
-     * ncr operations. It will be removed in 4.x.
+     * ncr operations. It will be removed in 3.x.
      *
      * @param string $name
      * @param array  $arguments
@@ -52,13 +52,13 @@ class CategoryAggregate extends Aggregate
 
     /**
      * This is for legacy uses of command/event mixins for common
-     * ncr operations. It will be removed in 4.x.
+     * ncr operations. It will be removed in 3.x.
      *
      * @param Message $command
      *
      * @return Message
      *
-     * @deprecated Will be removed in 4.x.
+     * @deprecated Will be removed in 3.x.
      */
     protected function createNodeCreatedEvent(Message $command): Message
     {
@@ -67,13 +67,13 @@ class CategoryAggregate extends Aggregate
 
     /**
      * This is for legacy uses of command/event mixins for common
-     * ncr operations. It will be removed in 4.x.
+     * ncr operations. It will be removed in 3.x.
      *
      * @param Message $command
      *
      * @return Message
      *
-     * @deprecated Will be removed in 4.x.
+     * @deprecated Will be removed in 3.x.
      */
     protected function createNodeDeletedEvent(Message $command): Message
     {
@@ -82,13 +82,13 @@ class CategoryAggregate extends Aggregate
 
     /**
      * This is for legacy uses of command/event mixins for common
-     * ncr operations. It will be removed in 4.x.
+     * ncr operations. It will be removed in 3.x.
      *
      * @param Message $command
      *
      * @return Message
      *
-     * @deprecated Will be removed in 4.x.
+     * @deprecated Will be removed in 3.x.
      */
     protected function createNodeExpiredEvent(Message $command): Message
     {
@@ -97,13 +97,13 @@ class CategoryAggregate extends Aggregate
 
     /**
      * This is for legacy uses of command/event mixins for common
-     * ncr operations. It will be removed in 4.x.
+     * ncr operations. It will be removed in 3.x.
      *
      * @param Message $command
      *
      * @return Message
      *
-     * @deprecated Will be removed in 4.x.
+     * @deprecated Will be removed in 3.x.
      */
     protected function createNodeLockedEvent(Message $command): Message
     {
@@ -112,13 +112,13 @@ class CategoryAggregate extends Aggregate
 
     /**
      * This is for legacy uses of command/event mixins for common
-     * ncr operations. It will be removed in 4.x.
+     * ncr operations. It will be removed in 3.x.
      *
      * @param Message $command
      *
      * @return Message
      *
-     * @deprecated Will be removed in 4.x.
+     * @deprecated Will be removed in 3.x.
      */
     protected function createNodeMarkedAsDraftEvent(Message $command): Message
     {
@@ -127,13 +127,13 @@ class CategoryAggregate extends Aggregate
 
     /**
      * This is for legacy uses of command/event mixins for common
-     * ncr operations. It will be removed in 4.x.
+     * ncr operations. It will be removed in 3.x.
      *
      * @param Message $command
      *
      * @return Message
      *
-     * @deprecated Will be removed in 4.x.
+     * @deprecated Will be removed in 3.x.
      */
     protected function createNodeMarkedAsPendingEvent(Message $command): Message
     {
@@ -142,13 +142,13 @@ class CategoryAggregate extends Aggregate
 
     /**
      * This is for legacy uses of command/event mixins for common
-     * ncr operations. It will be removed in 4.x.
+     * ncr operations. It will be removed in 3.x.
      *
      * @param Message $command
      *
      * @return Message
      *
-     * @deprecated Will be removed in 4.x.
+     * @deprecated Will be removed in 3.x.
      */
     protected function createNodePublishedEvent(Message $command): Message
     {
@@ -157,13 +157,13 @@ class CategoryAggregate extends Aggregate
 
     /**
      * This is for legacy uses of command/event mixins for common
-     * ncr operations. It will be removed in 4.x.
+     * ncr operations. It will be removed in 3.x.
      *
      * @param Message $command
      *
      * @return Message
      *
-     * @deprecated Will be removed in 4.x.
+     * @deprecated Will be removed in 3.x.
      */
     protected function createNodeRenamedEvent(Message $command): Message
     {
@@ -172,13 +172,13 @@ class CategoryAggregate extends Aggregate
 
     /**
      * This is for legacy uses of command/event mixins for common
-     * ncr operations. It will be removed in 4.x.
+     * ncr operations. It will be removed in 3.x.
      *
      * @param Message $command
      *
      * @return Message
      *
-     * @deprecated Will be removed in 4.x.
+     * @deprecated Will be removed in 3.x.
      */
     protected function createNodeScheduledEvent(Message $command): Message
     {
@@ -187,13 +187,13 @@ class CategoryAggregate extends Aggregate
 
     /**
      * This is for legacy uses of command/event mixins for common
-     * ncr operations. It will be removed in 4.x.
+     * ncr operations. It will be removed in 3.x.
      *
      * @param Message $command
      *
      * @return Message
      *
-     * @deprecated Will be removed in 4.x.
+     * @deprecated Will be removed in 3.x.
      */
     protected function createNodeUnlockedEvent(Message $command): Message
     {
@@ -202,13 +202,13 @@ class CategoryAggregate extends Aggregate
 
     /**
      * This is for legacy uses of command/event mixins for common
-     * ncr operations. It will be removed in 4.x.
+     * ncr operations. It will be removed in 3.x.
      *
      * @param Message $command
      *
      * @return Message
      *
-     * @deprecated Will be removed in 4.x.
+     * @deprecated Will be removed in 3.x.
      */
     protected function createNodeUnpublishedEvent(Message $command): Message
     {
@@ -217,13 +217,13 @@ class CategoryAggregate extends Aggregate
 
     /**
      * This is for legacy uses of command/event mixins for common
-     * ncr operations. It will be removed in 4.x.
+     * ncr operations. It will be removed in 3.x.
      *
      * @param Message $command
      *
      * @return Message
      *
-     * @deprecated Will be removed in 4.x.
+     * @deprecated Will be removed in 3.x.
      */
     protected function createNodeUpdatedEvent(Message $command): Message
     {
