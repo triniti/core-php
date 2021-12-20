@@ -585,7 +585,7 @@ class SyncMediaHandler implements CommandHandler
 
         foreach (['mpm', 'show', 'tvpg_rating'] as $field) {
             if ($node->has($field)) {
-                $parameters['custom.' . $field] = $node->get($field);
+                $parameters['custom.' . $field] = $node->fget($field);
             }
         }
 

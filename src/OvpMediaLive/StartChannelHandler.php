@@ -46,7 +46,7 @@ class StartChannelHandler implements CommandHandler
         $retries = $command->get('ctx_retries');
         $pbjx->cancelJobs(["{$nodeRef}.stop-medialive-channel"], $context);
 
-        if (ChannelState::RUNNING === $description->get('State')) {
+        if (ChannelState::RUNNING->value === $description->get('State')) {
             if ($retries < 1) {
                 // if this is the first attempt to start the channel and it's
                 // already running then no event is needed.
@@ -65,7 +65,7 @@ class StartChannelHandler implements CommandHandler
             return;
         }
 
-        if (ChannelState::STARTING !== $description->get('State')) {
+        if (ChannelState::STARTING->value !== $description->get('State')) {
             try {
                 $client->startChannel(['ChannelId' => $channelData['channelId']]);
             } catch (\Throwable $e) {
