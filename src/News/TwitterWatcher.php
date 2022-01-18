@@ -7,6 +7,7 @@ use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbj\WellKnown\UuidIdentifier;
+use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\EventSubscriber;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Iam\Request\SearchAppsRequestV1;
@@ -51,17 +52,16 @@ class TwitterWatcher implements EventSubscriber
             ->set('content_ref', $contentRef);
     }
 
-    protected function getApp(Message $article, Message $event, Pbjx $pbjx): ?Message
+    protected function getApps(Message $article, Message $event, Pbjx $pbjx): ?array
     {
         $typeField = MappingBuilder::TYPE_FIELD;
         $request = SearchAppsRequestV1::create()
             ->set('status', NodeStatus::PUBLISHED())
-            ->set('q', "+{$typeField}:twitter-app")
-            ->set('count', 1);
+            ->set('q', "+{$typeField}:twitter-app");
 
         try {
             $response = $pbjx->copyContext($event, $request)->request($request);
-            return $response->getFromListAt('nodes', 0);
+            return $response->get('nodes');
         } catch (\Throwable $e) {
             return null;
         }
@@ -81,23 +81,26 @@ class TwitterWatcher implements EventSubscriber
             return;
         }
 
-        $app = $this->getApp($article, $event, $pbjx);
-        if (null === $app) {
+        $apps = $this->getApps($article, $event, $pbjx);
+        if (null === $apps || count($apps) === 0) {
             return;
         }
 
-        $notification = $this->createTwitterNotification($event, $article, $pbjx)
-            ->set('app_ref', $app->generateNodeRef());
+        foreach ($apps as $app) {
+            $appRef = NodeRef::fromNode($app);
+            try {
+                $notification = $this->createTwitterNotification($event, $article, $pbjx)
+                    ->set('app_ref', $appRef);
 
-        $command = CreateNodeV1::create()->set('node', $notification);
-        $pbjx->copyContext($event, $command);
-        $nodeRef = $article->generateNodeRef();
+                $command = CreateNodeV1::create()->set('node', $notification);
+                $pbjx->copyContext($event, $command);
+                $nodeRef = $article->generateNodeRef();
 
-        try {
-            $pbjx->sendAt($command, strtotime('+3 seconds'), "{$nodeRef}.post-tweet");
-        } catch (\Throwable $e) {
-            if ($e->getCode() !== Code::ALREADY_EXISTS) {
-                throw $e;
+                $pbjx->sendAt($command, strtotime('+3 seconds'), "{$nodeRef}.{$appRef}.post-tweet");
+            } catch (\Throwable $e) {
+                if ($e->getCode() !== Code::ALREADY_EXISTS->value) {
+                    throw $e;
+                }
             }
         }
     }
