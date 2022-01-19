@@ -99,7 +99,6 @@ class TwitterWatcher implements EventSubscriber
 
                 $pbjx->sendAt($command, strtotime('+3 seconds'), "{$nodeRef}.{$appRef}.post-tweet");
             } catch (\Throwable $e) {
-                //throw new \Exception("poooo".$e->getMessage());
                 if ($e->getCode() !== Code::ALREADY_EXISTS->value) {
                     throw $e;
                 }
