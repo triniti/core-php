@@ -34,20 +34,21 @@ class TwitterWatcher implements EventSubscriber
         $this->notifyTwitter($event, $node, $pbjx);
     }
 
-    protected function createTwitterNotification(Message $event, Message $article, Pbjx $pbjx): Message
+    protected function createTwitterNotification(Message $event, Message $article, Message $app, Pbjx $pbjx): Message
     {
         $date = $event->get('occurred_at')->toDateTime()->add(new \DateInterval('PT180S'));
         $contentRef = $article->generateNodeRef();
+        $appId = $app->generateNodeRef()->getId();
         $id = UuidIdentifier::fromString(
             Uuid::uuid5(
                 Uuid::uuid5(Uuid::NIL, 'twitter-auto-post'),
-                $contentRef->toString()
+                $contentRef->toString().$appId
             )->toString()
         );
 
         return MessageResolver::resolveCurie('*:notify:node:twitter-notification:v1')::create()
             ->set('_id', $id)
-            ->set('title', $article->get('title'))
+            ->set('title', $article->get('title').'-'.$appId)
             ->set('send_at', $date)
             ->set('content_ref', $contentRef);
     }
@@ -89,7 +90,7 @@ class TwitterWatcher implements EventSubscriber
         foreach ($apps as $app) {
             $appRef = NodeRef::fromNode($app);
             try {
-                $notification = $this->createTwitterNotification($event, $article, $pbjx)
+                $notification = $this->createTwitterNotification($event, $article, $app, $pbjx)
                     ->set('app_ref', $appRef);
 
                 $command = CreateNodeV1::create()->set('node', $notification);
@@ -98,6 +99,7 @@ class TwitterWatcher implements EventSubscriber
 
                 $pbjx->sendAt($command, strtotime('+3 seconds'), "{$nodeRef}.{$appRef}.post-tweet");
             } catch (\Throwable $e) {
+                //throw new \Exception("poooo".$e->getMessage());
                 if ($e->getCode() !== Code::ALREADY_EXISTS->value) {
                     throw $e;
                 }
