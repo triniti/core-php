@@ -59,7 +59,6 @@ class TwitterWatcher implements EventSubscriber
         $request = SearchAppsRequestV1::create()
             ->set('status', NodeStatus::PUBLISHED())
             ->set('q', "+{$typeField}:twitter-app");
-        //->set('count', 1);
 
         try {
             $response = $pbjx->copyContext($event, $request)->request($request);
@@ -97,10 +96,8 @@ class TwitterWatcher implements EventSubscriber
                 $pbjx->copyContext($event, $command);
                 $nodeRef = $article->generateNodeRef();
 
-                //$pbjx->sendAt($command, strtotime('+3 seconds'), "{$nodeRef}.{$appRef}.post-tweet");
-                $pbjx->send($command);
+                $pbjx->sendAt($command, strtotime('+3 seconds'), "{$nodeRef}.{$appRef}.post-tweet");
             } catch (\Throwable $e) {
-                //throw new \Exception("poooo".$e->getMessage());
                 if ($e->getCode() !== Code::ALREADY_EXISTS->value) {
                     throw $e;
                 }
