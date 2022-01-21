@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Triniti\News;
@@ -38,17 +39,17 @@ class TwitterWatcher implements EventSubscriber
     {
         $date = $event->get('occurred_at')->toDateTime()->add(new \DateInterval('PT180S'));
         $contentRef = $article->generateNodeRef();
-        $appId = $app->generateNodeRef()->getId();
+        $appTitle = $app->get('title');
         $id = UuidIdentifier::fromString(
             Uuid::uuid5(
                 Uuid::uuid5(Uuid::NIL, 'twitter-auto-post'),
-                $contentRef->toString().$appId
+                $contentRef->toString() . $appTitle
             )->toString()
         );
 
         return MessageResolver::resolveCurie('*:notify:node:twitter-notification:v1')::create()
             ->set('_id', $id)
-            ->set('title', $article->get('title').'-'.$appId)
+            ->set('title', $article->get('title') . ' | ' . $appTitle)
             ->set('send_at', $date)
             ->set('content_ref', $contentRef);
     }
