@@ -8,7 +8,6 @@ use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbj\WellKnown\UuidIdentifier;
-use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\EventSubscriber;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Iam\Request\SearchAppsRequestV1;
@@ -39,7 +38,9 @@ class TwitterWatcher implements EventSubscriber
     {
         $date = $event->get('occurred_at')->toDateTime()->add(new \DateInterval('PT180S'));
         $contentRef = $article->generateNodeRef();
+        $appRef = $app->generateNodeRef();
         $appTitle = $app->get('title');
+
         $id = UuidIdentifier::fromString(
             Uuid::uuid5(
                 Uuid::uuid5(Uuid::NIL, 'twitter-auto-post'),
@@ -51,6 +52,7 @@ class TwitterWatcher implements EventSubscriber
             ->set('_id', $id)
             ->set('title', $article->get('title') . ' | ' . $appTitle)
             ->set('send_at', $date)
+            ->set('app_ref', $appRef)
             ->set('content_ref', $contentRef);
     }
 
@@ -83,22 +85,15 @@ class TwitterWatcher implements EventSubscriber
             return;
         }
 
-        $apps = $this->getApps($article, $event, $pbjx);
-        if (null === $apps || count($apps) === 0) {
-            return;
-        }
-
-        foreach ($apps as $app) {
-            $appRef = NodeRef::fromNode($app);
+        foreach ($this->getApps($article, $event, $pbjx) as $app) {
             try {
-                $notification = $this->createTwitterNotification($event, $article, $app, $pbjx)
-                    ->set('app_ref', $appRef);
-
+                $notification = $this->createTwitterNotification($event, $article, $app, $pbjx);
                 $command = CreateNodeV1::create()->set('node', $notification);
                 $pbjx->copyContext($event, $command);
                 $nodeRef = $article->generateNodeRef();
+                $appRef = $app->generateNodeRef();
 
-                $pbjx->sendAt($command, strtotime('+3 seconds'), "{$nodeRef}.{$appRef}.post-tweet");
+                $pbjx->sendAt($command, strtotime('+3 seconds'), "{$nodeRef}.{$appRef->getId()}.post-tweet");
             } catch (\Throwable $e) {
                 if ($e->getCode() !== Code::ALREADY_EXISTS->value) {
                     throw $e;
