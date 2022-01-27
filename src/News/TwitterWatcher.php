@@ -54,7 +54,7 @@ class TwitterWatcher implements EventSubscriber
             ->set('content_ref', $contentRef);
     }
 
-    protected function getApps(Message $article, Message $event, Pbjx $pbjx): ?array
+    protected function getApps(Message $article, Message $event, Pbjx $pbjx): array
     {
         $typeField = MappingBuilder::TYPE_FIELD;
         $request = SearchAppsRequestV1::create()
@@ -63,9 +63,9 @@ class TwitterWatcher implements EventSubscriber
 
         try {
             $response = $pbjx->copyContext($event, $request)->request($request);
-            return $response->get('nodes');
+            return $response->get('nodes', []);
         } catch (\Throwable $e) {
-            return null;
+            return [];
         }
     }
 
