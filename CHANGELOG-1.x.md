@@ -3,7 +3,7 @@ This changelog references the relevant changes done in 1.x versions.
 
 
 ## v1.2.0
-* Update `Triniti\News\TwitterWatcher` to have an array retruned from getApps.
+* Update `Triniti\News\TwitterWatcher` to post tweets to all twitter apps.
 
 
 ## v1.1.2

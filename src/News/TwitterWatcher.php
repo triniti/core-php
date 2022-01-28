@@ -37,20 +37,18 @@ class TwitterWatcher implements EventSubscriber
     protected function createTwitterNotification(Message $event, Message $article, Message $app, Pbjx $pbjx): Message
     {
         $date = $event->get('occurred_at')->toDateTime()->add(new \DateInterval('PT180S'));
-        $contentRef = $article->generateNodeRef();
         $appRef = $app->generateNodeRef();
-        $appTitle = $app->get('title');
-
+        $contentRef = $article->generateNodeRef();
         $id = UuidIdentifier::fromString(
             Uuid::uuid5(
                 Uuid::uuid5(Uuid::NIL, 'twitter-auto-post'),
-                $contentRef->toString() . $appTitle
+                $contentRef->toString() . $appRef->getId()
             )->toString()
         );
 
         return MessageResolver::resolveCurie('*:notify:node:twitter-notification:v1')::create()
             ->set('_id', $id)
-            ->set('title', $article->get('title') . ' | ' . $appTitle)
+            ->set('title', $article->get('title') . ' | ' . $app->get('title'))
             ->set('send_at', $date)
             ->set('app_ref', $appRef)
             ->set('content_ref', $contentRef);
@@ -81,31 +79,29 @@ class TwitterWatcher implements EventSubscriber
             return;
         }
 
-        if (!$this->shouldNotifyTwitter($event, $article)) {
-            return;
-        }
-
         foreach ($this->getApps($article, $event, $pbjx) as $app) {
+            if (!$this->shouldNotifyTwitter($event, $article, $app)) {
+                continue;
+            }
+
             try {
                 $notification = $this->createTwitterNotification($event, $article, $app, $pbjx);
                 $command = CreateNodeV1::create()->set('node', $notification);
                 $pbjx->copyContext($event, $command);
                 $nodeRef = $article->generateNodeRef();
-                $appRef = $app->generateNodeRef();
-
-                $pbjx->sendAt($command, strtotime('+3 seconds'), "{$nodeRef}.{$appRef->getId()}.post-tweet");
+                $pbjx->sendAt($command, strtotime('+3 seconds'), "{$nodeRef}.{$app->fget('_id')}.post-tweet");
             } catch (\Throwable $e) {
-                if ($e->getCode() !== Code::ALREADY_EXISTS->value) {
+                if ($e->getCode() !== Code::ALREADY_EXISTS) {
                     throw $e;
                 }
             }
         }
     }
 
-    protected function shouldNotifyTwitter(Message $event, Message $article): bool
+    protected function shouldNotifyTwitter(Message $event, Message $article, Message $app): bool
     {
         // override to implement your own check to block twitter posts
-        // based on the event or article
+        // based on the event, article or app
         return true;
     }
 }
