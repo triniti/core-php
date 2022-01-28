@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
+## v2.1.0
+* Update `Triniti\News\TwitterWatcher` to post tweets to all twitter apps.
+
+
 ## v2.0.1
 * Fix couple of missed php8.1 enum uses (->value checkes) in Ovp*
 

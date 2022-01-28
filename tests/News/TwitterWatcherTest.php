@@ -24,11 +24,20 @@ final class TwitterWatcherTest extends AbstractPbjxTest
     {
         parent::setup();
         $this->pbjx = new MockPbjx($this->locator);
-        $this->watcher = new class() extends TwitterWatcher
-        {
-            protected function getApp(Message $article, Message $event, Pbjx $pbjx): ?Message
+        $this->watcher = new class() extends TwitterWatcher {
+            private ?Message $app = null;
+
+            protected function getApps(Message $article, Message $event, Pbjx $pbjx): array
             {
-                 return TwitterAppV1::create();
+                return [$this->getApp()];
+            }
+
+            public function getApp(): Message
+            {
+                if (null === $this->app) {
+                    $this->app = TwitterAppV1::create();
+                }
+                return $this->app;
             }
         };
     }
@@ -47,7 +56,7 @@ final class TwitterWatcherTest extends AbstractPbjxTest
         $this->assertSame($articleRef->toString(), $this->pbjx->getSent()[0]['command']->get('node')->get('content_ref')->toString());
     }
 
-    public function testOnArticlePublishedTwitterPublishtDisabled(): void
+    public function testOnArticlePublishedTwitterPublishDisabled(): void
     {
         $article = ArticleV1::create()->set('twitter_publish_enabled', false);
         $articleRef = NodeRef::fromNode($article);
@@ -73,7 +82,7 @@ final class TwitterWatcherTest extends AbstractPbjxTest
         $expectedId = UuidIdentifier::fromString(
             Uuid::uuid5(
                 Uuid::uuid5(Uuid::NIL, 'twitter-auto-post'),
-                $article->generateNodeRef()->toString()
+                $article->generateNodeRef()->toString() . $this->watcher->getApp()->fget('_id')
             )->toString()
         );
 
