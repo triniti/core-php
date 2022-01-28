@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Triniti\News;
@@ -33,37 +34,38 @@ class TwitterWatcher implements EventSubscriber
         $this->notifyTwitter($event, $node, $pbjx);
     }
 
-    protected function createTwitterNotification(Message $event, Message $article, Pbjx $pbjx): Message
+    protected function createTwitterNotification(Message $event, Message $article, Message $app, Pbjx $pbjx): Message
     {
         $date = $event->get('occurred_at')->toDateTime()->add(new \DateInterval('PT180S'));
+        $appRef = $app->generateNodeRef();
         $contentRef = $article->generateNodeRef();
         $id = UuidIdentifier::fromString(
             Uuid::uuid5(
                 Uuid::uuid5(Uuid::NIL, 'twitter-auto-post'),
-                $contentRef->toString()
+                $contentRef->toString() . $appRef->getId()
             )->toString()
         );
 
         return MessageResolver::resolveCurie('*:notify:node:twitter-notification:v1')::create()
             ->set('_id', $id)
-            ->set('title', $article->get('title'))
+            ->set('title', $article->get('title') . ' | ' . $app->get('title'))
             ->set('send_at', $date)
+            ->set('app_ref', $appRef)
             ->set('content_ref', $contentRef);
     }
 
-    protected function getApp(Message $article, Message $event, Pbjx $pbjx): ?Message
+    protected function getApps(Message $article, Message $event, Pbjx $pbjx): array
     {
         $typeField = MappingBuilder::TYPE_FIELD;
         $request = SearchAppsRequestV1::create()
             ->set('status', NodeStatus::PUBLISHED())
-            ->set('q', "+{$typeField}:twitter-app")
-            ->set('count', 1);
+            ->set('q', "+{$typeField}:twitter-app");
 
         try {
             $response = $pbjx->copyContext($event, $request)->request($request);
-            return $response->getFromListAt('nodes', 0);
+            return $response->get('nodes', []);
         } catch (\Throwable $e) {
-            return null;
+            return [];
         }
     }
 
@@ -77,35 +79,29 @@ class TwitterWatcher implements EventSubscriber
             return;
         }
 
-        if (!$this->shouldNotifyTwitter($event, $article)) {
-            return;
-        }
+        foreach ($this->getApps($article, $event, $pbjx) as $app) {
+            if (!$this->shouldNotifyTwitter($event, $article, $app)) {
+                continue;
+            }
 
-        $app = $this->getApp($article, $event, $pbjx);
-        if (null === $app) {
-            return;
-        }
-
-        $notification = $this->createTwitterNotification($event, $article, $pbjx)
-            ->set('app_ref', $app->generateNodeRef());
-
-        $command = CreateNodeV1::create()->set('node', $notification);
-        $pbjx->copyContext($event, $command);
-        $nodeRef = $article->generateNodeRef();
-
-        try {
-            $pbjx->sendAt($command, strtotime('+3 seconds'), "{$nodeRef}.post-tweet");
-        } catch (\Throwable $e) {
-            if ($e->getCode() !== Code::ALREADY_EXISTS) {
-                throw $e;
+            try {
+                $notification = $this->createTwitterNotification($event, $article, $app, $pbjx);
+                $command = CreateNodeV1::create()->set('node', $notification);
+                $pbjx->copyContext($event, $command);
+                $nodeRef = $article->generateNodeRef();
+                $pbjx->sendAt($command, strtotime('+3 seconds'), "{$nodeRef}.{$app->fget('_id')}.post-tweet");
+            } catch (\Throwable $e) {
+                if ($e->getCode() !== Code::ALREADY_EXISTS) {
+                    throw $e;
+                }
             }
         }
     }
 
-    protected function shouldNotifyTwitter(Message $event, Message $article): bool
+    protected function shouldNotifyTwitter(Message $event, Message $article, Message $app): bool
     {
         // override to implement your own check to block twitter posts
-        // based on the event or article
+        // based on the event, article or app
         return true;
     }
 }

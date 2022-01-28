@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 1.x versions.
 
 
+## v1.2.0
+* Update `Triniti\News\TwitterWatcher` to post tweets to all twitter apps.
+
+
 ## v1.1.2
 * Reduce max gallery image count to 130 in `Triniti\AppleNews\ArticleDocumentMarshaler`
 
