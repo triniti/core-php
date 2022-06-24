@@ -1,6 +1,9 @@
 # CHANGELOG for 2.x
 This changelog references the relevant changes done in 2.x versions.
 
+## v2.1.1
+* Patching `Triniti\AppleNews\AppleNewApi` guzzle client for PHP 8.1.
+
 
 ## v2.1.0
 * Update `Triniti\News\TwitterWatcher` to post tweets to all twitter apps.

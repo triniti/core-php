@@ -17,7 +17,7 @@ class AppleNewsApi
 {
     const ENDPOINT = 'https://news-api.apple.com';
 
-    protected ?GuzzleClient $guzzleClient;
+    protected ?GuzzleClient $guzzleClient = null;
     protected string $apiKey;
     protected string $apiSecret;
 
