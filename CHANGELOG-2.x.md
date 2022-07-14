@@ -1,6 +1,11 @@
 # CHANGELOG for 2.x
 This changelog references the relevant changes done in 2.x versions.
 
+
+## v2.1.2
+* Adjust return type of `SupportedUnits::jsonSerialize`
+
+
 ## v2.1.1
 * Patching `Triniti\AppleNews\AppleNewApi` guzzle client for PHP 8.1.
 
