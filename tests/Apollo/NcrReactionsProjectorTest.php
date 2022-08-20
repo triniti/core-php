@@ -3,18 +3,6 @@ declare(strict_types=1);
 
 namespace Triniti\Tests\Apollo;
 
-use Acme\Schemas\Apollo\Event\PollCreatedV1;
-use Acme\Schemas\Apollo\Event\PollDeletedV1;
-use Acme\Schemas\Apollo\Event\PollExpiredV1;
-use Acme\Schemas\Apollo\Event\PollMarkedAsDraftV1;
-use Acme\Schemas\Apollo\Event\PollMarkedAsPendingV1;
-use Acme\Schemas\Apollo\Event\PollPublishedV1;
-use Acme\Schemas\Apollo\Event\PollScheduledV1;
-use Acme\Schemas\Apollo\Event\PollUnpublishedV1;
-use Acme\Schemas\Apollo\Event\PollUpdatedV1;
-use Acme\Schemas\Apollo\Event\VoteCastedV1;
-use Acme\Schemas\Apollo\Node\PollV1;
-use Acme\Schemas\Apollo\PollAnswerV1;
 use Acme\Schemas\News\Event\ArticleCreatedV1;
 use Acme\Schemas\News\Event\ArticleDeletedV1;
 use Acme\Schemas\News\Event\ArticleExpiredV1;
@@ -31,7 +19,6 @@ use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Pbj\WellKnown\Microtime;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
-use Triniti\Apollo\NcrPollStatsProjector;
 use Triniti\Apollo\NcrReactionsProjector;
 use Triniti\Schemas\Apollo\Event\ReactionsAddedV1;
 use Triniti\Tests\AbstractPbjxTest;

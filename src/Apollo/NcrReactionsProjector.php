@@ -19,8 +19,6 @@ use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 
 class NcrReactionsProjector implements EventSubscriber, PbjxProjector
 {
-    protected const REACTION_TYPES = ["love", "haha", "wow", "wtf", "trash", "sad"];
-
     protected Ncr $ncr;
     protected NcrSearch $ncrSearch;
     protected bool $enabled;
@@ -114,14 +112,26 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             $reactions = $this->ncr->getNode($reactionsRef, true, ['causator' => $event]);
         } catch (NodeNotFound $nf) {
             $reactions = $class::fromArray(['_id' => $nodeRef->getId()]);
-            foreach(self::REACTION_TYPES as $reactionType) {
-                $reactions->addToMap('reactions', $reactionType, 0);
-            }
+            $this->addReactions($reactions);
         } catch (\Throwable $e) {
             throw $e;
         }
 
         return $reactions;
+    }
+
+    protected function addReactions (Message $reactions): void
+    {
+        foreach ([
+                    'love',
+                    'haha',
+                    'wow',
+                    'wtf',
+                    'trash',
+                    'sad',
+                ] as $reactionType) {
+            $reactions->addToMap('reactions', $reactionType, 0);
+        }
     }
 
     protected function mergeNode(Message $node, Message $reactions): void
@@ -149,12 +159,11 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
     protected function shouldHaveReactions(NodeRef $nodeRef): bool
     {
         // override to implement other nodes that should have reactions, by default, only articles have reactions.
-        $label = $nodeRef->getLabel();
-        if ($label === 'article') {
-            return true;
-        }
+        $types = [
+            'article' => true,
+        ];
 
-        return false;
+        return $types[$nodeRef->getLabel()] ?? false;
     }
 }
 
