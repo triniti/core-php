@@ -507,16 +507,6 @@ class SyncMediaHandler implements CommandHandler
             'status:' . $node->fget('status'),
         ];
 
-        $refs = array_unique(array_merge(
-            $node->get('category_refs', []),
-            $node->get('person_refs', []),
-            $node->get('primary_person_refs', [])
-        ));
-
-        foreach ($this->ncr->getNodes($refs) as $n) {
-            $tags[] = $n::schema()->getCurie()->getMessage() . ':' . $n->get('slug');
-        }
-
         foreach ($node->get('hashtags', []) as $hashtag) {
             $tags[] = 'hashtag:' . strtolower($hashtag);
         }
@@ -525,6 +515,17 @@ class SyncMediaHandler implements CommandHandler
             if ($node->has($field)) {
                 $tags[] = $field . ':' . $node->get($field);
             }
+        }
+
+        $personRefs = array_unique(array_merge(
+            $node->get('person_refs', []),
+            $node->get('primary_person_refs', [])
+        ));
+        $people = $this->ncr->getNodes($personRefs);
+        $categories = $this->ncr->getNodes($node->get('category_refs', []));
+
+        foreach (array_merge($people, $categories) as $n) {
+            $tags[] = $n::schema()->getCurie()->getMessage() . ':' . $n->get('slug');
         }
 
         $parameters['tags'] = implode(',', $tags);
@@ -578,6 +579,10 @@ class SyncMediaHandler implements CommandHandler
         $parameters['custom.id'] = $node->get('_id');
         $parameters['custom.status'] = $node->fget('status');
         $parameters['custom.has_music'] = $node->get('has_music');
+
+        if (count($categories) > 0) {
+            $parameters['custom.categories'] = implode(',', array_map(fn($n) => $n->fget('slug'), $categories));
+        }
 
         foreach ($node->get('tags', []) as $key => $value) {
             $parameters['custom.' . $key] = $value;

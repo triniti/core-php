@@ -6,6 +6,7 @@ namespace Triniti\Tests\OvpJwplayer;
 use Acme\Schemas\Ovp\Command\UpdateVideoV1;
 use Acme\Schemas\Ovp\Event\VideoUpdatedV1;
 use Acme\Schemas\Ovp\Node\VideoV1;
+use Acme\Schemas\People\Node\PersonV1;
 use Acme\Schemas\Sys\Node\FlagsetV1;
 use Acme\Schemas\Taxonomy\Node\CategoryV1;
 use Acme\Schemas\Taxonomy\Node\ChannelV1;
@@ -378,31 +379,42 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
             $httpClient
         );
 
+        $primaryPersonSlugs = ['roald', 'dahl'];
+        $primaryPeople = array_map(fn($slug) => PersonV1::fromArray(['slug' => $slug]), $primaryPersonSlugs);
+
+        $personSlugs = ['james'];
+        $people = array_map(fn($slug) => PersonV1::fromArray(['slug' => $slug]), $personSlugs);
+
         $categorySlugs = ['sloth', 'weasel'];
-        $categories = [];
         $categories = array_map(fn($slug) => CategoryV1::fromArray(['slug' => $slug]), $categorySlugs);
-        foreach ($categories as $category) {
-            $this->ncr->putNode($category);
+
+        foreach (array_merge($primaryPeople, $people, $categories) as $node) {
+            $this->ncr->putNode($node);
         }
 
         $channel = ChannelV1::fromArray(['slug' => 'nice-channel']);
         $this->ncr->putNode($channel);
 
+        $tags = [
+            'foo_bar' => 'baz',
+        ];
+        $hashtags = ['qux'];
         $node = VideoV1::fromArray([
             '_id'             => '7afcc2f1-9654-46d1-8fc1-b0511df257db',
             'kaltura_mp4_url' => 'https://www.very-cool-place.mp4',
             'order_date'      => new \DateTime(),
+            'person_refs'     => array_map([NodeRef::class, 'fromNode'], $people),
+            'primary_person_refs'     => array_map([NodeRef::class, 'fromNode'], $primaryPeople),
             'category_refs'   => array_map([NodeRef::class, 'fromNode'], $categories),
             'channel_ref'     => $channel->generateNodeRef(),
             'mpm' => '2065683',
             'show' => 'wonder_showzen',
             'tvpg_rating' => 'TV-PG',
-            'tags' => [
-                'foo_bar' => 'baz',
-            ],
+            'tags' => $tags,
+            'hashtags' => $hashtags
         ]);
-
         $this->ncr->putNode($node);
+
         $nodeRef = $node->generateNodeRef();
         $command = SyncMediaV1::create()->set('node_ref', $nodeRef);
         $handler->handleCommand($command, $this->pbjx);
@@ -423,9 +435,16 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
             unset($queryParams[$key]);
         }
 
+        foreach ($tags as $key => $value) {
+            $this->assertEquals(
+                $node->getFromMap('tags', $key),
+                $queryParams['custom.' . $key],
+            );
+        }
+
         $this->assertEquals(
+            rawurlencode(implode(',', $categorySlugs)),
             $queryParams['custom.categories'],
-            implode(',', $categorySlugs)
         );
 
         $this->assertEquals($node->fget('_id'), $queryParams['custom.id']);
@@ -447,11 +466,17 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
         $this->assertTrue(isset($tags['id:' . $node->fget('_id')]));
         $this->assertTrue(isset($tags['is_unlisted:' . ($node->get('is_unlisted') ? 'true' : 'false')]));
         $this->assertTrue(isset($tags['status:' . $node->fget('status')]));
-        foreach ($categories as $category) {
-            $this->assertTrue(isset($tags['category:' . $category->get('slug')]));
+        foreach ($categorySlugs as $categorySlug) {
+            $this->assertTrue(isset($tags['category:' . $categorySlug]));
+        }
+        foreach (array_merge($personSlugs, $primaryPersonSlugs) as $personSlug) {
+            $this->assertTrue(isset($tags['person:' . $personSlug]));
         }
         foreach (['mpm', 'show'] as $field) {
             $this->assertTrue(isset($tags[$field . ':' . $node->fget($field)]));
+        }
+        foreach ($hashtags as $hashtag) {
+            $this->assertTrue(isset($tags['hashtag:' . $hashtag]));
         }
     }
 
