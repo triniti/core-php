@@ -378,13 +378,13 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
             $httpClient
         );
 
-        $categories = [
-            CategoryV1::fromArray(['slug' => 'category-1']),
-            CategoryV1::fromArray(['slug' => 'category-2']),
-        ];
+        $categorySlugs = ['sloth', 'weasel'];
+        $categories = [];
+        $categories = array_map(fn($slug) => CategoryV1::fromArray(['slug' => $slug]), $categorySlugs);
         foreach ($categories as $category) {
             $this->ncr->putNode($category);
         }
+
         $channel = ChannelV1::fromArray(['slug' => 'nice-channel']);
         $this->ncr->putNode($channel);
 
@@ -401,6 +401,7 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
                 'foo_bar' => 'baz',
             ],
         ]);
+
         $this->ncr->putNode($node);
         $nodeRef = $node->generateNodeRef();
         $command = SyncMediaV1::create()->set('node_ref', $nodeRef);
@@ -421,6 +422,11 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
             $queryParams[$exploded[0]] = $exploded[1];
             unset($queryParams[$key]);
         }
+
+        $this->assertEquals(
+            $queryParams['custom.categories'],
+            implode(',', $categorySlugs)
+        );
 
         $this->assertEquals($node->fget('_id'), $queryParams['custom.id']);
 
