@@ -7,6 +7,8 @@ use Acme\Schemas\Ovp\Command\UpdateVideoV1;
 use Acme\Schemas\Ovp\Event\VideoUpdatedV1;
 use Acme\Schemas\Ovp\Node\VideoV1;
 use Acme\Schemas\Sys\Node\FlagsetV1;
+use Acme\Schemas\Taxonomy\Node\CategoryV1;
+use Acme\Schemas\Taxonomy\Node\ChannelV1;
 use Gdbots\Ncr\AggregateResolver;
 use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Pbj\Message;
@@ -17,6 +19,8 @@ use Gdbots\Schemas\Pbjx\StreamId;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Utils;
 use Triniti\Dam\UrlProvider as DamUrlProvider;
@@ -346,6 +350,102 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
             $this->assertInstanceOf(MediaSyncedV1::class, $event);
             $this->assertTrue($event->get('node_ref')->equals($nodeRef));
             $this->assertTrue($event->get('jwplayer_media_id') === $jwplayerMediaId);
+        }
+    }
+
+    public function testCreateWithMarshaledParameters(): void
+    {
+        $jwplayerMediaId = 'foo';
+        $stream = Utils::streamFor(serialize([
+            'video' => [
+                'key' => $jwplayerMediaId,
+            ],
+        ]));
+        $historyContainer = [];
+        $history = Middleware::history($historyContainer);
+        $response = new Response(200, [], $stream);
+        $handlerStack = HandlerStack::create(new MockHandler([$response]));
+        $handlerStack->push($history);
+        $httpClient = new HttpClient(['handler' => $handlerStack]);
+        $damUrlProvider = new DamUrlProvider();
+        $handler = new SyncMediaHandler(
+            'key',
+            'secret',
+            $this->ncr,
+            $damUrlProvider,
+            new ArtifactUrlProvider($damUrlProvider),
+            new Flags($this->ncr, 'acme:flagset:test'),
+            $httpClient
+        );
+
+        $categories = [
+            CategoryV1::fromArray(['slug' => 'category-1']),
+            CategoryV1::fromArray(['slug' => 'category-2']),
+        ];
+        foreach ($categories as $category) {
+            $this->ncr->putNode($category);
+        }
+        $channel = ChannelV1::fromArray(['slug' => 'nice-channel']);
+        $this->ncr->putNode($channel);
+
+        $node = VideoV1::fromArray([
+            '_id'             => '7afcc2f1-9654-46d1-8fc1-b0511df257db',
+            'kaltura_mp4_url' => 'https://www.very-cool-place.mp4',
+            'order_date'      => new \DateTime(),
+            'category_refs'   => array_map([NodeRef::class, 'fromNode'], $categories),
+            'channel_ref'     => $channel->generateNodeRef(),
+            'mpm' => '2065683',
+            'show' => 'wonder_showzen',
+            'tvpg_rating' => 'TV-PG',
+            'tags' => [
+                'foo_bar' => 'baz',
+            ],
+        ]);
+        $this->ncr->putNode($node);
+        $nodeRef = $node->generateNodeRef();
+        $command = SyncMediaV1::create()->set('node_ref', $nodeRef);
+        $handler->handleCommand($command, $this->pbjx);
+
+        foreach ($this->pbjx->getEventStore()->pipeAllEvents() as [$event, $streamId]) {
+            $this->assertInstanceOf(MediaSyncedV1::class, $event);
+            $this->assertTrue($event->get('node_ref')->equals($nodeRef));
+            $this->assertTrue($event->get('jwplayer_media_id') === $jwplayerMediaId);
+        }
+
+        /** @var Request $request */
+        $request = $historyContainer[0]['request'];
+        $queryParams = explode('&', $request->getUri()->getQuery());
+
+        foreach ($queryParams as $key => $queryParam) {
+            $exploded = explode('=', $queryParam);
+            $queryParams[$exploded[0]] = $exploded[1];
+            unset($queryParams[$key]);
+        }
+
+        $this->assertEquals($node->fget('_id'), $queryParams['custom.id']);
+
+        $singleValueFields = ['status', 'has_music', 'mpm', 'show', 'tvpg_rating'];
+        foreach ($singleValueFields as $singleValueField) {
+            $this->assertEquals($node->fget($singleValueField), $queryParams['custom.' . $singleValueField]);
+        }
+
+        $booleanFields = ['ads_enabled', 'is_full_episode', 'is_live', 'is_promo', 'is_unlisted', 'sharing_enabled'];
+        foreach($booleanFields as $booleanField) {
+            $this->assertEquals(
+                $node->get($booleanField) ? 'true' : 'false',
+                $queryParams['custom.' . $booleanField],
+            );
+        }
+
+        $tags = array_flip(explode(',', urldecode($queryParams['tags'])));
+        $this->assertTrue(isset($tags['id:' . $node->fget('_id')]));
+        $this->assertTrue(isset($tags['is_unlisted:' . ($node->get('is_unlisted') ? 'true' : 'false')]));
+        $this->assertTrue(isset($tags['status:' . $node->fget('status')]));
+        foreach ($categories as $category) {
+            $this->assertTrue(isset($tags['category:' . $category->get('slug')]));
+        }
+        foreach (['mpm', 'show'] as $field) {
+            $this->assertTrue(isset($tags[$field . ':' . $node->fget($field)]));
         }
     }
 
