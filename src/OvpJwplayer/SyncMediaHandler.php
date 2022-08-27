@@ -582,7 +582,11 @@ class SyncMediaHandler implements CommandHandler
         $parameters['custom.has_music'] = $node->get('has_music');
 
         if (count($categories) > 0) {
-            $parameters['custom.categories'] = implode(',', array_map(fn($n) => $n->fget('slug'), $categories));
+            $parameters['custom.categories'] = implode(',', array_map(fn($n) => $n->get('slug'), $categories));
+        }
+
+        if (count($people) > 0) {
+            $parameters['custom.people'] = implode(',', array_map(fn($n) => $n->get('slug'), $people));
         }
 
         foreach ($node->get('tags', []) as $key => $value) {
