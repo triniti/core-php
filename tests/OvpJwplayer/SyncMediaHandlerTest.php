@@ -17,6 +17,7 @@ use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\Scheduler\Scheduler;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Gdbots\Schemas\Pbjx\StreamId;
+use Gdbots\UriTemplate\UriTemplateService;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -399,19 +400,29 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
             'foo_bar' => 'baz',
         ];
         $hashtags = ['qux'];
+
+        $title = 'i cant believe its not butter';
+        $description = 'oh, no one ever said it was butter...';
+        $duration = 30;
+        $expiresAt = date('Y-m-d\TH:i:s.u\Z');
+        $kalturaMp4Url = 'https://www.very-cool-place.mp4';
         $node = VideoV1::fromArray([
-            '_id'             => '7afcc2f1-9654-46d1-8fc1-b0511df257db',
-            'kaltura_mp4_url' => 'https://www.very-cool-place.mp4',
-            'order_date'      => new \DateTime(),
-            'person_refs'     => array_map([NodeRef::class, 'fromNode'], $people),
-            'primary_person_refs'     => array_map([NodeRef::class, 'fromNode'], $primaryPeople),
-            'category_refs'   => array_map([NodeRef::class, 'fromNode'], $categories),
-            'channel_ref'     => $channel->generateNodeRef(),
-            'mpm' => '2065683',
-            'show' => 'wonder_showzen',
-            'tvpg_rating' => 'TV-PG',
-            'tags' => $tags,
-            'hashtags' => $hashtags
+            '_id'                 => '7afcc2f1-9654-46d1-8fc1-b0511df257db',
+            'category_refs'       => array_map([NodeRef::class, 'fromNode'], $categories),
+            'channel_ref'         => $channel->generateNodeRef(),
+            'description'         => $description,
+            'duration'            => $duration,
+            'expires_at'          => $expiresAt,
+            'hashtags'            => $hashtags,
+            'kaltura_mp4_url'     => $kalturaMp4Url,
+            'mpm'                 => '2065683',
+            'order_date'          => new \DateTime(),
+            'person_refs'         => array_map([NodeRef::class, 'fromNode'], $people),
+            'primary_person_refs' => array_map([NodeRef::class, 'fromNode'], $primaryPeople),
+            'show'                => 'wonder_showzen',
+            'tags'                => $tags,
+            'title'               => $title,
+            'tvpg_rating'         => 'TV-PG',
         ]);
         $this->ncr->putNode($node);
 
@@ -435,9 +446,19 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
             unset($queryParams[$key]);
         }
 
+        $this->assertTrue(isset($queryParams['link']));
+        $this->assertEquals(rawurlencode($node::schema()->getCurie()->getVendor()), $queryParams['author']);
+        $this->assertEquals(rawurlencode(pathinfo($kalturaMp4Url, PATHINFO_EXTENSION)), $queryParams['sourceformat']);
+        $this->assertEquals(rawurlencode($kalturaMp4Url), $queryParams['sourceurl']);
+        $this->assertEquals(rawurlencode((string)$node->get('expires_at')->getTimestamp()), $queryParams['expires_date']);
+        $this->assertEquals(rawurlencode((string)$node->get('created_at')->getSeconds()), $queryParams['date']);
+        foreach (['title', 'description', 'duration'] as $param) {
+            $this->assertEquals(rawurlencode((string)$node->get($param)), $queryParams[$param]);
+        }
+
         foreach ($tags as $key => $value) {
             $this->assertEquals(
-                $node->getFromMap('tags', $key),
+                rawurlencode($node->getFromMap('tags', $key)),
                 $queryParams['custom.' . $key],
             );
         }
@@ -447,11 +468,12 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
             $queryParams['custom.categories'],
         );
 
-        $this->assertEquals($node->fget('_id'), $queryParams['custom.id']);
+        $this->assertEquals(rawurlencode($node->fget('_id')), $queryParams['custom.id']);
+        $this->assertEquals(rawurlencode($channel->get('slug')), $queryParams['custom.channel_slug']);
 
         $singleValueFields = ['status', 'has_music', 'mpm', 'show', 'tvpg_rating'];
         foreach ($singleValueFields as $singleValueField) {
-            $this->assertEquals($node->fget($singleValueField), $queryParams['custom.' . $singleValueField]);
+            $this->assertEquals(rawurlencode((string)$node->fget($singleValueField)), $queryParams['custom.' . $singleValueField]);
         }
 
         $booleanFields = ['ads_enabled', 'is_full_episode', 'is_live', 'is_promo', 'is_unlisted', 'sharing_enabled'];

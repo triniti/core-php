@@ -477,15 +477,16 @@ class SyncMediaHandler implements CommandHandler
             ));
         }
 
+        $title = $node->get('title');
         $parameters = [
             'author'       => $node::schema()->getQName()->getVendor(),
-            'description'  => $node->get('description', $node->get('title')),
+            'description'  => $node->get('description', $title),
             'duration'     => $node->get('duration'),
             'link'         => UriTemplateService::expand("{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()),
             'sourceformat' => $sourceFormat,
             'sourcetype'   => 'url',
             'sourceurl'    => $sourceUrl,
-            'title'        => $node->get('title'),
+            'title'        => $title,
         ];
 
         $parameters['date'] = NodeStatus::PUBLISHED->value === $node->fget('status')
@@ -502,7 +503,7 @@ class SyncMediaHandler implements CommandHandler
         }
 
         $tags = [
-            'id:' . $node->get('_id'),
+            'id:' . $node->fget('_id'),
             'is_unlisted:' . ($node->get('is_unlisted') ? 'true' : 'false'),
             'status:' . $node->fget('status'),
         ];
@@ -576,7 +577,7 @@ class SyncMediaHandler implements CommandHandler
             $parameters['custom.' . $field] = $node->get($field) ? 'true' : 'false';
         }
 
-        $parameters['custom.id'] = $node->get('_id');
+        $parameters['custom.id'] = $node->fget('_id');
         $parameters['custom.status'] = $node->fget('status');
         $parameters['custom.has_music'] = $node->get('has_music');
 
