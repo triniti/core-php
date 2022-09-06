@@ -161,7 +161,7 @@ class SyncMediaHandler implements CommandHandler
             ));
         }
 
-        return unserialize($response->getBody()->getContents())['video']['key'];
+        return json_decode($response->getBody()->getContents(), true)['video']['key'];
     }
 
     protected function updateVideo(Message $command, Pbjx $pbjx, Message $node, array $parameters): bool
@@ -258,7 +258,7 @@ class SyncMediaHandler implements CommandHandler
             throw $e;
         }
 
-        $linkData = unserialize($response->getBody()->getContents())['link'];
+        $linkData = json_decode($response->getBody()->getContents(), true)['link'];
         $uploadUrl = $this->createUploadUrl($linkData);
         $this->guzzleClient->post($uploadUrl, [
             'multipart' => [[
@@ -293,7 +293,7 @@ class SyncMediaHandler implements CommandHandler
             throw $e;
         }
 
-        $tracks = unserialize($response->getBody()->getContents())['tracks'];
+        $tracks = json_decode($response->getBody()->getContents(), true)['tracks'];
         foreach ($tracks as $track) {
             $qString = $this->createAuthenticatedQString([
                 'track_key' => $track['key'],
@@ -342,7 +342,7 @@ class SyncMediaHandler implements CommandHandler
                 throw $e;
             }
 
-            $linkData = unserialize($response->getBody()->getContents())['link'];
+            $linkData = json_decode($response->getBody()->getContents(), true)['link'];
             $uploadUrl = $this->createUploadUrl($linkData);
             $uploadResponse = $this->guzzleClient->post($uploadUrl, [
                 'multipart' => [[
@@ -352,7 +352,7 @@ class SyncMediaHandler implements CommandHandler
                 ]],
             ]);
 
-            $captionKey = unserialize($uploadResponse->getBody()->getContents())['media']['key'];
+            $captionKey = json_decode($uploadResponse->getBody()->getContents(), true)['media']['key'];
             $captionKeyMap[$language] = $captionKey;
         }
 
@@ -435,7 +435,7 @@ class SyncMediaHandler implements CommandHandler
             ));
         }
 
-        return unserialize($response->getBody()->getContents());
+        return json_decode($response->getBody()->getContents(), true);
     }
 
     protected function marshalParameters(Message $node, ?array $media = null): array
@@ -639,7 +639,7 @@ class SyncMediaHandler implements CommandHandler
         $parameters['api_nonce'] = mt_rand(10000000, 99999999);
         $parameters['api_timestamp'] = time();
         $parameters['api_key'] = $this->key;
-        $parameters['api_format'] = 'php'; // fixme: should use json here to avoid unserializing potentially malicious php
+        $parameters['api_format'] = 'json';
 
         $encodedParameters = [];
         foreach ($parameters as $key => $value) {
@@ -659,7 +659,7 @@ class SyncMediaHandler implements CommandHandler
     protected function createUploadUrl(array $linkData): string
     {
         return sprintf(
-            '%s://%s%s?api_format=php&key=%s&token=%s',
+            '%s://%s%s?api_format=json&key=%s&token=%s',
             $linkData['protocol'],
             $linkData['address'],
             $linkData['path'],

@@ -198,15 +198,15 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testCreateWithUrlAndCaptionAndThumbnail(): void
     {
         $jwplayerMediaId = 'foo';
-        $createVideoStream = Utils::streamFor(serialize([
+        $createVideoStream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
         ]));
-        $listCaptionsStream = Utils::streamFor(serialize([
+        $listCaptionsStream = Utils::streamFor(json_encode([
             'tracks' => [['key' => 'foo']],
         ]));
-        $captionUploadUrlStream = Utils::streamFor(serialize([
+        $captionUploadUrlStream = Utils::streamFor(json_encode([
             'link' => [
                 'protocol' => 'foo',
                 'address'  => 'foo',
@@ -218,12 +218,12 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
             ],
         ]));
         $newCaptionKey = 'foo';
-        $createCaptionResponseStream = Utils::streamFor(serialize([
+        $createCaptionResponseStream = Utils::streamFor(json_encode([
             'media' => [
                 'key' => $newCaptionKey,
             ],
         ]));
-        $thumbnailUploadUrlStream = Utils::streamFor(serialize([
+        $thumbnailUploadUrlStream = Utils::streamFor(json_encode([
             'link' => [
                 'protocol' => 'foo',
                 'address'  => 'foo',
@@ -284,7 +284,7 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testCreateWithRef(): void
     {
         $jwplayerMediaId = 'foo';
-        $stream = Utils::streamFor(serialize([
+        $stream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
@@ -321,7 +321,7 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testCreateWithKalturaMp4Url(): void
     {
         $jwplayerMediaId = 'foo';
-        $stream = Utils::streamFor(serialize([
+        $stream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
@@ -358,7 +358,7 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testCreateWithMarshaledParameters(): void
     {
         $jwplayerMediaId = 'foo';
-        $stream = Utils::streamFor(serialize([
+        $stream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
@@ -505,7 +505,7 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testCreateWithKalturaFlavor(): void
     {
         $jwplayerMediaId = 'foo';
-        $stream = Utils::streamFor(serialize([
+        $stream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
@@ -546,7 +546,7 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testUpdateWithMezzanineUrl(): void
     {
         $jwplayerMediaId = 'udpatewithurl';
-        $stream = Utils::streamFor(serialize([
+        $stream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
@@ -586,15 +586,15 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testUpdateWithLiveM3u8Url(): void
     {
         $jwplayerMediaId = 'foo';
-        $getVideoStream = Utils::streamFor(serialize([
+        $getVideoStream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
         ]));
-        $listCaptionsStream = Utils::streamFor(serialize([
+        $listCaptionsStream = Utils::streamFor(json_encode([
             'tracks' => [['key' => 'fun']],
         ]));
-        $captionUploadUrlStream = Utils::streamFor(serialize([
+        $captionUploadUrlStream = Utils::streamFor(json_encode([
             'link' => [
                 'protocol' => 'ok',
                 'address'  => 'ok',
@@ -606,12 +606,12 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
             ],
         ]));
         $newCaptionKey = 'daydream';
-        $createCaptionResponseStream = Utils::streamFor(serialize([
+        $createCaptionResponseStream = Utils::streamFor(json_encode([
             'media' => [
                 'key' => $newCaptionKey,
             ],
         ]));
-        $thumbnailUploadUrlStream = Utils::streamFor(serialize([
+        $thumbnailUploadUrlStream = Utils::streamFor(json_encode([
             'link' => [
                 'protocol' => 'ok',
                 'address'  => 'ok',
@@ -674,7 +674,7 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testUpdateWithMezzanineRef(): void
     {
         $jwplayerMediaId = 'foo';
-        $stream = Utils::streamFor(serialize([
+        $stream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
@@ -713,12 +713,12 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testUpdateWithMezzanineRefAndPosterImage(): void
     {
         $jwplayerMediaId = 'foo';
-        $getVideoStream = Utils::streamFor(serialize([
+        $getVideoStream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
         ]));
-        $thumbnailUploadUrlStream = Utils::streamFor(serialize([
+        $thumbnailUploadUrlStream = Utils::streamFor(json_encode([
             'link' => [
                 'protocol' => 'ok',
                 'address'  => 'ok',
@@ -773,12 +773,12 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testUpdateWithStaleNcr(): void
     {
         $jwplayerMediaId = 'foo';
-        $getVideoStream = Utils::streamFor(serialize([
+        $getVideoStream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
         ]));
-        $thumbnailUploadUrlStream = Utils::streamFor(serialize([
+        $thumbnailUploadUrlStream = Utils::streamFor(json_encode([
             'link' => [
                 'protocol' => 'ok',
                 'address'  => 'ok',
