@@ -518,15 +518,22 @@ class SyncMediaHandler implements CommandHandler
             }
         }
 
-        $personRefs = array_unique(array_merge(
+        $refs = array_unique(array_merge(
             $node->get('person_refs', []),
-            $node->get('primary_person_refs', [])
+            $node->get('primary_person_refs', []),
+            $node->get('category_refs', [])
         ));
-        $people = $this->ncr->getNodes($personRefs);
-        $categories = $this->ncr->getNodes($node->get('category_refs', []));
-
-        foreach (array_merge($people, $categories) as $n) {
-            $tags[] = $n::schema()->getCurie()->getMessage() . ':' . $n->get('slug');
+        $refNodes = $this->ncr->getNodes($refs);
+        $people = [];
+        $categories = [];
+        foreach ($refNodes as $n) {
+            $message = $n::schema()->getCurie()->getMessage();
+            $tags[] = $message . ':' . $n->get('slug');
+            if ($message === 'person') {
+                $people[] = $n;
+            } else {
+                $categories[] = $n;
+            }
         }
 
         $parameters['tags'] = implode(',', $tags);
@@ -563,7 +570,7 @@ class SyncMediaHandler implements CommandHandler
             'id',
             'status',
         ]);
-        $existingCustomParameters = isset($media['video']['custom']) ? $media['video']['custom'] : [];
+        $existingCustomParameters = $media['video']['custom'] ?? [];
 
         foreach ($existingCustomParameters as $key => $value) {
             if (in_array($key, $deterministicCustomParameters)) {
