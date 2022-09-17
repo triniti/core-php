@@ -120,7 +120,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         return $reactions;
     }
 
-    protected function addReactions (Message $reactions): void
+    protected function addReactions(Message $reactions): void
     {
         foreach ([
                     'love',
