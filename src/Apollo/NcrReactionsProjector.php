@@ -48,7 +48,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         $nodeRef = $node->generateNodeRef();
         $lastEvent = $pbjxEvent->getLastEvent();
 
-        if (!$this->shouldHaveReactions($nodeRef)){
+        if (!$this->hasReactions($node)){
             return;
         }
 
@@ -71,7 +71,8 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             return;
         }
 
-        if (!$this->shouldHaveReactions($event->get('node_ref'))){
+        $node = $this->ncr->getNode($event->get('node_ref'), true, ['causator' => $event]);
+        if (!$this->hasReactions($node)){
             return;
         }
 
@@ -156,14 +157,9 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         return NodeRef::fromString(str_replace($nodeRef->getLabel() . ':', 'reactions:', $nodeRef->toString()));
     }
 
-    protected function shouldHaveReactions(NodeRef $nodeRef): bool
+    protected function hasReactions(Message $node): bool
     {
-        // override to implement other nodes that should have reactions, by default, only articles have reactions.
-        $types = [
-            'article' => true,
-        ];
-
-        return $types[$nodeRef->getLabel()] ?? false;
+        return $node::schema()->hasMixin('triniti:apollo:mixin:has-reactions');
     }
 }
 
