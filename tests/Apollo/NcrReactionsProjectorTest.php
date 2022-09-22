@@ -13,8 +13,10 @@ use Acme\Schemas\News\Event\ArticleScheduledV1;
 use Acme\Schemas\News\Event\ArticleUnpublishedV1;
 use Acme\Schemas\News\Event\ArticleUpdatedV1;
 use Acme\Schemas\News\Node\ArticleV1;
+use Aws\DynamoDb\DynamoDbClient;
 use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Ncr\Exception\NodeNotFound;
+use Gdbots\Ncr\Repository\DynamoDb\TableManager;
 use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Pbj\WellKnown\Microtime;
 use Gdbots\Pbj\WellKnown\NodeRef;
@@ -29,13 +31,17 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
     private MockNcrSearch $ncrSearch;
     private NcrReactionsProjector $projector;
     private InMemoryNcr $ncr;
+    private TableManager $tableManager;
+    private DynamoDbClient $dynamoDbClient;
 
     public function setup(): void
     {
         parent::setup();
         $this->ncrSearch = new MockNcrSearch();
         $this->ncr = new InMemoryNcr();
-        $this->projector = new NcrReactionsProjector($this->ncr, $this->ncrSearch);
+        $this->tableManager = new TableManager('test');
+        $this->dynamoDbClient = new DynamoDbClient(['region' => 'us-west-2', 'version' => '2012-08-10']);
+        $this->projector = new NcrReactionsProjector($this->dynamoDbClient, $this->tableManager, $this->ncr, $this->ncrSearch);
     }
 
     protected function createReactionsRef(NodeRef $nodeRef): NodeRef
@@ -227,7 +233,7 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
 
     public function testNodeCreatedAndUpdated(): void
     {
-        $node = ArticleV1::create()->set('title', 'poll-title');
+        $node = ArticleV1::create()->set('title', 'article-title');
         $nodeRef = NodeRef::fromNode($node);
         $createdEvent = ArticleCreatedV1::create()->set('node', $node);
         $createdPbjxEvent = new NodeProjectedEvent($node, $createdEvent);
@@ -257,30 +263,9 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
         $this->assertSame('new-title', $this->ncrSearch->getNode($reactionsRef)->get('title'));
     }
 
-    public function testReactionsAdded(): void
-    {
-        $node = ArticleV1::create()->set('title', 'poll-title');
-        $this->ncr->putNode($node);
-        $nodeRef = NodeRef::fromNode($node);
-        $event = ReactionsAddedV1::create()
-            ->set('node_ref', $nodeRef)
-            ->addToSet('reactions', ['wtf']);
-        $this->projector->onReactionsAdded($event, $this->pbjx);
-
-        $reactionsRef = $this->createReactionsRef($nodeRef);
-        $reactions = $this->ncr->getNode($reactionsRef);
-
-        $this->assertSame(1, $reactions->getFromMap('reactions', 'wtf'));
-        $this->assertSame(0, $reactions->getFromMap('reactions', 'love'));
-        $this->assertSame(0, $reactions->getFromMap('reactions', 'haha'));
-        $this->assertSame(0, $reactions->getFromMap('reactions', 'wow'));
-        $this->assertSame(0, $reactions->getFromMap('reactions', 'trash'));
-        $this->assertSame(0, $reactions->getFromMap('reactions', 'sad'));
-    }
-
     public function testInvalidReactionsAdded(): void
     {
-        $node = ArticleV1::create()->set('title', 'poll-title');
+        $node = ArticleV1::create()->set('title', 'article-title');
         $this->ncr->putNode($node);
         $nodeRef = NodeRef::fromNode($node);
         $event = ReactionsAddedV1::create()

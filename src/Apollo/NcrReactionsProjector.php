@@ -3,11 +3,14 @@ declare(strict_types=1);
 
 namespace Triniti\Apollo;
 
+use Aws\DynamoDb\DynamoDbClient;
 use Gdbots\Ncr\Aggregate;
 use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Ncr\NcrSearch;
+use Gdbots\Ncr\Repository\DynamoDb\NodeTable;
+use Gdbots\Ncr\Repository\DynamoDb\TableManager;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbj\WellKnown\Microtime;
@@ -19,23 +22,21 @@ use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 
 class NcrReactionsProjector implements EventSubscriber, PbjxProjector
 {
-    protected Ncr $ncr;
-    protected NcrSearch $ncrSearch;
-    protected bool $enabled;
-
     public static function getSubscribedEvents(): array
     {
         return [
-            'gdbots:ncr:mixin:node.projected'       => 'onNodeProjected',
-            'triniti:apollo:event:reactions-added'  => 'onReactionsAdded',
+            'gdbots:ncr:mixin:node.projected'      => 'onNodeProjected',
+            'triniti:apollo:event:reactions-added' => 'onReactionsAdded',
         ];
     }
 
-    public function __construct(Ncr $ncr, NcrSearch $ncrSearch, bool $enabled = true)
-    {
-        $this->ncr = $ncr;
-        $this->ncrSearch = $ncrSearch;
-        $this->enabled = $enabled;
+    public function __construct(
+        protected DynamoDbClient $client,
+        protected TableManager $tableManager,
+        protected Ncr $ncr,
+        protected NcrSearch $ncrSearch,
+        protected bool $enabled = true
+    ) {
     }
 
     public function onNodeProjected(NodeProjectedEvent $pbjxEvent): void
@@ -48,7 +49,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         $nodeRef = $node->generateNodeRef();
         $lastEvent = $pbjxEvent->getLastEvent();
 
-        if (!$this->hasReactions($nodeRef)){
+        if (!$this->hasReactions($nodeRef)) {
             return;
         }
 
@@ -60,7 +61,11 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             return;
         }
 
-        $reactions = $this->getOrCreateReactions($nodeRef, $lastEvent);
+        $reactions = $this->getReactions($nodeRef, $lastEvent);
+        if (!$reactions) {
+            $reactions = $this->createReactions($nodeRef);
+        }
+
         $this->mergeNode($node, $reactions);
         $this->projectNode($reactions, $lastEvent, $pbjxEvent::getPbjx());
     }
@@ -71,20 +76,74 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             return;
         }
 
-        $node = $this->ncr->getNode($event->get('node_ref'), true, ['causator' => $event]);
-        if (!$this->hasReactions($event->get('node_ref'))){
+        if (!$event->has('node_ref')) {
             return;
         }
 
-        $reactions = $this->getOrCreateReactions($event->get('node_ref'), $event);
+        $nodeRef = $event->get('node_ref');
+        if (!$this->hasReactions($nodeRef)) {
+            return;
+        }
+
+        // On older node, chances are reactions node has not been created yet.
+        // Moving forward all new nodes will have a reactions node created when that node is first created
+        $reactions = $this->getReactions($nodeRef, $event);
+        if (!$reactions) {
+            $reactions = $this->createReactions($nodeRef);
+            $node = $this->ncr->getNode($nodeRef, true, ['causator' => $event]);
+            $this->mergeNode($node, $reactions);
+            $this->projectNode($reactions, $event, $pbjx);
+        }
+
+        $this->incrementReactions($reactions, $event);
+    }
+
+    protected function incrementReactions(Message $reactions, Message $event): void
+    {
+        $updateExpression = '';
+        $expressionAttributeNames = [];
+
+        $context = [
+            'causator' => $event,
+            'tenant_id' => $event->get('ctx_tenant_id'),
+        ];
+
+        $nodeRef = $event->get('node_ref');
+        $reactionsRef = $this->createReactionsRef($nodeRef);
+        $tableName = $this->tableManager->getNodeTableName($reactionsRef->getQName(), $context);
 
         foreach ($event->get('reactions') as $reaction) {
             if ($reactions->isInMap('reactions', $reaction)) {
-                $reactions->addToMap('reactions', $reaction, $reactions->getFromMap('reactions', $reaction) + 1);
+                $updateExpression .= " set reactions.#{$reaction} = reactions.#{$reaction} + :v_incr,";
+                $expressionAttributeNames["#{$reaction}"] = $reaction;
             }
         }
+        $updateExpression = trim($updateExpression, ', ');
 
-        $this->projectNode($reactions, $event, $pbjx);
+        if (empty($expressionAttributeNames)) {
+            return;
+        }
+
+        $params = [
+            'TableName'                 => $tableName,
+            'Key'                       => [
+                NodeTable::HASH_KEY_NAME => ['S' => $reactionsRef->toString()],
+            ],
+            'UpdateExpression'          => $updateExpression,
+            'ExpressionAttributeNames'  => $expressionAttributeNames,
+            'ExpressionAttributeValues' => [
+                ':v_incr' => ['N' => '1'],
+            ],
+            'ReturnValues'              => 'NONE',
+        ];
+
+        $this->client->updateItem($params);
+
+        // this ensures the ncr cache is current
+        // note that we don't put a new node as that would
+        // overwrite the atomic counting above.
+        $reactions = $this->ncr->getNode($reactionsRef, true, $context);
+        $this->ncrSearch->indexNodes([$reactions], $context);
     }
 
     protected function projectNode(Message $reactions, Message $event, Pbjx $pbjx): void
@@ -101,24 +160,31 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         $pbjx->trigger($reactions, 'projected', new NodeProjectedEvent($reactions, $event), false, false);
     }
 
-    protected function getOrCreateReactions(NodeRef $nodeRef, Message $event): Message
+    protected function createReactions(NodeRef $nodeRef): Message
     {
         static $class = null;
         if (null === $class) {
             $class = MessageResolver::resolveCurie('*:apollo:node:reactions:v1');
         }
 
+        $reactions = $class::fromArray(['_id' => $nodeRef->getId()]);
+        $this->addReactions($reactions);
+
+        return $reactions;
+    }
+
+    protected function getReactions(NodeRef $nodeRef, Message $event): ?Message
+    {
         try {
             $reactionsRef = $this->createReactionsRef($nodeRef);
-            $reactions = $this->ncr->getNode($reactionsRef, true, ['causator' => $event]);
+            return $this->ncr->getNode($reactionsRef, true, ['causator' => $event]);
         } catch (NodeNotFound $nf) {
-            $reactions = $class::fromArray(['_id' => $nodeRef->getId()]);
-            $this->addReactions($reactions);
+            // Node not found do nothing here
         } catch (\Throwable $e) {
             throw $e;
         }
 
-        return $reactions;
+        return null;
     }
 
     protected function addReactions(Message $reactions): void
