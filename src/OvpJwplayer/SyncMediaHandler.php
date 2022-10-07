@@ -161,7 +161,7 @@ class SyncMediaHandler implements CommandHandler
             ));
         }
 
-        return unserialize($response->getBody()->getContents())['video']['key'];
+        return json_decode($response->getBody()->getContents(), true)['video']['key'];
     }
 
     protected function updateVideo(Message $command, Pbjx $pbjx, Message $node, array $parameters): bool
@@ -258,7 +258,7 @@ class SyncMediaHandler implements CommandHandler
             throw $e;
         }
 
-        $linkData = unserialize($response->getBody()->getContents())['link'];
+        $linkData = json_decode($response->getBody()->getContents(), true)['link'];
         $uploadUrl = $this->createUploadUrl($linkData);
         $this->guzzleClient->post($uploadUrl, [
             'multipart' => [[
@@ -293,7 +293,7 @@ class SyncMediaHandler implements CommandHandler
             throw $e;
         }
 
-        $tracks = unserialize($response->getBody()->getContents())['tracks'];
+        $tracks = json_decode($response->getBody()->getContents(), true)['tracks'];
         foreach ($tracks as $track) {
             $qString = $this->createAuthenticatedQString([
                 'track_key' => $track['key'],
@@ -342,7 +342,7 @@ class SyncMediaHandler implements CommandHandler
                 throw $e;
             }
 
-            $linkData = unserialize($response->getBody()->getContents())['link'];
+            $linkData = json_decode($response->getBody()->getContents(), true)['link'];
             $uploadUrl = $this->createUploadUrl($linkData);
             $uploadResponse = $this->guzzleClient->post($uploadUrl, [
                 'multipart' => [[
@@ -352,7 +352,7 @@ class SyncMediaHandler implements CommandHandler
                 ]],
             ]);
 
-            $captionKey = unserialize($uploadResponse->getBody()->getContents())['media']['key'];
+            $captionKey = json_decode($uploadResponse->getBody()->getContents(), true)['media']['key'];
             $captionKeyMap[$language] = $captionKey;
         }
 
@@ -435,7 +435,7 @@ class SyncMediaHandler implements CommandHandler
             ));
         }
 
-        return unserialize($response->getBody()->getContents());
+        return json_decode($response->getBody()->getContents(), true);
     }
 
     protected function marshalParameters(Message $node, ?array $media = null): array
@@ -477,15 +477,16 @@ class SyncMediaHandler implements CommandHandler
             ));
         }
 
+        $title = $node->get('title');
         $parameters = [
             'author'       => $node::schema()->getQName()->getVendor(),
-            'description'  => $node->get('description', $node->get('title')),
+            'description'  => $node->get('description', $title),
             'duration'     => $node->get('duration'),
             'link'         => UriTemplateService::expand("{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()),
             'sourceformat' => $sourceFormat,
             'sourcetype'   => 'url',
             'sourceurl'    => $sourceUrl,
-            'title'        => $node->get('title'),
+            'title'        => $title,
         ];
 
         $parameters['date'] = NodeStatus::PUBLISHED->value === $node->fget('status')
@@ -502,20 +503,10 @@ class SyncMediaHandler implements CommandHandler
         }
 
         $tags = [
-            'id:' . $node->get('_id'),
+            'id:' . $node->fget('_id'),
             'is_unlisted:' . ($node->get('is_unlisted') ? 'true' : 'false'),
             'status:' . $node->fget('status'),
         ];
-
-        $refs = array_unique(array_merge(
-            $node->get('category_refs', []),
-            $node->get('person_refs', []),
-            $node->get('primary_person_refs', [])
-        ));
-
-        foreach ($this->ncr->getNodes($refs) as $n) {
-            $tags[] = $n::schema()->getCurie()->getMessage() . ':' . $n->get('slug');
-        }
 
         foreach ($node->get('hashtags', []) as $hashtag) {
             $tags[] = 'hashtag:' . strtolower($hashtag);
@@ -524,6 +515,24 @@ class SyncMediaHandler implements CommandHandler
         foreach (['mpm', 'show'] as $field) {
             if ($node->has($field)) {
                 $tags[] = $field . ':' . $node->get($field);
+            }
+        }
+
+        $refs = array_unique(array_merge(
+            $node->get('person_refs', []),
+            $node->get('primary_person_refs', []),
+            $node->get('category_refs', [])
+        ));
+        $refNodes = $this->ncr->getNodes($refs);
+        $people = [];
+        $categories = [];
+        foreach ($refNodes as $n) {
+            $message = $n::schema()->getCurie()->getMessage();
+            $tags[] = $message . ':' . $n->get('slug');
+            if ($message === 'person') {
+                $people[] = $n;
+            } else {
+                $categories[] = $n;
             }
         }
 
@@ -561,7 +570,7 @@ class SyncMediaHandler implements CommandHandler
             'id',
             'status',
         ]);
-        $existingCustomParameters = isset($media['video']['custom']) ? $media['video']['custom'] : [];
+        $existingCustomParameters = $media['video']['custom'] ?? [];
 
         foreach ($existingCustomParameters as $key => $value) {
             if (in_array($key, $deterministicCustomParameters)) {
@@ -575,9 +584,17 @@ class SyncMediaHandler implements CommandHandler
             $parameters['custom.' . $field] = $node->get($field) ? 'true' : 'false';
         }
 
-        $parameters['custom.id'] = $node->get('_id');
+        $parameters['custom.id'] = $node->fget('_id');
         $parameters['custom.status'] = $node->fget('status');
         $parameters['custom.has_music'] = $node->get('has_music');
+
+        if (count($categories) > 0) {
+            $parameters['custom.categories'] = implode(',', array_map(fn($n) => $n->get('slug'), $categories));
+        }
+
+        if (count($people) > 0) {
+            $parameters['custom.people'] = implode(',', array_map(fn($n) => $n->get('slug'), $people));
+        }
 
         foreach ($node->get('tags', []) as $key => $value) {
             $parameters['custom.' . $key] = $value;
@@ -629,7 +646,7 @@ class SyncMediaHandler implements CommandHandler
         $parameters['api_nonce'] = mt_rand(10000000, 99999999);
         $parameters['api_timestamp'] = time();
         $parameters['api_key'] = $this->key;
-        $parameters['api_format'] = 'php'; // fixme: should use json here to avoid unserializing potentially malicious php
+        $parameters['api_format'] = 'json';
 
         $encodedParameters = [];
         foreach ($parameters as $key => $value) {
@@ -649,7 +666,7 @@ class SyncMediaHandler implements CommandHandler
     protected function createUploadUrl(array $linkData): string
     {
         return sprintf(
-            '%s://%s%s?api_format=php&key=%s&token=%s',
+            '%s://%s%s?api_format=json&key=%s&token=%s',
             $linkData['protocol'],
             $linkData['address'],
             $linkData['path'],

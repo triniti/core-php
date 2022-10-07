@@ -6,7 +6,10 @@ namespace Triniti\Tests\OvpJwplayer;
 use Acme\Schemas\Ovp\Command\UpdateVideoV1;
 use Acme\Schemas\Ovp\Event\VideoUpdatedV1;
 use Acme\Schemas\Ovp\Node\VideoV1;
+use Acme\Schemas\People\Node\PersonV1;
 use Acme\Schemas\Sys\Node\FlagsetV1;
+use Acme\Schemas\Taxonomy\Node\CategoryV1;
+use Acme\Schemas\Taxonomy\Node\ChannelV1;
 use Gdbots\Ncr\AggregateResolver;
 use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Pbj\Message;
@@ -14,9 +17,12 @@ use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\Scheduler\Scheduler;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Gdbots\Schemas\Pbjx\StreamId;
+use Gdbots\UriTemplate\UriTemplateService;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Utils;
 use Triniti\Dam\UrlProvider as DamUrlProvider;
@@ -192,15 +198,15 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testCreateWithUrlAndCaptionAndThumbnail(): void
     {
         $jwplayerMediaId = 'foo';
-        $createVideoStream = Utils::streamFor(serialize([
+        $createVideoStream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
         ]));
-        $listCaptionsStream = Utils::streamFor(serialize([
+        $listCaptionsStream = Utils::streamFor(json_encode([
             'tracks' => [['key' => 'foo']],
         ]));
-        $captionUploadUrlStream = Utils::streamFor(serialize([
+        $captionUploadUrlStream = Utils::streamFor(json_encode([
             'link' => [
                 'protocol' => 'foo',
                 'address'  => 'foo',
@@ -212,12 +218,12 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
             ],
         ]));
         $newCaptionKey = 'foo';
-        $createCaptionResponseStream = Utils::streamFor(serialize([
+        $createCaptionResponseStream = Utils::streamFor(json_encode([
             'media' => [
                 'key' => $newCaptionKey,
             ],
         ]));
-        $thumbnailUploadUrlStream = Utils::streamFor(serialize([
+        $thumbnailUploadUrlStream = Utils::streamFor(json_encode([
             'link' => [
                 'protocol' => 'foo',
                 'address'  => 'foo',
@@ -278,7 +284,7 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testCreateWithRef(): void
     {
         $jwplayerMediaId = 'foo';
-        $stream = Utils::streamFor(serialize([
+        $stream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
@@ -315,7 +321,7 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testCreateWithKalturaMp4Url(): void
     {
         $jwplayerMediaId = 'foo';
-        $stream = Utils::streamFor(serialize([
+        $stream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
@@ -349,10 +355,157 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
         }
     }
 
+    public function testCreateWithMarshaledParameters(): void
+    {
+        $jwplayerMediaId = 'foo';
+        $stream = Utils::streamFor(json_encode([
+            'video' => [
+                'key' => $jwplayerMediaId,
+            ],
+        ]));
+        $historyContainer = [];
+        $history = Middleware::history($historyContainer);
+        $response = new Response(200, [], $stream);
+        $handlerStack = HandlerStack::create(new MockHandler([$response]));
+        $handlerStack->push($history);
+        $httpClient = new HttpClient(['handler' => $handlerStack]);
+        $damUrlProvider = new DamUrlProvider();
+        $handler = new SyncMediaHandler(
+            'key',
+            'secret',
+            $this->ncr,
+            $damUrlProvider,
+            new ArtifactUrlProvider($damUrlProvider),
+            new Flags($this->ncr, 'acme:flagset:test'),
+            $httpClient
+        );
+
+        $primaryPersonSlugs = ['roald', 'dahl'];
+        $primaryPeople = array_map(fn($slug) => PersonV1::fromArray(['slug' => $slug]), $primaryPersonSlugs);
+
+        $personSlugs = ['james'];
+        $people = array_map(fn($slug) => PersonV1::fromArray(['slug' => $slug]), $personSlugs);
+
+        $categorySlugs = ['sloth', 'weasel'];
+        $categories = array_map(fn($slug) => CategoryV1::fromArray(['slug' => $slug]), $categorySlugs);
+
+        foreach (array_merge($primaryPeople, $people, $categories) as $node) {
+            $this->ncr->putNode($node);
+        }
+
+        $channel = ChannelV1::fromArray(['slug' => 'nice-channel']);
+        $this->ncr->putNode($channel);
+
+        $tags = [
+            'foo_bar' => 'baz',
+        ];
+        $hashtags = ['qux'];
+
+        $title = 'i cant believe its not butter';
+        $description = 'oh, no one ever said it was butter...';
+        $duration = 30;
+        $expiresAt = date('Y-m-d\TH:i:s.u\Z');
+        $kalturaMp4Url = 'https://www.very-cool-place.mp4';
+        $node = VideoV1::fromArray([
+            '_id'                 => '7afcc2f1-9654-46d1-8fc1-b0511df257db',
+            'category_refs'       => array_map([NodeRef::class, 'fromNode'], $categories),
+            'channel_ref'         => $channel->generateNodeRef(),
+            'description'         => $description,
+            'duration'            => $duration,
+            'expires_at'          => $expiresAt,
+            'hashtags'            => $hashtags,
+            'kaltura_mp4_url'     => $kalturaMp4Url,
+            'mpm'                 => '2065683',
+            'order_date'          => new \DateTime(),
+            'person_refs'         => array_map([NodeRef::class, 'fromNode'], $people),
+            'primary_person_refs' => array_map([NodeRef::class, 'fromNode'], $primaryPeople),
+            'show'                => 'wonder_showzen',
+            'tags'                => $tags,
+            'title'               => $title,
+            'tvpg_rating'         => 'TV-PG',
+        ]);
+        $this->ncr->putNode($node);
+
+        $nodeRef = $node->generateNodeRef();
+        $command = SyncMediaV1::create()->set('node_ref', $nodeRef);
+        $handler->handleCommand($command, $this->pbjx);
+
+        foreach ($this->pbjx->getEventStore()->pipeAllEvents() as [$event, $streamId]) {
+            $this->assertInstanceOf(MediaSyncedV1::class, $event);
+            $this->assertTrue($event->get('node_ref')->equals($nodeRef));
+            $this->assertTrue($event->get('jwplayer_media_id') === $jwplayerMediaId);
+        }
+
+        /** @var Request $request */
+        $request = $historyContainer[0]['request'];
+        $queryParams = explode('&', $request->getUri()->getQuery());
+
+        foreach ($queryParams as $key => $queryParam) {
+            $exploded = explode('=', $queryParam);
+            $queryParams[$exploded[0]] = $exploded[1];
+            unset($queryParams[$key]);
+        }
+
+        $this->assertTrue(isset($queryParams['link']));
+        $this->assertEquals(rawurlencode($node::schema()->getCurie()->getVendor()), $queryParams['author']);
+        $this->assertEquals(rawurlencode(pathinfo($kalturaMp4Url, PATHINFO_EXTENSION)), $queryParams['sourceformat']);
+        $this->assertEquals(rawurlencode($kalturaMp4Url), $queryParams['sourceurl']);
+        $this->assertEquals(rawurlencode((string)$node->get('expires_at')->getTimestamp()), $queryParams['expires_date']);
+        $this->assertEquals(rawurlencode((string)$node->get('created_at')->getSeconds()), $queryParams['date']);
+        foreach (['title', 'description', 'duration'] as $param) {
+            $this->assertEquals(rawurlencode((string)$node->get($param)), $queryParams[$param]);
+        }
+
+        foreach ($tags as $key => $value) {
+            $this->assertEquals(
+                rawurlencode($node->getFromMap('tags', $key)),
+                $queryParams['custom.' . $key],
+            );
+        }
+
+        $this->assertEquals(
+            rawurlencode(implode(',', $categorySlugs)),
+            $queryParams['custom.categories'],
+        );
+
+        $this->assertEquals(rawurlencode($node->fget('_id')), $queryParams['custom.id']);
+        $this->assertEquals(rawurlencode($channel->get('slug')), $queryParams['custom.channel_slug']);
+
+        $singleValueFields = ['status', 'has_music', 'mpm', 'show', 'tvpg_rating'];
+        foreach ($singleValueFields as $singleValueField) {
+            $this->assertEquals(rawurlencode((string)$node->fget($singleValueField)), $queryParams['custom.' . $singleValueField]);
+        }
+
+        $booleanFields = ['ads_enabled', 'is_full_episode', 'is_live', 'is_promo', 'is_unlisted', 'sharing_enabled'];
+        foreach($booleanFields as $booleanField) {
+            $this->assertEquals(
+                $node->get($booleanField) ? 'true' : 'false',
+                $queryParams['custom.' . $booleanField],
+            );
+        }
+
+        $tags = array_flip(explode(',', urldecode($queryParams['tags'])));
+        $this->assertTrue(isset($tags['id:' . $node->fget('_id')]));
+        $this->assertTrue(isset($tags['is_unlisted:' . ($node->get('is_unlisted') ? 'true' : 'false')]));
+        $this->assertTrue(isset($tags['status:' . $node->fget('status')]));
+        foreach ($categorySlugs as $categorySlug) {
+            $this->assertTrue(isset($tags['category:' . $categorySlug]));
+        }
+        foreach (array_merge($personSlugs, $primaryPersonSlugs) as $personSlug) {
+            $this->assertTrue(isset($tags['person:' . $personSlug]));
+        }
+        foreach (['mpm', 'show'] as $field) {
+            $this->assertTrue(isset($tags[$field . ':' . $node->fget($field)]));
+        }
+        foreach ($hashtags as $hashtag) {
+            $this->assertTrue(isset($tags['hashtag:' . $hashtag]));
+        }
+    }
+
     public function testCreateWithKalturaFlavor(): void
     {
         $jwplayerMediaId = 'foo';
-        $stream = Utils::streamFor(serialize([
+        $stream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
@@ -393,7 +546,7 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testUpdateWithMezzanineUrl(): void
     {
         $jwplayerMediaId = 'udpatewithurl';
-        $stream = Utils::streamFor(serialize([
+        $stream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
@@ -433,15 +586,15 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testUpdateWithLiveM3u8Url(): void
     {
         $jwplayerMediaId = 'foo';
-        $getVideoStream = Utils::streamFor(serialize([
+        $getVideoStream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
         ]));
-        $listCaptionsStream = Utils::streamFor(serialize([
+        $listCaptionsStream = Utils::streamFor(json_encode([
             'tracks' => [['key' => 'fun']],
         ]));
-        $captionUploadUrlStream = Utils::streamFor(serialize([
+        $captionUploadUrlStream = Utils::streamFor(json_encode([
             'link' => [
                 'protocol' => 'ok',
                 'address'  => 'ok',
@@ -453,12 +606,12 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
             ],
         ]));
         $newCaptionKey = 'daydream';
-        $createCaptionResponseStream = Utils::streamFor(serialize([
+        $createCaptionResponseStream = Utils::streamFor(json_encode([
             'media' => [
                 'key' => $newCaptionKey,
             ],
         ]));
-        $thumbnailUploadUrlStream = Utils::streamFor(serialize([
+        $thumbnailUploadUrlStream = Utils::streamFor(json_encode([
             'link' => [
                 'protocol' => 'ok',
                 'address'  => 'ok',
@@ -521,7 +674,7 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testUpdateWithMezzanineRef(): void
     {
         $jwplayerMediaId = 'foo';
-        $stream = Utils::streamFor(serialize([
+        $stream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
@@ -560,12 +713,12 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testUpdateWithMezzanineRefAndPosterImage(): void
     {
         $jwplayerMediaId = 'foo';
-        $getVideoStream = Utils::streamFor(serialize([
+        $getVideoStream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
         ]));
-        $thumbnailUploadUrlStream = Utils::streamFor(serialize([
+        $thumbnailUploadUrlStream = Utils::streamFor(json_encode([
             'link' => [
                 'protocol' => 'ok',
                 'address'  => 'ok',
@@ -620,12 +773,12 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
     public function testUpdateWithStaleNcr(): void
     {
         $jwplayerMediaId = 'foo';
-        $getVideoStream = Utils::streamFor(serialize([
+        $getVideoStream = Utils::streamFor(json_encode([
             'video' => [
                 'key' => $jwplayerMediaId,
             ],
         ]));
-        $thumbnailUploadUrlStream = Utils::streamFor(serialize([
+        $thumbnailUploadUrlStream = Utils::streamFor(json_encode([
             'link' => [
                 'protocol' => 'ok',
                 'address'  => 'ok',
