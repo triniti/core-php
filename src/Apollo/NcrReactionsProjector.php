@@ -129,12 +129,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         ];
 
         $this->client->updateItem($params);
-
-        // this ensures the ncr cache is current
-        // note that we don't put a new node as that would
-        // overwrite the atomic counting above.
-        $reactions = $this->ncr->getNode($reactionsRef, true, $context);
-        $this->ncrSearch->indexNodes([$reactions], $context);
+        $this->ncrSearch->indexNodes([$this->ncr->getNode($reactionsRef, true, $context)], $context);
     }
 
     protected function projectNode(Message $reactions, Message $event, Pbjx $pbjx): void
