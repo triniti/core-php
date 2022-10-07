@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Triniti\Tests\Apollo;
 
+use Acme\Schemas\Apollo\Node\ReactionsV1;
 use Acme\Schemas\News\Event\ArticleCreatedV1;
 use Acme\Schemas\News\Event\ArticleDeletedV1;
 use Acme\Schemas\News\Event\ArticleExpiredV1;
@@ -266,8 +267,23 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
     public function testInvalidReactionsAdded(): void
     {
         $node = ArticleV1::create()->set('title', 'article-title');
-        $this->ncr->putNode($node);
         $nodeRef = NodeRef::fromNode($node);
+        $reactions = ReactionsV1::fromArray(['_id' => $nodeRef->getId()])
+            ->set('title', 'article-title');
+
+        foreach ([
+                     'love',
+                     'haha',
+                     'wow',
+                     'wtf',
+                     'trash',
+                     'sad',
+                 ] as $reactionType) {
+            $reactions->addToMap('reactions', $reactionType, 0);
+        }
+
+        $this->ncr->putNode($node);
+        $this->ncr->putNode($reactions);
         $event = ReactionsAddedV1::create()
             ->set('node_ref', $nodeRef)
             ->addToSet('reactions', ['reaction-type']);

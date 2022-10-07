@@ -54,12 +54,12 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         }
 
         if (NodeStatus::DELETED->value === $node->fget('status')) {
-            $context = ['causator' => $lastEvent];
-            $reactionsRef = $this->createReactionsRef($nodeRef);
-            $this->ncr->deleteNode($reactionsRef, $context);
-            $this->ncrSearch->deleteNodes([$reactionsRef], $context);
-            return;
-        }
+        $context = ['causator' => $lastEvent];
+        $reactionsRef = $this->createReactionsRef($nodeRef);
+        $this->ncr->deleteNode($reactionsRef, $context);
+        $this->ncrSearch->deleteNodes([$reactionsRef], $context);
+        return;
+    }
 
         $reactions = $this->getReactions($nodeRef, $lastEvent);
         if (!$reactions) {
@@ -85,14 +85,9 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             return;
         }
 
-        // On older node, chances are reactions node has not been created yet.
-        // Moving forward all new nodes will have a reactions node created when that node is first created
         $reactions = $this->getReactions($nodeRef, $event);
         if (!$reactions) {
-            $reactions = $this->createReactions($nodeRef);
-            $node = $this->ncr->getNode($nodeRef, true, ['causator' => $event]);
-            $this->mergeNode($node, $reactions);
-            $this->projectNode($reactions, $event, $pbjx);
+            return;
         }
 
         $this->incrementReactions($reactions, $event);
@@ -114,11 +109,10 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
 
         foreach ($event->get('reactions') as $reaction) {
             if ($reactions->isInMap('reactions', $reaction)) {
-                $updateExpression .= " set reactions.#{$reaction} = reactions.#{$reaction} + :v_incr,";
+                $updateExpression .= " reactions.#{$reaction} = reactions.#{$reaction} + :v_incr,";
                 $expressionAttributeNames["#{$reaction}"] = $reaction;
             }
         }
-        $updateExpression = trim($updateExpression, ', ');
 
         if (empty($expressionAttributeNames)) {
             return;
@@ -129,7 +123,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             'Key'                       => [
                 NodeTable::HASH_KEY_NAME => ['S' => $reactionsRef->toString()],
             ],
-            'UpdateExpression'          => $updateExpression,
+            'UpdateExpression'          =>  rtrim('set'. $updateExpression, ', '),
             'ExpressionAttributeNames'  => $expressionAttributeNames,
             'ExpressionAttributeValues' => [
                 ':v_incr' => ['N' => '1'],
@@ -190,13 +184,13 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
     protected function addReactions(Message $reactions): void
     {
         foreach ([
-                    'love',
-                    'haha',
-                    'wow',
-                    'wtf',
-                    'trash',
-                    'sad',
-                ] as $reactionType) {
+                     'love',
+                     'haha',
+                     'wow',
+                     'wtf',
+                     'trash',
+                     'sad',
+                 ] as $reactionType) {
             $reactions->addToMap('reactions', $reactionType, 0);
         }
     }
@@ -228,4 +222,3 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         return MessageResolver::resolveQName($nodeRef->getQName())::schema()->hasMixin('triniti:apollo:mixin:has-reactions');
     }
 }
-
