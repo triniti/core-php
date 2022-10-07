@@ -54,17 +54,14 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         }
 
         if (NodeStatus::DELETED->value === $node->fget('status')) {
-        $context = ['causator' => $lastEvent];
-        $reactionsRef = $this->createReactionsRef($nodeRef);
-        $this->ncr->deleteNode($reactionsRef, $context);
-        $this->ncrSearch->deleteNodes([$reactionsRef], $context);
-        return;
-    }
-
-        $reactions = $this->getReactions($nodeRef, $lastEvent);
-        if (!$reactions) {
-            $reactions = $this->createReactions($nodeRef);
+            $context = ['causator' => $lastEvent];
+            $reactionsRef = $this->createReactionsRef($nodeRef);
+            $this->ncr->deleteNode($reactionsRef, $context);
+            $this->ncrSearch->deleteNodes([$reactionsRef], $context);
+            return;
         }
+
+        $reactions = $this->getReactions($nodeRef, $lastEvent) ?? $this->createReactions($nodeRef);
 
         $this->mergeNode($node, $reactions);
         $this->projectNode($reactions, $lastEvent, $pbjxEvent::getPbjx());
@@ -162,7 +159,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         }
 
         $reactions = $class::fromArray(['_id' => $nodeRef->getId()]);
-        $this->addReactions($reactions);
+        $this->addReactionTypes($reactions);
 
         return $reactions;
     }
@@ -181,7 +178,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         return null;
     }
 
-    protected function addReactions(Message $reactions): void
+    protected function addReactionTypes(Message $reactions): void
     {
         foreach ([
                      'love',

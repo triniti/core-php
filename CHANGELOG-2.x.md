@@ -3,7 +3,7 @@ This changelog references the relevant changes done in 2.x versions.
 
 
 ## v2.1.3
-* Add `Triniti\Apollo\AddReactionsHandler` to enable reactions on nodes.
+* Add `Triniti\Apollo\AddReactionsHandler` to handle add reactions command.
 * Add `Triniti\Apollo\NcrReactionsProjector` to enable reactions on nodes.
 
 
