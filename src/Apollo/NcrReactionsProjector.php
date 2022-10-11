@@ -8,7 +8,6 @@ use Gdbots\Ncr\Aggregate;
 use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Ncr\Ncr;
-use Gdbots\Ncr\NcrSearch;
 use Gdbots\Ncr\Repository\DynamoDb\NodeTable;
 use Gdbots\Ncr\Repository\DynamoDb\TableManager;
 use Gdbots\Pbj\Message;
@@ -25,8 +24,8 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
     public static function getSubscribedEvents(): array
     {
         return [
-            'gdbots:ncr:mixin:node.projected'      => 'onNodeProjected',
-            'triniti:apollo:event:reactions-added' => 'onReactionsAdded',
+            'triniti:apollo:mixin:has-reactions.projected'  => 'onNodeProjected',
+            'triniti:apollo:event:reactions-added'          => 'onReactionsAdded',
         ];
     }
 
@@ -34,7 +33,6 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         protected DynamoDbClient $client,
         protected TableManager $tableManager,
         protected Ncr $ncr,
-        protected NcrSearch $ncrSearch,
         protected bool $enabled = true
     ) {
     }
@@ -49,15 +47,10 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         $nodeRef = $node->generateNodeRef();
         $lastEvent = $pbjxEvent->getLastEvent();
 
-        if (!$this->hasReactions($nodeRef)) {
-            return;
-        }
-
         if (NodeStatus::DELETED->value === $node->fget('status')) {
             $context = ['causator' => $lastEvent];
             $reactionsRef = $this->createReactionsRef($nodeRef);
             $this->ncr->deleteNode($reactionsRef, $context);
-            $this->ncrSearch->deleteNodes([$reactionsRef], $context);
             return;
         }
 
@@ -129,7 +122,11 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         ];
 
         $this->client->updateItem($params);
-        $this->ncrSearch->indexNodes([$this->ncr->getNode($reactionsRef, true, $context)], $context);
+
+        // this ensures the ncr cache is current
+        // note that we don't put a new node as that would
+        // overwrite the atomic counting above.
+        $this->ncr->getNode($reactionsRef, true, $context);
     }
 
     protected function projectNode(Message $reactions, Message $event, Pbjx $pbjx): void
@@ -142,7 +139,6 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             ->set('etag', Aggregate::generateEtag($reactions));
 
         $this->ncr->putNode($reactions, null, $context);
-        $this->ncrSearch->indexNodes([$reactions], $context);
         $pbjx->trigger($reactions, 'projected', new NodeProjectedEvent($reactions, $event), false, false);
     }
 
@@ -166,8 +162,6 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             return $this->ncr->getNode($reactionsRef, true, ['causator' => $event]);
         } catch (NodeNotFound $nf) {
             // Node not found do nothing here
-        } catch (\Throwable $e) {
-            throw $e;
         }
 
         return null;
@@ -175,14 +169,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
 
     protected function addReactionTypes(Message $reactions): void
     {
-        foreach ([
-                     'love',
-                     'haha',
-                     'wow',
-                     'wtf',
-                     'trash',
-                     'sad',
-                 ] as $reactionType) {
+        foreach (ReactionsValidator::getValidReactions() as $reactionType) {
             $reactions->addToMap('reactions', $reactionType, 0);
         }
     }
