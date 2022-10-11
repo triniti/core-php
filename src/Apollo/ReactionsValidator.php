@@ -22,7 +22,7 @@ class ReactionsValidator implements EventSubscriber, PbjxValidator
         $this->ncr = $ncr;
     }
 
-    public static function getValidReactions(): array
+    public function getValidReactions(): array
     {
         // override to implement your own reaction types
         return [

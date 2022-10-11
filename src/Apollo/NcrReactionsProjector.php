@@ -33,6 +33,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         protected DynamoDbClient $client,
         protected TableManager $tableManager,
         protected Ncr $ncr,
+        protected ReactionsValidator $reactionsValidator,
         protected bool $enabled = true
     ) {
     }
@@ -169,7 +170,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
 
     protected function addReactionTypes(Message $reactions): void
     {
-        foreach (ReactionsValidator::getValidReactions() as $reactionType) {
+        foreach ($this->reactionsValidator->getValidReactions() as $reactionType) {
             $reactions->addToMap('reactions', $reactionType, 0);
         }
     }
