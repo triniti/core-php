@@ -25,11 +25,9 @@ use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Triniti\Apollo\NcrReactionsProjector;
 use Triniti\Schemas\Apollo\Event\ReactionsAddedV1;
 use Triniti\Tests\AbstractPbjxTest;
-use Triniti\Tests\MockNcrSearch;
 
 final class NcrReactionsProjectorTest extends AbstractPbjxTest
 {
-    private MockNcrSearch $ncrSearch;
     private NcrReactionsProjector $projector;
     private InMemoryNcr $ncr;
     private TableManager $tableManager;
@@ -38,11 +36,10 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
     public function setup(): void
     {
         parent::setup();
-        $this->ncrSearch = new MockNcrSearch();
         $this->ncr = new InMemoryNcr();
         $this->tableManager = new TableManager('test');
         $this->dynamoDbClient = new DynamoDbClient(['region' => 'us-west-2', 'version' => '2012-08-10']);
-        $this->projector = new NcrReactionsProjector($this->dynamoDbClient, $this->tableManager, $this->ncr, $this->ncrSearch);
+        $this->projector = new NcrReactionsProjector($this->dynamoDbClient, $this->tableManager, $this->ncr);
     }
 
     protected function createReactionsRef(NodeRef $nodeRef): NodeRef
@@ -64,9 +61,6 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
         $this->assertSame($node->get('title'), $reactions->get('title'));
         $this->assertSame((string)$node->get('created_at'), (string)$reactions->get('created_at'));
         $this->assertSame('article', $reactions->get('target'));
-        $this->assertSame(["love" => 0, "haha" => 0, "wow" => 0, "wtf" => 0, "trash" => 0, "sad" => 0], $reactions->get('reactions'));
-
-        $this->assertTrue($this->ncrSearch->hasIndexedNode($reactionsRef));
     }
 
     public function testNodeCreatedAndDeleted(): void
@@ -84,15 +78,12 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
         $this->assertSame($node->get('title'), $reactions->get('title'));
         $this->assertSame((string)$node->get('created_at'), (string)$reactions->get('created_at'));
         $this->assertSame('article', $reactions->get('target'));
-        $this->assertSame(["love" => 0, "haha" => 0, "wow" => 0, "wtf" => 0, "trash" => 0, "sad" => 0], $reactions->get('reactions'));
 
-        $this->assertTrue($this->ncrSearch->hasIndexedNode($reactionsRef));
 
         $deletedEvent = ArticleDeletedV1::create()->set('node_ref', $nodeRef);
         $deletedPbjxEvent = new NodeProjectedEvent((clone $node)->set('status', NodeStatus::DELETED), $deletedEvent);
         $this->projector->onNodeProjected($deletedPbjxEvent);
 
-        $this->assertFalse($this->ncrSearch->hasIndexedNode($reactionsRef));
         $this->expectException(NodeNotFound::class);
         $this->ncr->getNode($reactionsRef);
     }
@@ -110,7 +101,6 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
         $reactions = $this->ncr->getNode($reactionsRef);
 
         $this->assertTrue(NodeStatus::EXPIRED === $reactions->get('status'));
-        $this->assertTrue(NodeStatus::EXPIRED === $this->ncrSearch->getNode($reactionsRef)->get('status'));
     }
 
     public function testNodeMarkedAsDraft(): void
@@ -124,7 +114,6 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
         $reactions = $this->ncr->getNode($reactionsRef);
 
         $this->assertTrue(NodeStatus::DRAFT === $reactions->get('status'));
-        $this->assertTrue(NodeStatus::DRAFT === $this->ncrSearch->getNode($reactionsRef)->get('status'));
     }
 
     public function testNodeMarkedAsPending(): void
@@ -140,7 +129,6 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
         $reactions = $this->ncr->getNode($reactionsRef);
 
         $this->assertTrue(NodeStatus::PENDING === $reactions->get('status'));
-        $this->assertTrue(NodeStatus::PENDING === $this->ncrSearch->getNode($reactionsRef)->get('status'));
     }
 
     public function testNodePublished(): void
@@ -160,7 +148,6 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
         $reactions = $this->ncr->getNode($reactionsRef);
 
         $this->assertTrue(NodeStatus::PUBLISHED === $reactions->get('status'));
-        $this->assertTrue(NodeStatus::PUBLISHED === $this->ncrSearch->getNode($reactionsRef)->get('status'));
         $this->assertSame((string)$reactions->get('created_at'), (string)Microtime::fromDateTime($publishedAt));
     }
 
@@ -182,7 +169,6 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
         $reactions = $this->ncr->getNode($reactionsRef);
 
         $this->assertTrue(NodeStatus::SCHEDULED === $reactions->get('status'));
-        $this->assertTrue(NodeStatus::SCHEDULED === $this->ncrSearch->getNode($reactionsRef)->get('status'));
         $this->assertSame((string)$reactions->get('created_at'), (string)Microtime::fromDateTime($publishAt));
     }
 
@@ -204,7 +190,6 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
         $reactions = $this->ncr->getNode($reactionsRef);
 
         $this->assertTrue(NodeStatus::PUBLISHED === $reactions->get('status'));
-        $this->assertTrue(NodeStatus::PUBLISHED === $this->ncrSearch->getNode($reactionsRef)->get('status'));
         $this->assertSame((string)$reactions->get('created_at'), (string)Microtime::fromDateTime($publishedAt));
 
         $unpublishEvent = ArticleUnpublishedV1::create()->set('node_ref', $nodeRef);
@@ -212,7 +197,6 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
         $this->projector->onNodeProjected($unpublishPbjxEvent);
 
         $this->assertTrue(NodeStatus::DRAFT === $reactions->get('status'));
-        $this->assertTrue(NodeStatus::DRAFT === $this->ncrSearch->getNode($reactionsRef)->get('status'));
     }
 
     public function testNodeUpdated(): void
@@ -229,7 +213,6 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
         $reactionsRef = $this->createReactionsRef($nodeRef);
         $reactions = $this->ncr->getNode($reactionsRef);
         $this->assertSame('new-title', $reactions->get('title'));
-        $this->assertSame('new-title', $this->ncrSearch->getNode($reactionsRef)->get('title'));
     }
 
     public function testNodeCreatedAndUpdated(): void
@@ -247,9 +230,6 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
         $this->assertSame($node->get('title'), $reactions->get('title'));
         $this->assertSame((string)$node->get('created_at'), (string)$reactions->get('created_at'));
         $this->assertSame('article', $reactions->get('target'));
-        $this->assertSame(["love" => 0, "haha" => 0, "wow" => 0, "wtf" => 0, "trash" => 0, "sad" => 0], $reactions->get('reactions'));
-
-        $this->assertTrue($this->ncrSearch->hasIndexedNode($reactionsRef));
 
         $newNode = (clone $node)->set('title', 'new-title');
         $updatedEvent = ArticleUpdatedV1::create()
@@ -261,42 +241,5 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
         $reactionsRef = $this->createReactionsRef($nodeRef);
         $reactions = $this->ncr->getNode($reactionsRef);
         $this->assertSame('new-title', $reactions->get('title'));
-        $this->assertSame('new-title', $this->ncrSearch->getNode($reactionsRef)->get('title'));
-    }
-
-    public function testInvalidReactionsAdded(): void
-    {
-        $node = ArticleV1::create()->set('title', 'article-title');
-        $nodeRef = NodeRef::fromNode($node);
-        $reactions = ReactionsV1::fromArray(['_id' => $nodeRef->getId()])
-            ->set('title', 'article-title');
-
-        foreach ([
-                     'love',
-                     'haha',
-                     'wow',
-                     'wtf',
-                     'trash',
-                     'sad',
-                 ] as $reactionType) {
-            $reactions->addToMap('reactions', $reactionType, 0);
-        }
-
-        $this->ncr->putNode($node);
-        $this->ncr->putNode($reactions);
-        $event = ReactionsAddedV1::create()
-            ->set('node_ref', $nodeRef)
-            ->addToSet('reactions', ['reaction-type']);
-        $this->projector->onReactionsAdded($event, $this->pbjx);
-
-        $reactionsRef = $this->createReactionsRef($nodeRef);
-        $reactions = $this->ncr->getNode($reactionsRef);
-
-        $this->assertSame(0, $reactions->getFromMap('reactions', 'wtf'));
-        $this->assertSame(0, $reactions->getFromMap('reactions', 'love'));
-        $this->assertSame(0, $reactions->getFromMap('reactions', 'haha'));
-        $this->assertSame(0, $reactions->getFromMap('reactions', 'wow'));
-        $this->assertSame(0, $reactions->getFromMap('reactions', 'trash'));
-        $this->assertSame(0, $reactions->getFromMap('reactions', 'sad'));
     }
 }

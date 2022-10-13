@@ -15,6 +15,7 @@ use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbj\WellKnown\Microtime;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\DependencyInjection\PbjxProjector;
+use Gdbots\Pbjx\Event\PbjxEvent;
 use Gdbots\Pbjx\EventSubscriber;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
@@ -33,7 +34,6 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         protected DynamoDbClient $client,
         protected TableManager $tableManager,
         protected Ncr $ncr,
-        protected ReactionsValidator $reactionsValidator,
         protected bool $enabled = true
     ) {
     }
@@ -49,11 +49,11 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         $lastEvent = $pbjxEvent->getLastEvent();
 
         if (NodeStatus::DELETED->value === $node->fget('status')) {
-            $context = ['causator' => $lastEvent];
-            $reactionsRef = $this->createReactionsRef($nodeRef);
-            $this->ncr->deleteNode($reactionsRef, $context);
-            return;
-        }
+        $context = ['causator' => $lastEvent];
+        $reactionsRef = $this->createReactionsRef($nodeRef);
+        $this->ncr->deleteNode($reactionsRef, $context);
+        return;
+    }
 
         $reactions = $this->getReactions($nodeRef, $lastEvent) ?? $this->createReactions($nodeRef);
 
@@ -72,10 +72,6 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         }
 
         $nodeRef = $event->get('node_ref');
-        if (!$this->hasReactions($nodeRef)) {
-            return;
-        }
-
         $reactions = $this->getReactions($nodeRef, $event);
         if (!$reactions) {
             return;
@@ -99,14 +95,8 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         $tableName = $this->tableManager->getNodeTableName($reactionsRef->getQName(), $context);
 
         foreach ($event->get('reactions') as $reaction) {
-            if ($reactions->isInMap('reactions', $reaction)) {
-                $updateExpression .= " reactions.#{$reaction} = reactions.#{$reaction} + :v_incr,";
-                $expressionAttributeNames["#{$reaction}"] = $reaction;
-            }
-        }
-
-        if (empty($expressionAttributeNames)) {
-            return;
+            $updateExpression .= " reactions.#{$reaction} = reactions.#{$reaction} + :v_incr,";
+            $expressionAttributeNames["#{$reaction}"] = $reaction;
         }
 
         $params = [
@@ -139,6 +129,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             ->set('last_event_ref', $event->generateMessageRef())
             ->set('etag', Aggregate::generateEtag($reactions));
 
+        $pbjx->trigger($reactions, 'validate', new PbjxEvent($reactions), false, false);
         $this->ncr->putNode($reactions, null, $context);
         $pbjx->trigger($reactions, 'projected', new NodeProjectedEvent($reactions, $event), false, false);
     }
@@ -151,8 +142,6 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         }
 
         $reactions = $class::fromArray(['_id' => $nodeRef->getId()]);
-        $this->addReactionTypes($reactions);
-
         return $reactions;
     }
 
@@ -166,13 +155,6 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         }
 
         return null;
-    }
-
-    protected function addReactionTypes(Message $reactions): void
-    {
-        foreach ($this->reactionsValidator->getValidReactions() as $reactionType) {
-            $reactions->addToMap('reactions', $reactionType, 0);
-        }
     }
 
     protected function mergeNode(Message $node, Message $reactions): void
@@ -195,10 +177,5 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
     protected function createReactionsRef(NodeRef $nodeRef): NodeRef
     {
         return NodeRef::fromString(str_replace($nodeRef->getLabel() . ':', 'reactions:', $nodeRef->toString()));
-    }
-
-    protected function hasReactions(NodeRef $nodeRef): bool
-    {
-        return MessageResolver::resolveQName($nodeRef->getQName())::schema()->hasMixin('triniti:apollo:mixin:has-reactions');
     }
 }
