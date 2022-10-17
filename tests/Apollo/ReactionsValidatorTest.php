@@ -18,17 +18,6 @@ final class ReactionsValidatorTest extends AbstractPbjxTest
         parent::setup();
     }
 
-    public function testValidateReactions(): void
-    {
-        $reactions = ReactionsV1::create();
-        $reactions->addToMap('reactions', '', null);
-
-        $validator = new ReactionsValidator();
-        $pbjxEvent = new PbjxEvent($reactions);
-        $validator->validateReactions($pbjxEvent);
-        $this->assertSame(['love' => 0, 'haha' => 0, 'wow' => 0, 'wtf' => 0, 'trash' => 0, 'sad' => 0], $reactions->get('reactions'));
-    }
-
     public function testValidateAddReactions(): void
     {
         $command = AddReactionsV1::create();
@@ -46,6 +35,7 @@ final class ReactionsValidatorTest extends AbstractPbjxTest
 
     public function testValidateAddReactionsWithInvalidReactions(): void
     {
+        $this->expectExceptionMessage('Invalid reaction type.');
         $command = AddReactionsV1::create();
         $command
             ->set('node_ref', NodeRef::fromString('acme:article:1234'))
@@ -77,6 +67,19 @@ final class ReactionsValidatorTest extends AbstractPbjxTest
         $command = AddReactionsV1::create();
         $command
             ->set('node_ref', NodeRef::fromString('acme:article:1234'));
+
+        $validator = new ReactionsValidator();
+        $pbjxEvent = new PbjxEvent($command);
+        $validator->validateAddReactions($pbjxEvent);
+    }
+
+    public function testValidateAddReactionsWithEmptyReactions(): void
+    {
+        $this->expectExceptionMessage('Field "reactions" is required.');
+        $command = AddReactionsV1::create();
+        $command
+            ->set('node_ref', NodeRef::fromString('acme:article:1234'))
+            ->addToSet('reactions', []);
 
         $validator = new ReactionsValidator();
         $pbjxEvent = new PbjxEvent($command);

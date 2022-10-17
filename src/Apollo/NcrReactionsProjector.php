@@ -25,8 +25,9 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
     public static function getSubscribedEvents(): array
     {
         return [
-            'triniti:apollo:mixin:has-reactions.projected'  => 'onNodeProjected',
-            'triniti:apollo:event:reactions-added'          => 'onReactionsAdded',
+            'triniti:apollo:mixin:has-reactions.created'  => 'onNodeCreated',
+            'triniti:apollo:mixin:has-reactions.deleted'  => 'onNodeDeleted',
+            'triniti:apollo:event:reactions-added'        => 'onReactionsAdded',
         ];
     }
 
@@ -38,7 +39,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
     ) {
     }
 
-    public function onNodeProjected(NodeProjectedEvent $pbjxEvent): void
+    public function onNodeCreated(NodeProjectedEvent $pbjxEvent): void
     {
         if (!$this->enabled) {
             return;
@@ -48,17 +49,24 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         $nodeRef = $node->generateNodeRef();
         $lastEvent = $pbjxEvent->getLastEvent();
 
-        if (NodeStatus::DELETED->value === $node->fget('status')) {
+        $reactions = $this->createReactions($nodeRef);
+        $this->mergeNode($node, $reactions);
+        $this->projectNode($reactions, $lastEvent, $pbjxEvent::getPbjx());
+    }
+
+    public function onNodeDeleted(NodeProjectedEvent $pbjxEvent): void
+    {
+        if (!$this->enabled) {
+            return;
+        }
+
+        $node = $pbjxEvent->getMessage();
+        $nodeRef = $node->generateNodeRef();
+        $lastEvent = $pbjxEvent->getLastEvent();
+
         $context = ['causator' => $lastEvent];
         $reactionsRef = $this->createReactionsRef($nodeRef);
         $this->ncr->deleteNode($reactionsRef, $context);
-        return;
-    }
-
-        $reactions = $this->getReactions($nodeRef, $lastEvent) ?? $this->createReactions($nodeRef);
-
-        $this->mergeNode($node, $reactions);
-        $this->projectNode($reactions, $lastEvent, $pbjxEvent::getPbjx());
     }
 
     public function onReactionsAdded(Message $event, Pbjx $pbjx): void
@@ -129,7 +137,6 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             ->set('last_event_ref', $event->generateMessageRef())
             ->set('etag', Aggregate::generateEtag($reactions));
 
-        $pbjx->trigger($reactions, 'validate', new PbjxEvent($reactions), false, false);
         $this->ncr->putNode($reactions, null, $context);
         $pbjx->trigger($reactions, 'projected', new NodeProjectedEvent($reactions, $event), false, false);
     }
@@ -163,15 +170,8 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             ->set('_id', $node->get('_id'))
             ->set('status', $node->get('status'))
             ->set('title', $node->get('title'))
-            ->set('target', $node::schema()->getQName()->getMessage());
-
-        if ($node->has('published_at')) {
-            $createdAt = Microtime::fromDateTime($node->get('published_at'));
-        } else {
-            $createdAt = $node->get('created_at');
-        }
-
-        $reactions->set('created_at', $createdAt);
+            ->set('target', $node::schema()->getQName()->getMessage())
+            ->set('created_at', $node->get('created_at'));
     }
 
     protected function createReactionsRef(NodeRef $nodeRef): NodeRef
