@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Triniti\Apollo;
 
 use Aws\DynamoDb\DynamoDbClient;
+use Aws\Exception\AwsException;
 use Gdbots\Ncr\Aggregate;
 use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Ncr\Exception\NodeNotFound;
@@ -12,6 +13,7 @@ use Gdbots\Ncr\Repository\DynamoDb\NodeTable;
 use Gdbots\Ncr\Repository\DynamoDb\TableManager;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
+use Gdbots\Pbj\Util\ClassUtil;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\DependencyInjection\PbjxProjector;
 use Gdbots\Pbjx\EventSubscriber;
@@ -90,6 +92,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
     {
         $updateExpression = '';
         $expressionAttributeNames = [];
+        $reactionsMap = [];
 
         $context = [
             'causator' => $event,
@@ -103,6 +106,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         foreach ($event->get('reactions') as $reaction) {
             $updateExpression .= " reactions.#{$reaction} :v_incr,";
             $expressionAttributeNames["#{$reaction}"] = $reaction;
+            $reactionsMap[$reaction] = ['N' => '1'];
         }
 
         $params = [
@@ -115,10 +119,24 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             'ExpressionAttributeValues' => [
                 ':v_incr' => ['N' => '1'],
             ],
+            'ConditionExpression'       => "attribute_exists(reactions)",
             'ReturnValues'              => 'NONE',
         ];
 
-        $this->client->updateItem($params);
+        try {
+            $this->client->updateItem($params);
+        } catch (\Throwable $e) {
+            if ($e instanceof AwsException) {
+                $errorName = $e->getAwsErrorCode() ?: ClassUtil::getShortName($e);
+                if ('ConditionalCheckFailedException' === $errorName) {
+                    unset($params['ConditionExpression']);
+                    unset($params['ExpressionAttributeNames']);
+                    $params['UpdateExpression'] = 'set reactions = :reactions_map';
+                    $params['ExpressionAttributeValues'] = [':reactions_map' => ['M' => $reactionsMap]];
+                    $this->client->updateItem($params);
+                }
+            }
+        }
 
         // this ensures the ncr cache is current
         // note that we don't put a new node as that would
@@ -136,23 +154,6 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             ->set('etag', Aggregate::generateEtag($reactions));
 
         $this->ncr->putNode($reactions, null, $context);
-
-        // add empty reactions map
-        $reactionsRef = NodeRef::fromNode($reactions);
-        $tableName = $this->tableManager->getNodeTableName($reactionsRef->getQName(), $context);
-        $params = [
-            'TableName'                 => $tableName,
-            'Key'                       => [
-                NodeTable::HASH_KEY_NAME => ['S' => $reactionsRef->toString()],
-            ],
-            'UpdateExpression'          =>  "set reactions = :reactionTypesMap",
-            'ExpressionAttributeValues' => [
-                ':reactionTypesMap' => ['M' => []],
-            ],
-            'ReturnValues'              => 'NONE',
-        ];
-
-        $this->client->updateItem($params);
         $pbjx->trigger($reactions, 'projected', new NodeProjectedEvent($reactions, $event), false, false);
     }
 

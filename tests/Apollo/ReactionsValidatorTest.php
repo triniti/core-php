@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Triniti\Tests\Apollo;
 
-use Acme\Schemas\Apollo\Node\ReactionsV1;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\Event\PbjxEvent;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;

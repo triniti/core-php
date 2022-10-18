@@ -6,24 +6,15 @@ namespace Triniti\Tests\Apollo;
 use Acme\Schemas\Apollo\Node\ReactionsV1;
 use Acme\Schemas\News\Event\ArticleCreatedV1;
 use Acme\Schemas\News\Event\ArticleDeletedV1;
-use Acme\Schemas\News\Event\ArticleExpiredV1;
-use Acme\Schemas\News\Event\ArticleMarkedAsDraftV1;
-use Acme\Schemas\News\Event\ArticleMarkedAsPendingV1;
-use Acme\Schemas\News\Event\ArticlePublishedV1;
-use Acme\Schemas\News\Event\ArticleScheduledV1;
-use Acme\Schemas\News\Event\ArticleUnpublishedV1;
-use Acme\Schemas\News\Event\ArticleUpdatedV1;
 use Acme\Schemas\News\Node\ArticleV1;
 use Aws\DynamoDb\DynamoDbClient;
 use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Ncr\Repository\DynamoDb\TableManager;
 use Gdbots\Ncr\Repository\InMemoryNcr;
-use Gdbots\Pbj\WellKnown\Microtime;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Triniti\Apollo\NcrReactionsProjector;
-use Triniti\Schemas\Apollo\Event\ReactionsAddedV1;
 use Triniti\Tests\AbstractPbjxTest;
 
 final class NcrReactionsProjectorTest extends AbstractPbjxTest
@@ -45,6 +36,22 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
     protected function createReactionsRef(NodeRef $nodeRef): NodeRef
     {
         return NodeRef::fromString(str_replace($nodeRef->getLabel() . ':', 'reactions:', $nodeRef->toString()));
+    }
+
+    public function testNodeCreated(): void
+    {
+        $node = ArticleV1::create()->set('title', 'article-title');
+        $event = ArticleCreatedV1::create()->set('node', $node);
+        $pbjxEvent = new NodeProjectedEvent($node, $event);
+        $this->projector->onNodeCreated($pbjxEvent);
+        $reactionsRef = $this->createReactionsRef(NodeRef::fromNode($node));
+        $reactions = $this->ncr->getNode($reactionsRef);
+
+        $this->assertTrue(NodeStatus::PUBLISHED === $reactions->get('status'));
+        $this->assertSame((string)$node->get('_id'), (string)$reactions->get('_id'));
+        $this->assertSame($node->get('title'), $reactions->get('title'));
+        $this->assertSame((string)$node->get('created_at'), (string)$reactions->get('created_at'));
+        $this->assertSame('article', $reactions->get('target'));
     }
 
     public function testNodeDeleted(): void
