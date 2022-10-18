@@ -12,10 +12,8 @@ use Gdbots\Ncr\Repository\DynamoDb\NodeTable;
 use Gdbots\Ncr\Repository\DynamoDb\TableManager;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
-use Gdbots\Pbj\WellKnown\Microtime;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\DependencyInjection\PbjxProjector;
-use Gdbots\Pbjx\Event\PbjxEvent;
 use Gdbots\Pbjx\EventSubscriber;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
@@ -85,10 +83,10 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             return;
         }
 
-        $this->incrementReactions($reactions, $event);
+        $this->incrementReactions($event);
     }
 
-    protected function incrementReactions(Message $reactions, Message $event): void
+    protected function incrementReactions(Message $event): void
     {
         $updateExpression = '';
         $expressionAttributeNames = [];
@@ -103,7 +101,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         $tableName = $this->tableManager->getNodeTableName($reactionsRef->getQName(), $context);
 
         foreach ($event->get('reactions') as $reaction) {
-            $updateExpression .= " reactions.#{$reaction} = reactions.#{$reaction} + :v_incr,";
+            $updateExpression .= " reactions.#{$reaction} :v_incr,";
             $expressionAttributeNames["#{$reaction}"] = $reaction;
         }
 
@@ -112,7 +110,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             'Key'                       => [
                 NodeTable::HASH_KEY_NAME => ['S' => $reactionsRef->toString()],
             ],
-            'UpdateExpression'          =>  rtrim('set'. $updateExpression, ', '),
+            'UpdateExpression'          =>  rtrim('add'. $updateExpression, ', '),
             'ExpressionAttributeNames'  => $expressionAttributeNames,
             'ExpressionAttributeValues' => [
                 ':v_incr' => ['N' => '1'],
@@ -138,6 +136,23 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             ->set('etag', Aggregate::generateEtag($reactions));
 
         $this->ncr->putNode($reactions, null, $context);
+
+        // add empty reactions map
+        $reactionsRef = NodeRef::fromNode($reactions);
+        $tableName = $this->tableManager->getNodeTableName($reactionsRef->getQName(), $context);
+        $params = [
+            'TableName'                 => $tableName,
+            'Key'                       => [
+                NodeTable::HASH_KEY_NAME => ['S' => $reactionsRef->toString()],
+            ],
+            'UpdateExpression'          =>  "set reactions = :reactionTypesMap",
+            'ExpressionAttributeValues' => [
+                ':reactionTypesMap' => ['M' => []],
+            ],
+            'ReturnValues'              => 'NONE',
+        ];
+
+        $this->client->updateItem($params);
         $pbjx->trigger($reactions, 'projected', new NodeProjectedEvent($reactions, $event), false, false);
     }
 
@@ -168,7 +183,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
     {
         $reactions
             ->set('_id', $node->get('_id'))
-            ->set('status', $node->get('status'))
+            ->set('status', NodeStatus::PUBLISHED)
             ->set('title', $node->get('title'))
             ->set('target', $node::schema()->getQName()->getMessage())
             ->set('created_at', $node->get('created_at'));

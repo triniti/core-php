@@ -47,22 +47,6 @@ final class NcrReactionsProjectorTest extends AbstractPbjxTest
         return NodeRef::fromString(str_replace($nodeRef->getLabel() . ':', 'reactions:', $nodeRef->toString()));
     }
 
-    public function testNodeCreated(): void
-    {
-        $node = ArticleV1::create()->set('title', 'article-title');
-        $event = ArticleCreatedV1::create()->set('node', $node);
-        $pbjxEvent = new NodeProjectedEvent($node, $event);
-        $this->projector->onNodeCreated($pbjxEvent);
-        $reactionsRef = $this->createReactionsRef(NodeRef::fromNode($node));
-        $reactions = $this->ncr->getNode($reactionsRef);
-
-        $this->assertTrue($node->get('status') === $reactions->get('status'));
-        $this->assertSame((string)$node->get('_id'), (string)$reactions->get('_id'));
-        $this->assertSame($node->get('title'), $reactions->get('title'));
-        $this->assertSame((string)$node->get('created_at'), (string)$reactions->get('created_at'));
-        $this->assertSame('article', $reactions->get('target'));
-    }
-
     public function testNodeDeleted(): void
     {
         $this->expectException(NodeNotFound::class);
