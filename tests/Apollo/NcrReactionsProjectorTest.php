@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Triniti\Tests\Apollo;
 
 use Acme\Schemas\Apollo\Node\ReactionsV1;
-use Acme\Schemas\News\Event\ArticleCreatedV1;
 use Acme\Schemas\News\Event\ArticleDeletedV1;
 use Acme\Schemas\News\Node\ArticleV1;
 use Aws\DynamoDb\DynamoDbClient;
