@@ -22,8 +22,6 @@ class ReactionsValidator implements EventSubscriber, PbjxValidator
 
     public function validateAddReactions(PbjxEvent $pbjxEvent): void
     {
-        $reactions = [];
-
         $command = $pbjxEvent->getMessage();
         Assertion::true($this->hasReactions($command->get('node_ref')), 'Node does not support reactions.');
         Assertion::true($command->has('node_ref'), 'Field "node_ref" is required.');
@@ -33,10 +31,6 @@ class ReactionsValidator implements EventSubscriber, PbjxValidator
         foreach ($command->get('reactions') as $reaction) {
             Assertion::inArray($reaction, $validReactions, 'Invalid reaction type.');
         }
-
-        $command
-            ->clear('reactions')
-            ->addToSet('reactions', $reactions);
     }
 
     public function getReactions(): array
