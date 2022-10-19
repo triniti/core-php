@@ -6,7 +6,6 @@ namespace Triniti\Apollo;
 use Aws\DynamoDb\DynamoDbClient;
 use Gdbots\Ncr\Aggregate;
 use Gdbots\Ncr\Event\NodeProjectedEvent;
-use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Ncr\Repository\DynamoDb\NodeTable;
 use Gdbots\Ncr\Repository\DynamoDb\TableManager;
@@ -77,9 +76,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             return;
         }
 
-        $nodeRef = $event->get('node_ref');
-        $reactions = $this->getReactions($nodeRef, $event);
-        if (!$reactions) {
+        if (!$this->ncr->hasNode($this->createReactionsRef($event->get('node_ref')), true, ['causator' => $event])) {
             return;
         }
 
@@ -165,18 +162,6 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
 
         $reactions = $class::fromArray(['_id' => $nodeRef->getId()]);
         return $reactions;
-    }
-
-    protected function getReactions(NodeRef $nodeRef, Message $event): ?Message
-    {
-        try {
-            $reactionsRef = $this->createReactionsRef($nodeRef);
-            return $this->ncr->getNode($reactionsRef, true, ['causator' => $event]);
-        } catch (NodeNotFound $nf) {
-            // Node not found do nothing here
-        }
-
-        return null;
     }
 
     protected function mergeNode(Message $node, Message $reactions): void
