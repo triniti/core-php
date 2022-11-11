@@ -2,6 +2,12 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
+## v2.2.0
+* Add `Triniti\Apollo\AddReactionsHandler` to handle add reactions command.
+* Add `Triniti\Apollo\NcrReactionsProjector` to enable reactions on nodes.
+* Add `Triniti\Apollo\ReactionsValidator` to validate AddReactions command and Reactions node.
+
+
 ## v2.1.3
 * When syncing to Jwplayer, include people and categories as custom parameters.
 
