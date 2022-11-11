@@ -9,7 +9,6 @@ use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\DependencyInjection\PbjxValidator;
 use Gdbots\Pbjx\Event\PbjxEvent;
 use Gdbots\Pbjx\EventSubscriber;
-use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 
 class ReactionsValidator implements EventSubscriber, PbjxValidator
 {

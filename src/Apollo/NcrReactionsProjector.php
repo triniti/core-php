@@ -160,8 +160,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             $class = MessageResolver::resolveCurie('*:apollo:node:reactions:v1');
         }
 
-        $reactions = $class::fromArray(['_id' => $nodeRef->getId()]);
-        return $reactions;
+        return $class::fromArray(['_id' => $nodeRef->getId()]);
     }
 
     protected function mergeNode(Message $node, Message $reactions): void
