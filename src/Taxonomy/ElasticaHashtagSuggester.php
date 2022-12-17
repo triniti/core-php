@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Triniti\Taxonomy;
 
+use Elastica\Index;
 use Elastica\Query;
 use Elastica\ResultSet;
 use Elastica\Search;
@@ -16,8 +17,9 @@ class ElasticaHashtagSuggester extends ElasticaNcrSearch implements HashtagSugge
     public function autocomplete(string $prefix, int $count = 25, array $context = []): array
     {
         $context = $this->enrichContext(__FUNCTION__, $context);
-        $search = new Search($this->getClientForRead($context));
-        $search->addIndex($this->indexManager->getIndexPrefix($context));
+        $client = $this->getClientForRead($context);
+        $search = new Search($client);
+        $search->addIndex(new Index($client, $this->indexManager->getIndexPrefix($context)));
         $options = [
             Search::OPTION_TIMEOUT                   => $this->timeout,
             Search::OPTION_FROM                      => 0,

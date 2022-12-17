@@ -2,6 +2,11 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
+## v2.3.0
+* Require symfony 6.2.x
+* Remove sensio/framework-extra-bundle.
+
+
 ## v2.2.0
 * Add `Triniti\Apollo\AddReactionsHandler` to handle add reactions command.
 * Add `Triniti\Apollo\NcrReactionsProjector` to enable reactions on nodes.
