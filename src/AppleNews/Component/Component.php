@@ -34,6 +34,12 @@ abstract class Component extends AppleNewsObject
     /** @var string|ComponentStyle */
     protected $style;
 
+    /** @var boolean */
+    protected $hidden;
+
+    /** @var ConditionalComponent[] */
+    protected $conditional;
+
     /**
      * @return Anchor
      */
@@ -179,6 +185,75 @@ abstract class Component extends AppleNewsObject
         }
 
         $this->style = $style;
+        return $this;
+    }
+
+    /**
+     * @param bool|null $hidden
+     *
+     * @return static
+     */
+    public function setHidden(?bool $hidden = true): self
+    {
+        $this->hidden = $hidden;
+
+        return $this;
+    }
+
+    /**
+     * @return ConditionalComponent[]
+     */
+    public function getConditional(): array
+    {
+        return $this->conditional;
+    }
+
+    /**
+     * @param ConditionalComponent[] $conditionals
+     *
+     * @return static
+     */
+    public function setConditional(?array $conditionals = []): self
+    {
+        $this->conditional = [];
+
+        if (null !== $conditionals) {
+            foreach ($conditionals as $conditional) {
+                $this->addConditional($conditional);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param ConditionalComponent $conditional
+     *
+     * @return static
+     */
+    public function addConditional(?ConditionalComponent $conditional = null): self
+    {
+        if (null !== $conditional) {
+            $conditional->validate();
+            $this->conditional[] = $conditional;
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param ConditionalComponent[] $conditionals
+     *
+     * @return static
+     */
+    public function addConditionals(?array $conditionals = []): self
+    {
+        if (null !== $conditionals) {
+            foreach ($conditionals as $conditional) {
+                $this->addConditional($conditional);
+            }
+        }
+
         return $this;
     }
 }
