@@ -4,17 +4,18 @@ declare(strict_types=1);
 namespace Triniti\AppleNews\Component;
 
 use Assert\Assertion;
-use Triniti\AppleNews\Animation\ComponentAnimation;
 use Triniti\AppleNews\AppleNewsObject;
+use Triniti\AppleNews\Condition;
+use Triniti\AppleNews\Animation\ComponentAnimation;
 use Triniti\AppleNews\Behavior\Behavior;
 use Triniti\AppleNews\Layout\Anchor;
 use Triniti\AppleNews\Layout\ComponentLayout;
 use Triniti\AppleNews\Style\ComponentStyle;
 
 /**
- * @link https://developer.apple.com/documentation/apple_news/component
+ * @link https://developer.apple.com/documentation/apple_news/conditionalcomponent
  */
-abstract class Component extends AppleNewsObject
+class ConditionalComponent extends AppleNewsObject
 {
     /** @var Anchor */
     protected $anchor;
@@ -25,14 +26,11 @@ abstract class Component extends AppleNewsObject
     /** @var Behavior */
     protected $behavior;
 
-    /** @var ConditionalComponent[] */
-    protected $conditional;
+    /** @var Condition[] */
+    protected $conditions = [];
 
     /** @var boolean */
     protected $hidden;
-
-    /** @var string */
-    protected $identifier;
 
     /** @var string|ComponentLayout */
     protected $layout;
@@ -110,25 +108,25 @@ abstract class Component extends AppleNewsObject
     }
 
     /**
-     * @return ConditionalComponent[]
+     * @return Condition[]
      */
-    public function getConditional(): array
+    public function getConditions(): array
     {
-        return $this->conditional;
+        return $this->conditions;
     }
 
     /**
-     * @param ConditionalComponent[] $conditionals
+     * @param Condition[] $conditions
      *
      * @return static
      */
-    public function setConditional(?array $conditionals = []): self
+    public function setConditions(?array $conditions = []): self
     {
-        $this->conditional = [];
+        $this->conditions = [];
 
-        if (!empty(conditionals)) {
-            foreach ($conditionals as $conditional) {
-                $this->addConditional($conditional);
+        if (null !== $conditions) {
+            foreach ($conditions as $condition) {
+                $this->addCondition($condition);
             }
         }
 
@@ -136,30 +134,30 @@ abstract class Component extends AppleNewsObject
     }
 
     /**
-     * @param ConditionalComponent $conditional
+     * @param Condition $condition
      *
      * @return static
      */
-    public function addConditional(?ConditionalComponent $conditional = null): self
+    public function addCondition(?Condition $condition = null): self
     {
-        if (null !== $conditional) {
-            $conditional->validate();
-            $this->conditional[] = $conditional;
+        if (null !== $condition) {
+            $condition->validate();
+            $this->conditions[] = $condition;
         }
 
         return $this;
     }
 
     /**
-     * @param ConditionalComponent[] $conditionals
+     * @param Condition[] $conditions
      *
      * @return static
      */
-    public function addConditionals(?array $conditionals = []): self
+    public function addConditions(?array $conditions = []): self
     {
-        if (!empty(conditionals)) {
-            foreach ($conditionals as $conditional) {
-                $this->addConditional($conditional);
+        if (null !== $conditions) {
+            foreach ($conditions as $condition) {
+                $this->addCondition($condition);
             }
         }
 
@@ -183,25 +181,6 @@ abstract class Component extends AppleNewsObject
     {
         $this->hidden = $hidden;
 
-        return $this;
-    }
-
-    /**
-     * @return string
-     */
-    public function getIdentifier(): ?string
-    {
-        return $this->identifier;
-    }
-
-    /**
-     * @param string $identifier
-     *
-     * @return static
-     */
-    public function setIdentifier(?string $identifier = null): self
-    {
-        $this->identifier = $identifier;
         return $this;
     }
 
@@ -263,5 +242,22 @@ abstract class Component extends AppleNewsObject
 
         $this->style = $style;
         return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function validate(): void
+    {
+        Assertion::notEmpty($this->conditions);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function jsonSerialize(): array
+    {
+        $properties = $this->getSetProperties();
+        return $properties;
     }
 }
