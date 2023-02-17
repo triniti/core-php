@@ -199,7 +199,7 @@ final class CuratorExtension extends AbstractExtension
                 return $response;
             }
 
-            $html = ["<!-- start: promotion-slot ${slot} -->"];
+            $html = ["<!-- start: promotion-slot {$slot} -->"];
 
             /** @var Message $promotion */
             $promotion = $response->get('promotion');
@@ -216,7 +216,7 @@ final class CuratorExtension extends AbstractExtension
                 $html[] = trim($promotion->get('post_render_code', ''));
             }
 
-            $html[] = "<!-- end: promotion-slot ${slot} -->";
+            $html[] = "<!-- end: promotion-slot {$slot} -->";
 
             return trim(implode(PHP_EOL, $html));
         } catch (\Throwable $e) {
@@ -280,14 +280,14 @@ final class CuratorExtension extends AbstractExtension
             }
 
             $slot = $context->get('promotion_slot');
-            $html = ["<!-- start: ${promotionRef}#${slot} -->"];
+            $html = ["<!-- start: {$promotionRef}#{$slot} -->"];
 
             /** @var Message $renderWidgetResponse */
             foreach ($response->get('widgets', []) as $renderWidgetResponse) {
                 $html[] = trim($renderWidgetResponse->get('html', ''));
             }
 
-            $html[] = "<!-- end: ${promotionRef}#${slot} -->";
+            $html[] = "<!-- end: {$promotionRef}#{$slot} -->";
 
             return trim(implode(PHP_EOL, $html));
         } catch (\Throwable $e) {

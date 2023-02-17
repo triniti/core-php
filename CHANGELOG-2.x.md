@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
+## v2.3.2
+* Change ${var} in strings is deprecated, use {$var} instead.
+
+
 ## v2.3.1
 * Add `Triniti\AppleNews\Component\ConditionalComponent` to enable conditional properties for components
 
