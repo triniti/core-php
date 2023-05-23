@@ -178,7 +178,7 @@ abstract class AbstractFcmNotifier implements Notifier
         $tokens = $client->fetchAccessTokenWithAssertion();
 
         if (!isset($tokens['access_token'])) {
-            throw new UnableToFetchAccessToken ('Failed to retrieve access token.');
+            throw new UnableToFetchAccessToken('Failed to retrieve access token.');
         }
 
         return $tokens['access_token'];
