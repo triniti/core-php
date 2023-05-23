@@ -16,7 +16,7 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\RequestInterface;
-use Triniti\Notify\Exception\OauthTokenGenerationFailed;
+use Triniti\Notify\Exception\UnableToFetchAccessToken ;
 use Triniti\Notify\Notifier;
 use Triniti\Schemas\Notify\NotifierResultV1;
 use Triniti\Sys\Flags;
@@ -54,7 +54,7 @@ abstract class AbstractFcmNotifier implements Notifier
             $this->guzzleClient = null;
             $this->config = json_decode(base64_decode(Crypto::decrypt($this->firebaseServiceAccountSecrets, $this->key)), true);
             $payload = $this->buildPayload($notification, $app, $content);
-            $this->accessToken = $this->generateAccessToken();
+            $this->accessToken = $this->fetchAccessToken();
             $result = $this->sendNotification($payload);
             $response = $result['response'] ?? [];
             $result = NotifierResultV1::fromArray($result);
@@ -170,7 +170,7 @@ abstract class AbstractFcmNotifier implements Notifier
         return $notification->get('_id')->toString();
     }
 
-    protected function generateAccessToken(): string
+    protected function fetchAccessToken(): string
     {
         $client = new \Google_Client();
         $client->setAuthConfig($this->config);
@@ -178,7 +178,7 @@ abstract class AbstractFcmNotifier implements Notifier
         $tokens = $client->fetchAccessTokenWithAssertion();
 
         if (!isset($tokens['access_token'])) {
-            throw new OAuthTokenGenerationFailed('Firebase OAuth token generation failed.');
+            throw new UnableToFetchAccessToken ('Failed to retrieve access token.');
         }
 
         return $tokens['access_token'];
