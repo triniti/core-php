@@ -52,7 +52,7 @@ abstract class AbstractFcmNotifier implements Notifier
 
         try {
             $this->guzzleClient = null;
-            $this->config = json_decode(base64_decode(Crypto::decrypt($this->firebaseServiceAccountSecrets, $this->key)), true);
+            $this->config = $this->parseConfig();
             $payload = $this->buildPayload($notification, $app, $content);
             $this->accessToken = $this->fetchAccessToken();
             $result = $this->sendNotification($payload);
@@ -182,6 +182,11 @@ abstract class AbstractFcmNotifier implements Notifier
         }
 
         return $tokens['access_token'];
+    }
+
+    protected function parseConfig(): array
+    {
+        return json_decode(base64_decode(Crypto::decrypt($this->firebaseServiceAccountSecrets, $this->key)), true);
     }
 
     /**

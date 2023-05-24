@@ -23,6 +23,8 @@ use Triniti\Tests\AbstractPbjxTest;
 class FcmBrowserNotifierTest extends AbstractPbjxTest
 {
     const FCM_API_KEY = 'XXX';
+    const FIREBASE_SECRETS = 'ENCRYPTED_STRING';
+
 
     protected Flags $flags;
     protected Key $key;
@@ -38,20 +40,35 @@ class FcmBrowserNotifierTest extends AbstractPbjxTest
         $this->ncr->putNode($flagset);
         $this->flags = new Flags($this->ncr, 'acme:flagset:test');
         $this->key = Key::createNewRandomKey();
-        $this->notifier = new class($this->flags, $this->key) extends FcmBrowserNotifier
+        $this->notifier = new class($this->flags, $this->key, self::FIREBASE_SECRETS) extends FcmBrowserNotifier
         {
             protected function getGuzzleClient(): GuzzleClient
             {
                 $mock = new MockHandler([
-                    new Response(201, [], '{"message_id":"123"}'),
+                    new Response(201, [], '{"name":"123"}'),
                 ]);
-
                 return new GuzzleClient(['handler' => HandlerStack::create($mock)]);
             }
 
             public function setFlags(Flags $flags): void
             {
                 $this->flags = $flags;
+            }
+
+            protected function parseConfig(): array
+            {
+                return [
+                    'project_id' => 'tmz-test',
+                    'client_email' => 'test@tmz.com',
+                    'client_id' => '123',
+                    'private_key_id' => '123',
+                    'private_key' => '123'
+                ];
+            }
+
+            protected function fetchAccessToken(): string
+            {
+                return '123';
             }
         };
     }
@@ -76,11 +93,12 @@ class FcmBrowserNotifierTest extends AbstractPbjxTest
     public function testSendWithoutContent()
     {
         $result = $this->notifier->send($this->getNotification(), $this->getApp());
+
         $this->assertTrue($result->get('ok'), 'notifications can be sent without content');
         $this->assertSame(
             '123',
-            $result->getFromMap('tags', 'fcm_message_id'),
-            'fcm_message_id must match'
+            $result->getFromMap('tags', 'fcm_name'),
+            'fcm_name must match'
         );
     }
 

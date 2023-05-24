@@ -33,6 +33,6 @@ class FcmBrowserNotifier extends AbstractFcmNotifier
             }
         }
 
-        return $payload;
+        return ['message' => $payload];
     }
 }
