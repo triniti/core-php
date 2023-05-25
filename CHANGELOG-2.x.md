@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
+## v2.4.0
+* Update FCM to HTTP v1 API.
+
+
 ## v2.3.2
 * Change ${var} in strings is deprecated, use {$var} instead.
 
