@@ -61,7 +61,7 @@ abstract class AbstractFcmNotifier implements Notifier
 
             if (isset($response['name'])) {
                 preg_match('/.*\/(\d+)/', $response['name'], $matches);
-                $result->addToMap('tags', 'fcm_message_id', $matches[0] ?? '');
+                $result->addToMap('tags', 'fcm_message_id', $matches[1] ?? '');
             }
         } catch (\Throwable $e) {
             $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN->value;
