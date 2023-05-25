@@ -44,7 +44,7 @@ class FcmIosNotifierTest extends AbstractPbjxTest
             protected function getGuzzleClient(): GuzzleClient
             {
                 $mock = new MockHandler([
-                    new Response(201, [], '{"name":"123"}'),
+                    new Response(201, [], '{"name":"projects/123"}'),
                 ]);
                 return new GuzzleClient(['handler' => HandlerStack::create($mock)]);
             }
@@ -97,8 +97,8 @@ class FcmIosNotifierTest extends AbstractPbjxTest
         $this->assertTrue($result->get('ok'), 'notifications can be sent without content');
         $this->assertSame(
             '123',
-            $result->getFromMap('tags', 'fcm_name'),
-            'fcm_name must match'
+            $result->getFromMap('tags', 'fcm_message_id'),
+            'fcm_message_id must match'
         );
     }
 

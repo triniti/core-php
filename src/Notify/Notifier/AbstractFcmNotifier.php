@@ -60,7 +60,8 @@ abstract class AbstractFcmNotifier implements Notifier
             $result = NotifierResultV1::fromArray($result);
 
             if (isset($response['name'])) {
-                $result->addToMap('tags', 'fcm_name', (string)$response['name']);
+                $name = explode('/', $response['name']);
+                $result->addToMap('tags', 'fcm_message_id', array_pop($name));
             }
         } catch (\Throwable $e) {
             $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN->value;
