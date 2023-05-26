@@ -15,7 +15,6 @@
     "gdbots/crypto-bundle": "^3.1",
     "gdbots/enrichments": "^3.0",
     "gdbots/iam-bundle": "^3.0",
-    "google/apiclient": "^2.9",
     "guzzlehttp/oauth-subscriber": "~0.5",
     "ruflin/elastica": "^7.1",
     "symfony/asset": "^6.2",
