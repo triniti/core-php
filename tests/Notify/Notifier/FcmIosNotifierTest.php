@@ -57,8 +57,8 @@ class FcmIosNotifierTest extends AbstractPbjxTest
             protected function parseConfig(): array
             {
                 return [
-                    'project_id' => 'tmz-test',
-                    'client_email' => 'test@tmz.com',
+                    'project_id' => 'test',
+                    'client_email' => 'test@test.com',
                     'client_id' => '123',
                     'private_key_id' => '123',
                     'private_key' => '123'
