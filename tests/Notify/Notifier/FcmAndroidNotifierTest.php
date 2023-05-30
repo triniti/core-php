@@ -59,8 +59,8 @@ class FcmAndroidNotifierTest extends AbstractPbjxTest
             protected function parseConfig(): array
             {
                 return [
-                    'project_id' => 'test',
-                    'client_email' => 'test@test.com',
+                    'project_id' => 'acme-test',
+                    'client_email' => 'test@acme.com',
                     'client_id' => '123',
                     'private_key_id' => '123',
                     'private_key' => '123'
