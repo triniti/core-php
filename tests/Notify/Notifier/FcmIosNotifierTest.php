@@ -22,8 +22,7 @@ use Triniti\Tests\AbstractPbjxTest;
 
 class FcmIosNotifierTest extends AbstractPbjxTest
 {
-    const FCM_API_KEY = 'XXX';
-    const FIREBASE_SECRETS = 'ENCRYPTED_STRING';
+    const FCM_AUTH_CONFIG = '{"project_id": "acme-test","client_email": "test@acme.com", "client_id": "123", "private_key_id": "123", "private_key": "123"}';
 
     protected Flags $flags;
     protected Key $key;
@@ -39,7 +38,7 @@ class FcmIosNotifierTest extends AbstractPbjxTest
         $this->ncr->putNode($flagset);
         $this->flags = new Flags($this->ncr, 'acme:flagset:test');
         $this->key = Key::createNewRandomKey();
-        $this->notifier = new class($this->flags, $this->key, self::FIREBASE_SECRETS) extends FcmIosNotifier
+        $this->notifier = new class($this->flags, $this->key) extends FcmIosNotifier
         {
             protected function getGuzzleClient(): GuzzleClient
             {
@@ -52,17 +51,6 @@ class FcmIosNotifierTest extends AbstractPbjxTest
             public function setFlags(Flags $flags): void
             {
                 $this->flags = $flags;
-            }
-
-            protected function parseConfig(): array
-            {
-                return [
-                    'project_id' => 'acme-test',
-                    'client_email' => 'test@acme.com',
-                    'client_id' => '123',
-                    'private_key_id' => '123',
-                    'private_key' => '123'
-                ];
             }
 
             protected function fetchAccessToken(): string
@@ -146,9 +134,9 @@ class FcmIosNotifierTest extends AbstractPbjxTest
     {
         return IosAppV1::create()
             ->set(
-                'fcm_api_key',
+                'fcm_auth_config',
                 Crypto::encrypt(
-                    self::FCM_API_KEY,
+                    base64_encode(self::FCM_AUTH_CONFIG),
                     $this->key
                 )
             );

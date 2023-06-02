@@ -22,9 +22,7 @@ use Triniti\Tests\AbstractPbjxTest;
 
 class FcmBrowserNotifierTest extends AbstractPbjxTest
 {
-    const FCM_API_KEY = 'XXX';
-    const FIREBASE_SECRETS = 'ENCRYPTED_STRING';
-
+    const FCM_AUTH_CONFIG = '{"project_id": "acme-test","client_email": "test@acme.com", "client_id": "123", "private_key_id": "123", "private_key": "123"}';
 
     protected Flags $flags;
     protected Key $key;
@@ -40,7 +38,7 @@ class FcmBrowserNotifierTest extends AbstractPbjxTest
         $this->ncr->putNode($flagset);
         $this->flags = new Flags($this->ncr, 'acme:flagset:test');
         $this->key = Key::createNewRandomKey();
-        $this->notifier = new class($this->flags, $this->key, self::FIREBASE_SECRETS) extends FcmBrowserNotifier
+        $this->notifier = new class($this->flags, $this->key) extends FcmBrowserNotifier
         {
             protected function getGuzzleClient(): GuzzleClient
             {
@@ -53,17 +51,6 @@ class FcmBrowserNotifierTest extends AbstractPbjxTest
             public function setFlags(Flags $flags): void
             {
                 $this->flags = $flags;
-            }
-
-            protected function parseConfig(): array
-            {
-                return [
-                    'project_id' => 'acme-test',
-                    'client_email' => 'test@acme.com',
-                    'client_id' => '123',
-                    'private_key_id' => '123',
-                    'private_key' => '123'
-                ];
             }
 
             protected function fetchAccessToken(): string
@@ -130,9 +117,9 @@ class FcmBrowserNotifierTest extends AbstractPbjxTest
     {
         return BrowserAppV1::create()
             ->set(
-                'fcm_api_key',
+                'fcm_auth_config',
                 Crypto::encrypt(
-                    self::FCM_API_KEY,
+                    base64_encode(self::FCM_AUTH_CONFIG),
                     $this->key
                 )
             );

@@ -16,6 +16,7 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\RequestInterface;
+use Triniti\Notify\Exception\RequiredFieldNotSet;
 use Triniti\Notify\Exception\UnableToFetchAccessToken ;
 use Triniti\Notify\Notifier;
 use Triniti\Schemas\Notify\NotifierResultV1;
@@ -30,14 +31,12 @@ abstract class AbstractFcmNotifier implements Notifier
     protected ?GuzzleClient $guzzleClient = null;
     protected Key $key;
     protected string $accessToken = '';
-    protected array $config = [];
-    protected string $firebaseServiceAccountSecrets = '';
+    protected array $authConfig = [];
 
-    public function __construct(Flags $flags, Key $key, string $firebaseServiceAccountSecrets)
+    public function __construct(Flags $flags, Key $key)
     {
         $this->flags = $flags;
         $this->key = $key;
-        $this->firebaseServiceAccountSecrets = $firebaseServiceAccountSecrets;
     }
 
     public function send(Message $notification, Message $app, ?Message $content = null): Message
@@ -52,7 +51,8 @@ abstract class AbstractFcmNotifier implements Notifier
 
         try {
             $this->guzzleClient = null;
-            $this->config = $this->parseConfig();
+            $this->validate($notification, $app);
+            $this->authConfig = $this->parseAuthConfig($app->get('fcm_auth_config'));
             $payload = $this->buildPayload($notification, $app, $content);
             $this->accessToken = $this->fetchAccessToken();
             $result = $this->sendNotification($payload);
@@ -74,6 +74,13 @@ abstract class AbstractFcmNotifier implements Notifier
         }
 
         return $result;
+    }
+
+    protected function validate(Message $notification, Message $app): void
+    {
+        if (!$app->has('fcm_auth_config')) {
+            throw new RequiredFieldNotSet('[fcm_auth_config] is required');
+        }
     }
 
     /**
@@ -130,7 +137,7 @@ abstract class AbstractFcmNotifier implements Notifier
     protected function sendNotification(array $payload): array
     {
         try {
-            $response = $this->getGuzzleClient()->post("/v1/projects/{$this->config['project_id']}/messages:send", [RequestOptions::JSON => $payload]);
+            $response = $this->getGuzzleClient()->post("/v1/projects/{$this->authConfig['project_id']}/messages:send", [RequestOptions::JSON => $payload]);
             $httpCode = HttpCode::from($response->getStatusCode());
             $content = (string)$response->getBody()->getContents();
 
@@ -174,7 +181,7 @@ abstract class AbstractFcmNotifier implements Notifier
     protected function fetchAccessToken(): string
     {
         $client = new \Google_Client();
-        $client->setAuthConfig($this->config);
+        $client->setAuthConfig($this->authConfig);
         $client->addScope(\Google_Service_FirebaseCloudMessaging::FIREBASE_MESSAGING);
         $tokens = $client->fetchAccessTokenWithAssertion();
 
@@ -185,9 +192,9 @@ abstract class AbstractFcmNotifier implements Notifier
         return $tokens['access_token'];
     }
 
-    protected function parseConfig(): array
+    protected function parseAuthConfig(string $authConfig): array
     {
-        return json_decode(base64_decode(Crypto::decrypt($this->firebaseServiceAccountSecrets, $this->key)), true);
+        return json_decode(base64_decode(Crypto::decrypt($authConfig, $this->key)), true);
     }
 
     /**
