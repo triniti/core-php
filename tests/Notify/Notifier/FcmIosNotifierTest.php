@@ -10,6 +10,7 @@ use Acme\Schemas\Sys\Node\FlagsetV1;
 use Defuse\Crypto\Crypto;
 use Defuse\Crypto\Key;
 use Gdbots\Ncr\Repository\InMemoryNcr;
+use Gdbots\Pbj\Message;
 use Gdbots\Schemas\Pbjx\Enum\Code;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Handler\MockHandler;
@@ -22,8 +23,6 @@ use Triniti\Tests\AbstractPbjxTest;
 
 class FcmIosNotifierTest extends AbstractPbjxTest
 {
-    const FCM_AUTH_CONFIG = '{"project_id": "acme-test","client_email": "test@acme.com", "client_id": "123", "private_key_id": "123", "private_key": "123"}';
-
     protected Flags $flags;
     protected Key $key;
     protected Notifier $notifier;
@@ -57,6 +56,19 @@ class FcmIosNotifierTest extends AbstractPbjxTest
             {
                 return '123';
             }
+
+            protected function parseAuthConfig(Message $app): array
+            {
+                return [
+                    'project_id'     => 'acme-test',
+                    'client_email'   => 'test@acme.com',
+                    'client_id'      => '123',
+                    'private_key_id' => '123',
+                    'private_key'    => '123'
+                ];
+            }
+
+            protected function validate(Message $notification, Message $app): void {}
         };
     }
 
@@ -132,14 +144,7 @@ class FcmIosNotifierTest extends AbstractPbjxTest
 
     protected function getApp(): IosAppV1
     {
-        return IosAppV1::create()
-            ->set(
-                'fcm_auth_config',
-                Crypto::encrypt(
-                    base64_encode(self::FCM_AUTH_CONFIG),
-                    $this->key
-                )
-            );
+        return IosAppV1::create();
     }
 
     protected function getContent(): ArticleV1
