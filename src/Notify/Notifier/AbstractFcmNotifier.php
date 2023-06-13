@@ -17,7 +17,7 @@ use GuzzleHttp\Middleware;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\RequestInterface;
 use Triniti\Notify\Exception\RequiredFieldNotSet;
-use Triniti\Notify\Exception\UnableToFetchAccessToken ;
+use Triniti\Notify\Exception\UnableToFetchAccessToken;
 use Triniti\Notify\Notifier;
 use Triniti\Schemas\Notify\NotifierResultV1;
 use Triniti\Sys\Flags;
@@ -100,7 +100,7 @@ abstract class AbstractFcmNotifier implements Notifier
                 'body' => $notification->get('body', $title),
             ],
             'fcm_options'  => [
-                'analytics_label' => $this->generateAnalyticsLabel($notification),
+                'analytics_label' => $this->generateAnalyticsLabel($notification, $app),
             ],
         ];
 
@@ -173,7 +173,7 @@ abstract class AbstractFcmNotifier implements Notifier
         ];
     }
 
-    protected function generateAnalyticsLabel(Message $notification): string
+    protected function generateAnalyticsLabel(Message $notification, Message $app): string
     {
         return $notification->get('_id')->toString();
     }
