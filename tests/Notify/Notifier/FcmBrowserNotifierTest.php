@@ -10,6 +10,7 @@ use Acme\Schemas\Sys\Node\FlagsetV1;
 use Defuse\Crypto\Crypto;
 use Defuse\Crypto\Key;
 use Gdbots\Ncr\Repository\InMemoryNcr;
+use Gdbots\Pbj\Message;
 use Gdbots\Schemas\Pbjx\Enum\Code;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Handler\MockHandler;
@@ -22,8 +23,6 @@ use Triniti\Tests\AbstractPbjxTest;
 
 class FcmBrowserNotifierTest extends AbstractPbjxTest
 {
-    const FCM_API_KEY = 'XXX';
-
     protected Flags $flags;
     protected Key $key;
     protected Notifier $notifier;
@@ -43,9 +42,8 @@ class FcmBrowserNotifierTest extends AbstractPbjxTest
             protected function getGuzzleClient(): GuzzleClient
             {
                 $mock = new MockHandler([
-                    new Response(201, [], '{"message_id":"123"}'),
+                    new Response(201, [], '{"name":"projects/123"}'),
                 ]);
-
                 return new GuzzleClient(['handler' => HandlerStack::create($mock)]);
             }
 
@@ -53,6 +51,24 @@ class FcmBrowserNotifierTest extends AbstractPbjxTest
             {
                 $this->flags = $flags;
             }
+
+            protected function fetchAccessToken(): string
+            {
+                return '123';
+            }
+
+            protected function parseAuthConfig(Message $app): array
+            {
+                return [
+                    'project_id'     => 'acme-test',
+                    'client_email'   => 'test@acme.com',
+                    'client_id'      => '123',
+                    'private_key_id' => '123',
+                    'private_key'    => '123'
+                ];
+            }
+
+            protected function validate(Message $notification, Message $app): void {}
         };
     }
 
@@ -76,6 +92,7 @@ class FcmBrowserNotifierTest extends AbstractPbjxTest
     public function testSendWithoutContent()
     {
         $result = $this->notifier->send($this->getNotification(), $this->getApp());
+
         $this->assertTrue($result->get('ok'), 'notifications can be sent without content');
         $this->assertSame(
             '123',
@@ -110,14 +127,7 @@ class FcmBrowserNotifierTest extends AbstractPbjxTest
 
     protected function getApp(): BrowserAppV1
     {
-        return BrowserAppV1::create()
-            ->set(
-                'fcm_api_key',
-                Crypto::encrypt(
-                    self::FCM_API_KEY,
-                    $this->key
-                )
-            );
+        return BrowserAppV1::create();
     }
 
     protected function getContent(): ArticleV1

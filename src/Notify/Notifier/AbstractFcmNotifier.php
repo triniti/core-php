@@ -17,6 +17,7 @@ use GuzzleHttp\Middleware;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\RequestInterface;
 use Triniti\Notify\Exception\RequiredFieldNotSet;
+use Triniti\Notify\Exception\UnableToFetchAccessToken;
 use Triniti\Notify\Notifier;
 use Triniti\Schemas\Notify\NotifierResultV1;
 use Triniti\Sys\Flags;
@@ -26,10 +27,11 @@ abstract class AbstractFcmNotifier implements Notifier
     const API_ENDPOINT = 'https://fcm.googleapis.com';
     const DISABLED_FLAG_NAME = 'fcm_notifier_disabled';
 
-    protected string $apiKey = '';
     protected Flags $flags;
     protected ?GuzzleClient $guzzleClient = null;
     protected Key $key;
+    protected string $accessToken = '';
+    protected array $authConfig = [];
 
     public function __construct(Flags $flags, Key $key)
     {
@@ -50,14 +52,16 @@ abstract class AbstractFcmNotifier implements Notifier
         try {
             $this->guzzleClient = null;
             $this->validate($notification, $app);
-            $this->apiKey = Crypto::decrypt($app->get('fcm_api_key'), $this->key);
+            $this->authConfig = $this->parseAuthConfig($app);
             $payload = $this->buildPayload($notification, $app, $content);
+            $this->accessToken = $this->fetchAccessToken();
             $result = $this->sendNotification($payload);
             $response = $result['response'] ?? [];
             $result = NotifierResultV1::fromArray($result);
 
-            if (isset($response['message_id'])) {
-                $result->addToMap('tags', 'fcm_message_id', (string)$response['message_id']);
+            if (isset($response['name'])) {
+                preg_match('/.*\/(\d+)/', $response['name'], $matches);
+                $result->addToMap('tags', 'fcm_message_id', $matches[1] ?? '');
             }
         } catch (\Throwable $e) {
             $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN->value;
@@ -74,8 +78,8 @@ abstract class AbstractFcmNotifier implements Notifier
 
     protected function validate(Message $notification, Message $app): void
     {
-        if (!$app->has('fcm_api_key')) {
-            throw new RequiredFieldNotSet('[fcm_api_key] is required');
+        if (!$app->has('fcm_auth_config')) {
+            throw new RequiredFieldNotSet('[fcm_auth_config] is required');
         }
     }
 
@@ -96,7 +100,7 @@ abstract class AbstractFcmNotifier implements Notifier
                 'body' => $notification->get('body', $title),
             ],
             'fcm_options'  => [
-                'analytics_label' => $notification->get('_id')->toString(),
+                'analytics_label' => $this->generateAnalyticsLabel($notification, $app),
             ],
         ];
 
@@ -110,7 +114,7 @@ abstract class AbstractFcmNotifier implements Notifier
         }
 
         if (count($topics) === 1) {
-            $payload['to'] = "/topics/{$topics[0]}";
+            $payload['topic'] = $topics[0];
             return $payload;
         }
 
@@ -133,7 +137,7 @@ abstract class AbstractFcmNotifier implements Notifier
     protected function sendNotification(array $payload): array
     {
         try {
-            $response = $this->getGuzzleClient()->post('/fcm/send', [RequestOptions::JSON => $payload]);
+            $response = $this->getGuzzleClient()->post("/v1/projects/{$this->authConfig['project_id']}/messages:send", [RequestOptions::JSON => $payload]);
             $httpCode = HttpCode::from($response->getStatusCode());
             $content = (string)$response->getBody()->getContents();
 
@@ -169,6 +173,30 @@ abstract class AbstractFcmNotifier implements Notifier
         ];
     }
 
+    protected function generateAnalyticsLabel(Message $notification, Message $app): string
+    {
+        return $notification->get('_id')->toString();
+    }
+
+    protected function fetchAccessToken(): string
+    {
+        $client = new \Google_Client();
+        $client->setAuthConfig($this->authConfig);
+        $client->addScope(\Google_Service_FirebaseCloudMessaging::FIREBASE_MESSAGING);
+        $tokens = $client->fetchAccessTokenWithAssertion();
+
+        if (!isset($tokens['access_token'])) {
+            throw new UnableToFetchAccessToken();
+        }
+
+        return $tokens['access_token'];
+    }
+
+    protected function parseAuthConfig(Message $app): array
+    {
+        return json_decode(base64_decode(Crypto::decrypt($app->get('fcm_auth_config'), $this->key)), true);
+    }
+
     /**
      * @link https://firebase.google.com/docs/cloud-messaging/auth-server
      *
@@ -181,7 +209,7 @@ abstract class AbstractFcmNotifier implements Notifier
             $stack->push(
                 Middleware::mapRequest(
                     function (RequestInterface $request) {
-                        return $request->withHeader('Authorization', "key={$this->apiKey}");
+                        return $request->withHeader('Authorization', "Bearer {$this->accessToken}");
                     }
                 )
             );

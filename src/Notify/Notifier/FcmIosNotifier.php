@@ -18,13 +18,13 @@ class FcmIosNotifier extends AbstractFcmNotifier
     protected function buildPayload(Message $notification, Message $app, ?Message $content = null): array
     {
         $payload = parent::buildPayload($notification, $app, $content);
-        $payload['content_available'] = true;
-        $payload['mutable_content'] = true;
+        // https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/generating_a_remote_notification?language=objc
+        $payload['apns']['payload']['aps'] = ['content-available' => 1, 'mutable-content' => 1];
 
         if (!isset($payload['notification'])) {
             $payload['notification'] = [];
         }
-        $payload['notification']['click_action'] = 'COMMENT_SNOOZE';
+
         $payload['data'] = [
             'notification_ref' => NodeRef::fromNode($notification)->toString(),
         ];
@@ -36,6 +36,6 @@ class FcmIosNotifier extends AbstractFcmNotifier
             $payload['data']['type'] = "{$contentRef->getVendor()}#{$contentRef->getLabel()}";
         }
 
-        return $payload;
+        return ['message' => $payload];
     }
 }

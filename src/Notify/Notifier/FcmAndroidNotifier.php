@@ -26,7 +26,7 @@ class FcmAndroidNotifier extends AbstractFcmNotifier
             $payload['data']['guid'] = $contentRef->getId();
         }
 
-        return $payload;
+        return ['message' => $payload];
     }
 }
 
