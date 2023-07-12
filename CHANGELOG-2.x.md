@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
+## v2.4.1
+* In `\Triniti\Ovp\UpdateTranscriptionStatusHandler::handleCommand` update the Document Asset last as it is least likely to be available in the NCR. When it is unavailable the event is not applied to the Video, but that process only requires the Document Asset's NodeRef, which is known. 
+
+
 ## v2.4.0
 * Update FCM to HTTP v1 API.
 
