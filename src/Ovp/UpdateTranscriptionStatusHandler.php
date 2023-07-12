@@ -69,7 +69,7 @@ class UpdateTranscriptionStatusHandler implements CommandHandler
         ));
 
         /** @var NodeRef[] $linkedRefs */
-        $linkedRefs = array_merge([$documentRef], $videoAsset->get('linked_refs', []));
+        $linkedRefs = array_merge($videoAsset->get('linked_refs', []), [$documentRef]);
 
         foreach ($linkedRefs as $linkedRef) {
             $method = 'update' . StringUtil::toCamelFromSlug($linkedRef->getLabel());
