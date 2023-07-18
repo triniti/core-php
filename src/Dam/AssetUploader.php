@@ -59,11 +59,11 @@ class AssetUploader
         $metadata['asset-ref'] = $this->assetIdToNodeRef($assetId)->toString();
 
         $this->s3Client->putObject([
-            'Bucket'       => $this->bucket,
-            'Key'          => $assetId->toFilePath($version, $quality),
+            'Bucket'       => $options['bucket'] ?? $this->bucket,
+            'Key'          => $options['key'] ?? $assetId->toFilePath($version, $quality),
             'SourceFile'   => $filename,
             'ContentType'  => $mimeType,
-            'ACL'          => 'public-read',
+            'ACL'          => $options['acl'] ?? 'public-read',
             'CacheControl' => 'max-age=31536000', // 1 year
             'Metadata'     => $metadata,
         ]);
