@@ -3,7 +3,7 @@ This changelog references the relevant changes done in 2.x versions.
 
 
 ## v2.4.2
-* In `Triniti\Dam\AssetUploader::uploadToS3` add ability to upload to s3 ingest bucket.
+* In `Triniti\Dam\AssetUploader::uploadToS3` add ability to customize bucket, key, and acl via options when uploading file to s3.
 
 
 ## v2.4.1
