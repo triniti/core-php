@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 1.x versions.
 
 
+## v1.1.3
+* Add webp image mimetype in `Triniti\Dam\Util\MimeTypeUtil`
+
+
 ## v1.1.2
 * Reduce max gallery image count to 130 in `Triniti\AppleNews\ArticleDocumentMarshaler`
 
