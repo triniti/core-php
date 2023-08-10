@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
+## v2.4.3
+* Add webp image mimetype in `Triniti\Dam\Util\MimeTypeUtil`
+
+
 ## v2.4.2
 * In `Triniti\Dam\AssetUploader::uploadToS3` add ability to customize bucket, key, and acl via options when uploading file to s3.
 
