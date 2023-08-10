@@ -98,6 +98,7 @@ class MimeTypeUtil
             case self::check('image/png');
             case self::check('image/svg+xml');
             case self::check('image/tiff');
+            case self::check('image/webp');
             case self::check('image/x-icon');
             case self::check('image/x-pict');
             case self::check('image/x-portable-anymap');
