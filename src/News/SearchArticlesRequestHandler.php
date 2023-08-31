@@ -90,7 +90,7 @@ class SearchArticlesRequestHandler extends AbstractSearchNodesRequestHandler
 
             do {
                 $node = array_shift($unslottedNodes);
-                if (!isset($slottedIds[$node->fget('_id')])) {
+                if (null !== $node && !isset($slottedIds[$node->fget('_id')])) {
                     $finalNodes[] = $node;
                     break;
                 }

@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
+## v2.4.4
+* Check for empty unslotted nodes in SearchTeasersRequestHandler and SearchArticlesRequestHandler.
+
+
 ## v2.4.3
 * Add webp image mimetype in `Triniti\Dam\Util\MimeTypeUtil`
 
