@@ -25,7 +25,7 @@ class AppleNewsApiTest extends TestCase
                     'secret',
                 ]
             )
-            ->setMethods(
+            ->onlyMethods(
                 [
                     'getGuzzleClient',
                 ]
@@ -278,7 +278,7 @@ class AppleNewsApiTest extends TestCase
         $this->assertTrue($response['ok']);
     }
 
-    public function providerTestRequestInvalidStatusCode(): array
+    public static function providerTestRequestInvalidStatusCode(): array
     {
         /* status code*/
         return [

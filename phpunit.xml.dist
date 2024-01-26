@@ -4,6 +4,7 @@
   <testsuites>
     <testsuite name="Triniti">
       <directory>tests/</directory>
+      <exclude>tests/AbstractPbjxTest.php</exclude>
     </testsuite>
   </testsuites>
 

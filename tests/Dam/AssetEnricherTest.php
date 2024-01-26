@@ -24,7 +24,7 @@ final class AssetEnricherTest extends TestCase
         /** @var S3Client|MockObject $s3Client */
         $s3Client = $this->getMockBuilder(S3Client::class)
             ->disableOriginalConstructor()
-            ->setMethods(['headObject'])
+            ->addMethods(['headObject'])
             ->getMock();
         $s3Client->method('headObject')
             ->willReturn([

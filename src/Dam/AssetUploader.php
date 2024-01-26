@@ -63,7 +63,7 @@ class AssetUploader
             'Key'          => $options['key'] ?? $assetId->toFilePath($version, $quality),
             'SourceFile'   => $filename,
             'ContentType'  => $mimeType,
-            'ACL'          => $options['acl'] ?? 'public-read',
+            'ACL'          => $options['acl'] ?? 'bucket-owner-full-control',
             'CacheControl' => 'max-age=31536000', // 1 year
             'Metadata'     => $metadata,
         ]);

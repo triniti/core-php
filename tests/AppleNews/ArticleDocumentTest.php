@@ -87,7 +87,7 @@ class ArticleDocumentTest extends TestCase
         $this->assertJsonStringEqualsJsonString($expectedJson, json_encode($this->articleDocument));
     }
 
-    public function providerTestMissingGlobalSettings(): array
+    public static function providerTestMissingGlobalSettings(): array
     {
         $docMissingComponentLayout = new ArticleDocument();
         $docMissingComponentLayout->setIdentifier('identifier');

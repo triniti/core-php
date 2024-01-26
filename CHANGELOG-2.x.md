@@ -2,6 +2,12 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
+## v2.5.0
+* Require php 8.3.
+* Allow symfony 7.x
+* Do not use public-read when uploading to s3.
+
+
 ## v2.4.4
 * Check for empty unslotted nodes in SearchTeasersRequestHandler and SearchArticlesRequestHandler.
 

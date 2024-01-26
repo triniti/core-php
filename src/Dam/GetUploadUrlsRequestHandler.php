@@ -73,7 +73,7 @@ final class GetUploadUrlsRequestHandler implements RequestHandler
                 $command = $this->s3Client->getCommand('PutObject', [
                     'Bucket'       => $this->bucket,
                     'Key'          => $assetId->toFilePath($version, $quality),
-                    'ACL'          => 'public-read',
+                    // 'ACL'          => 'public-read',
                     'CacheControl' => 'max-age=31536000', // 1 year
                     'Metadata'     => [
                         'asset-ref' => $this->assetIdToNodeRef($assetId)->toString(),

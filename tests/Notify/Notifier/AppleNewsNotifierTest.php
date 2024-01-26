@@ -67,7 +67,7 @@ class AppleNewsNotifierTest extends AbstractPbjxTest
                     $marshaler,
                 ]
             )
-            ->setMethods(
+            ->onlyMethods(
                 [
                     'createArticleDocument',
                     'updateArticleDocument',

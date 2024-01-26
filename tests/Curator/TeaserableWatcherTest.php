@@ -26,6 +26,8 @@ use Triniti\Tests\MockPbjx;
 
 final class TeaserableWatcherTest extends AbstractPbjxTest
 {
+    protected MockNcr $ncr;
+
     public function setup(): void
     {
         parent::setup();
