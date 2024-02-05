@@ -57,13 +57,6 @@ class AssetEnricher implements EventSubscriber, PbjxEnricher
             if (!$schema->hasMixin('gdbots:pbjx:mixin:event')) {
                 return;
             }
-
-            if ($schema->hasMixin('gdbots:ncr:mixin:node-created')
-                || $schema->usesCurie('gdbots:ncr:event:node-created')
-            ) {
-                // always try to get file_etag from s3 upon node creation
-                $asset->clear('file_etag');
-            }
         }
 
         if ($asset->has('file_etag')) {
