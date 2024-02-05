@@ -2,6 +2,9 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
+## v2.5.1
+* Allow file details to change when asset nodes are updated
+
 ## v2.5.0
 * Require php 8.3.
 * Allow symfony 7.x
