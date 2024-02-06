@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 namespace Triniti\Dam;
 
-use Aws\RetryMiddleware;
 use Aws\S3\S3Client;
 use Brick\Math\BigInteger;
 use Gdbots\Pbjx\DependencyInjection\PbjxEnricher;
 use Gdbots\Pbjx\Event\PbjxEvent;
 use Gdbots\Pbjx\EventSubscriber;
+use GuzzleHttp\RetryMiddleware;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Triniti\Schemas\Dam\AssetId;
@@ -75,7 +75,7 @@ class AssetEnricher implements EventSubscriber, PbjxEnricher
                     'Bucket' => $this->bucket,
                     'Key'    => $key,
                     '@http'  => [
-                        'delay' => $retries > 0 ? RetryMiddleware::exponentialDelay($retries) : 0,
+                        'delay' => RetryMiddleware::exponentialDelay($retries),
                     ],
                 ]);
                 $asset
