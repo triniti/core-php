@@ -2,6 +2,12 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
+## v2.5.1
+* Allow file details to change when asset nodes are updated
+* Do not clear file_etag when enriching assets with s3 object
+* Use guzzle retry middleware in `Triniti\Dam\AssetEnricher` instead of aws
+
+
 ## v2.5.0
 * Require php 8.3.
 * Allow symfony 7.x

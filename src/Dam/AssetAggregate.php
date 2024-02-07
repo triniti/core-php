@@ -152,12 +152,6 @@ class AssetAggregate extends Aggregate
         /** @var Message $newNode */
         $newNode = $event->get('new_node');
 
-        $newNode
-            // file details SHOULD not change
-            ->set('mime_type', $oldNode->get('mime_type'))
-            ->set('file_size', $oldNode->get('file_size'))
-            ->set('file_etag', $oldNode->get('file_etag'));
-
         // assets are only published, deleted, expired, enforce it.
         if (NodeStatus::DELETED->value !== $newNode->fget('status')
             && NodeStatus::EXPIRED->value !== $newNode->fget('status')
