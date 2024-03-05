@@ -167,25 +167,31 @@ class AppleNewsNotifier implements Notifier
 
         $getArticleResult = $this->api->getArticle((string)$article->get('apple_news_id'));
         if (!$getArticleResult['ok']) {
-            // Post to slack
+            $this->sendFailureMessageToSlack();
             return $result;
         }
 
         $revision = $getArticleResult['response']['data']['revision'];
         if ($metadata['revision'] !== $revision) {
             $metadata['revision'] = $revision;
-            $updateResult = $this->api->updateArticle((string)$article->get('apple_news_id'), $document, $metadata);
+            $result = $this->api->updateArticle((string)$article->get('apple_news_id'), $document, $metadata);
 
-            if ($updateResult['ok']) {
-                return $updateResult;
+            if ($result['ok']) {
+                return $result;
             }
 
             $code = $result['response']['errors'][0]['code'] ?? null;
             if ('WRONG_REVISION' === $code) {
-                // Post to Slack
+                $this->sendFailureMessageToSlack();
             }
         }
+
         return $result;
+    }
+
+    protected function sendFailureMessageToSlack(): void
+    {
+        // Override to implement your own Slack message
     }
 
     protected function deleteArticle(Message $notification, Message $app, Message $article): array
