@@ -156,12 +156,36 @@ class AppleNewsNotifier implements Notifier
         }
 
         $latestRevision = $this->getLatestRevision($notification);
-        if (null === $latestRevision || $article->get('apple_news_revision') === $latestRevision) {
+        if (null !== $latestRevision && $metadata['revision'] !== $latestRevision) {
+            $metadata['revision'] = $latestRevision;
+            $result = $this->api->updateArticle((string)$article->get('apple_news_id'), $document, $metadata);
+        }
+
+        if ($result['ok']) {
             return $result;
         }
 
-        $metadata['revision'] = $latestRevision;
-        return $this->api->updateArticle((string)$article->get('apple_news_id'), $document, $metadata);
+        $getArticleResult = $this->api->getArticle((string)$article->get('apple_news_id'));
+        if (!$getArticleResult['ok']) {
+            // Post to slack
+            return $result;
+        }
+
+        $revision = $getArticleResult['response']['data']['revision'];
+        if ($metadata['revision'] !== $revision) {
+            $metadata['revision'] = $revision;
+            $updateResult = $this->api->updateArticle((string)$article->get('apple_news_id'), $document, $metadata);
+
+            if ($updateResult['ok']) {
+                return $updateResult;
+            }
+
+            $code = $result['response']['errors'][0]['code'] ?? null;
+            if ('WRONG_REVISION' === $code) {
+                // Post to Slack
+            }
+        }
+        return $result;
     }
 
     protected function deleteArticle(Message $notification, Message $app, Message $article): array
