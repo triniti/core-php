@@ -15,8 +15,6 @@ use Triniti\Schemas\Sys\Command\InspectSeo;
 
 class ArticleLabelsWatcher implements EventSubscriber
 {
-    protected Ncr $ncr;
-
     public static function getSubscribedEvents(): array
     {
         return [
@@ -35,7 +33,11 @@ class ArticleLabelsWatcher implements EventSubscriber
             return;
         }
 
-        sleep(5);
+        $seoDelayFlag = true;
+
+        if ($seoDelayFlag){
+            sleep(5);
+        }
 
         $command = InspectSeo::create()->set('node_ref', $event->get('node_ref'));
         $pbjx->sendAt($command);
