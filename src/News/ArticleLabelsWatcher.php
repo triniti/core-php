@@ -13,7 +13,7 @@ use Gdbots\Pbjx\Pbjx;
 use Triniti\Schemas\Sys\Command\InspectSeo;
 
 
-class InspectSeoHandler implements CommandHandler
+class ArticleLabelsWatcher implements EventSubscriber
 {
     protected Ncr $ncr;
 
