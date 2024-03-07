@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 1.x versions.
 
 
+## vN.N.N
+* Apple Notification Failures: CMS Re-Push
+
+
 ## v1.1.3
 * Add webp image mimetype in `Triniti\Dam\Util\MimeTypeUtil`
 
