@@ -165,7 +165,7 @@ class AppleNewsNotifier implements Notifier
             return $result;
         }
 
-        $getArticleResult = $this->api->getArticle((string)$article->get('apple_news_id'));
+        $getArticleResult = $this->api->getArticle($article->fget('apple_news_id'));
         if (!$getArticleResult['ok']) {
             $this->sendMessageToSlack($article, $notification);
             return $result;
@@ -174,7 +174,7 @@ class AppleNewsNotifier implements Notifier
         $revision = $getArticleResult['response']['data']['revision'];
         if ($metadata['revision'] !== $revision) {
             $metadata['revision'] = $revision;
-            $result = $this->api->updateArticle((string)$article->get('apple_news_id'), $document, $metadata);
+            $result = $this->api->updateArticle($article->fget('apple_news_id'), $document, $metadata);
 
             if ($result['ok']) {
                 return $result;
