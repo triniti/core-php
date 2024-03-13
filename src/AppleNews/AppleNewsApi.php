@@ -137,6 +137,31 @@ class AppleNewsApi
     }
 
     /**
+     * @link https://developer.apple.com/documentation/apple_news/read_article_information
+     *
+     * @param string $articleId
+     *
+     * @return array
+     */
+    public function getArticle(string $articleId): array
+    {
+        $uri = "/articles/{$articleId}";
+        try {
+            $response = $this->getGuzzleClient()->get($uri);
+            $httpCode = HttpCode::from($response->getStatusCode());
+            return [
+                'operation' => 'GET',
+                'ok'        => HttpCode::HTTP_OK === $httpCode,
+                'code'      => StatusCodeUtil::httpToVendor($httpCode)->value,
+                'http_code' => $httpCode->value,
+                'response'  => json_decode((string)$response->getBody()->getContents(), true),
+            ];
+        } catch (\Throwable $e) {
+            return $this->convertException($e, 'GET');
+        }
+    }
+
+    /**
      * @link https://developer.apple.com/documentation/apple_news/delete_an_article
      *
      * @param string $articleId

@@ -144,7 +144,7 @@ class AppleNewsNotifier implements Notifier
         $document = $this->marshaler->marshal($article);
         $metadata = $this->createArticleMetadata($article);
         $metadata['revision'] = $article->get('apple_news_revision');
-        $result = $this->api->updateArticle((string)$article->get('apple_news_id'), $document, $metadata);
+        $result = $this->api->updateArticle($article->fget('apple_news_id'), $document, $metadata);
 
         if ($result['ok']) {
             return $result;
@@ -156,12 +156,27 @@ class AppleNewsNotifier implements Notifier
         }
 
         $latestRevision = $this->getLatestRevision($notification);
-        if (null === $latestRevision || $article->get('apple_news_revision') === $latestRevision) {
+        if (null !== $latestRevision && $metadata['revision'] !== $latestRevision) {
+            $metadata['revision'] = $latestRevision;
+            $result = $this->api->updateArticle($article->fget('apple_news_id'), $document, $metadata);
+        }
+
+        if ($result['ok']) {
             return $result;
         }
 
-        $metadata['revision'] = $latestRevision;
-        return $this->api->updateArticle((string)$article->get('apple_news_id'), $document, $metadata);
+        $getArticleResult = $this->api->getArticle($article->fget('apple_news_id'));
+        if (!$getArticleResult['ok']) {
+            return $result;
+        }
+
+        $revision = $getArticleResult['response']['data']['revision'];
+        if ($metadata['revision'] !== $revision) {
+            $metadata['revision'] = $revision;
+            $result = $this->api->updateArticle($article->fget('apple_news_id'), $document, $metadata);
+        }
+
+        return $result;
     }
 
     protected function deleteArticle(Message $notification, Message $app, Message $article): array
