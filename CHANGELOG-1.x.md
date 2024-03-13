@@ -2,7 +2,7 @@
 This changelog references the relevant changes done in 1.x versions.
 
 
-## vN.N.N
+## v1.1.4
 * Apple Notification Failures: CMS Re-Push
 
 
