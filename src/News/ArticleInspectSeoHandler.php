@@ -64,6 +64,18 @@ class ArticleInspectSeoHandler implements CommandHandler {
         $successStates = ['INDEXING_ALLOWED', 'SUCCESSFUL'];
         $failureStates = ['INDEXING_STATE_UNSPECIFIED'];
 
+        $url = UriTemplateService::expand(
+            "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
+        );
+        $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
+        $request->setSiteUrl($siteUrl);
+        $request->setInspectionUrl($url);
+        $client = new \Google_Client();
+        $client->setAuthConfig(json_decode(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_AUTH_CONFIG'), true));
+        $client->addScope(\Google_Service_SearchConsole::WEBMASTERS_READONLY);
+        $service = new \Google_Service_SearchConsole($client);
+        $response = $service->urlInspection_index->inspect($request);
+
         $verdict = $response->get('inspectionResult')->get('indexStatusResult')->get('verdict');
         $indexingState = $response->get('inspectionResult')->get('indexStatusResult')->get('indexingState');
         
