@@ -67,23 +67,36 @@ class ArticleInspectSeoHandler implements CommandHandler {
         $url = UriTemplateService::expand(
             "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
         );
-        $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
-        $request->setSiteUrl($siteUrl);
-        $request->setInspectionUrl($url);
-        $client = new \Google_Client();
-        $client->setAuthConfig(json_decode(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_AUTH_CONFIG'), true));
-        $client->addScope(\Google_Service_SearchConsole::WEBMASTERS_READONLY);
-        $service = new \Google_Service_SearchConsole($client);
-        $response = $service->urlInspection_index->inspect($request);
+  
+        $urlStatus = null;
 
-        $verdict = $response->get('inspectionResult')->get('indexStatusResult')->get('verdict');
-        $indexingState = $response->get('inspectionResult')->get('indexStatusResult')->get('indexingState');
+        try {
+            $urlStatus = $this->inspectUrlIndex($url);
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+        }
+
+        $verdict = $urlStatus->get('inspectionResult')->get('indexStatusResult')->get('verdict');
+        $indexingState = $urlStatus->get('inspectionResult')->get('indexStatusResult')->get('indexingState');
         
         if ($verdict === 'PASS' && in_array($indexingState, $successStates)) {
             return true;
         } 
         
         return false;
+    }
+
+    public function inspectUrlIndex($inspectionUrl){
+        $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
+        $request->setSiteUrl($this->siteUrl);
+        $request->setInspectionUrl($inspectionUrl);
+        $client = new \Google_Client();
+        $client->setAuthConfig(json_decode(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_AUTH_CONFIG'), true));
+        $client->addScope(\Google_Service_SearchConsole::WEBMASTERS_READONLY);
+        $service = new \Google_Service_SearchConsole($client);
+        $response = $service->urlInspection_index->inspect($request);
+
+        return $response;
     }
 
     public function handleIndexingSuccess(): void {}
