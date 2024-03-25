@@ -10,17 +10,19 @@ use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Pbjx;
 
 
-class ArticleInspectSeoHandler implements CommandHandler {
+class ArticleInspectSeoHandler implements CommandHandler
+{
     private $retryCount;
+    // make max tries a flag
     private $maxRetries;
 
     public static function handlesCuries(): array
     {
         $curies = MessageResolver::findAllUsingMixin('triniti:sys:command:inspect-seo:v1', false);
         $curies[] = 'triniti:sys:command:inspect-seo:v1';
-        return $curies; 
+        return $curies;
     }
-    
+
     public function __construct(Ncr $ncr, string $siteUrl, int $maxRetries)
     {
         $this->ncr = $ncr;
@@ -45,13 +47,11 @@ class ArticleInspectSeoHandler implements CommandHandler {
                 $isIndexed = $this->checkIndexStatus($article);
 
                 if ($isIndexed) {
-                   $this->handleIndexingSuccess();
+                    return;
                 } else {
                     $this->retryCount++;
-
-                    if ($this->retryCount >= $this->maxRetries) {
-                         $this->handleIndexingFailure();
-                    }
+                    // set a timer for when to retry
+                    $isIndexed = $this->checkIndexStatus($article);
                 }
             }
         } catch (\Exception $e) {
@@ -62,12 +62,11 @@ class ArticleInspectSeoHandler implements CommandHandler {
 
     public function checkIndexStatus(Message $node): bool {
         $successStates = ['INDEXING_ALLOWED', 'SUCCESSFUL'];
-        $failureStates = ['INDEXING_STATE_UNSPECIFIED'];
 
         $url = UriTemplateService::expand(
             "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
         );
-  
+
         $urlStatus = null;
 
         try {
@@ -76,20 +75,27 @@ class ArticleInspectSeoHandler implements CommandHandler {
             error_log($e->getMessage());
         }
 
-        $verdict = $urlStatus->get('inspectionResult')->get('indexStatusResult')->get('verdict');
+        $webVerdict = $urlStatus->get('inspectionResult')->get('indexStatusResult')->get('verdict');
         $indexingState = $urlStatus->get('inspectionResult')->get('indexStatusResult')->get('indexingState');
-        
-        if ($verdict === 'PASS' && in_array($indexingState, $successStates)) {
-            return true;
-        } 
-        
-        return false;
+        $ampVerdict = $urlStatus->get('inspectionResult')->get('ampResult')->get('verdict');
+
+        if ($node->get('amp_enabled') === "true"){
+            if ($webVerdict === 'PASS' && $ampVerdict === 'PASS' && in_array($indexingState, $successStates)) {
+                $this->handleIndexingSuccess();
+            }
+        }
+
+        if ($webVerdict === 'PASS' && in_array($indexingState, $successStates)) {
+            $this->handleIndexingSuccess();
+        }
+
+        $this->handleIndexingFailure();
     }
 
-    public function inspectUrlIndex($inspectionUrl){
+    public function inspectUrlIndex($url){
         $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
         $request->setSiteUrl($this->siteUrl);
-        $request->setInspectionUrl($inspectionUrl);
+        $request->setInspectionUrl(url);
         $client = new \Google_Client();
         $client->setAuthConfig(json_decode(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_AUTH_CONFIG'), true));
         $client->addScope(\Google_Service_SearchConsole::WEBMASTERS_READONLY);
@@ -99,7 +105,11 @@ class ArticleInspectSeoHandler implements CommandHandler {
         return $response;
     }
 
-    public function handleIndexingSuccess(): void {}
+    public function handleIndexingSuccess(): bool {
+        return true;
+    }
 
-    public function handleIndexingFailure(): void {}
+    public function handleIndexingFailure(): bool {
+        return false;
+    }
 }
