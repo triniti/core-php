@@ -6,7 +6,7 @@ This changelog references the relevant changes done in 2.x versions.
 * Use field-based jobId for `Triniti\Schemas\OvpJwplayer\Command\SyncMedia`
 
 
-* ## v2.5.2
+## v2.5.2
 * Apple Notification Failures: CMS Re-Push
 
 
