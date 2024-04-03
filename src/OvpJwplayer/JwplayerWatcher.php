@@ -129,6 +129,11 @@ class JwplayerWatcher implements EventSubscriber
             ->set('node_ref', $nodeRef)
             ->addToSet('fields', $fields);
         $pbjx->copyContext($event, $command);
-        $pbjx->sendAt($command, strtotime('+5 seconds'), "{$nodeRef}.sync-jwplayer-media");
+        $jobIdSegments = [$command->get('node_ref'), 'sync-jwplayer-media'];
+        if ($command->has('fields')) {
+            $jobIdSegments[] = implode(',', $command->get('fields'));
+        }
+        $jobId = implode('.', $jobIdSegments);
+        $pbjx->sendAt($command, strtotime('+5 seconds'), $jobId);
     }
 }
