@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
+## v2.5.3
+* Use field-based jobId for Jwplayer SyncMedia commands
+
+
 ## v2.5.2
 * Apple Notification Failures: CMS Re-Push
 

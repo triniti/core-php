@@ -125,10 +125,18 @@ class JwplayerWatcher implements EventSubscriber
 
     protected function syncMedia(Message $event, Pbjx $pbjx, NodeRef $nodeRef, array $fields = []): void
     {
+        asort($fields);
         $command = SyncMediaV1::create()
             ->set('node_ref', $nodeRef)
             ->addToSet('fields', $fields);
         $pbjx->copyContext($event, $command);
-        $pbjx->sendAt($command, strtotime('+5 seconds'), "{$nodeRef}.sync-jwplayer-media");
+        $jobIdSegments = [$command->get('node_ref'), 'sync-jwplayer-media'];
+        if ($command->has('fields')) {
+            // if a captions sync is immediately followed by a thumbnail sync (or vice versa), the first
+            // job would be canceled before it has a chance to run. So include the fields in the jobId.
+            $jobIdSegments[] = implode(',', $command->get('fields'));
+        }
+        $jobId = implode('.', $jobIdSegments);
+        $pbjx->sendAt($command, strtotime('+5 seconds'), $jobId);
     }
 }
