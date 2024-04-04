@@ -26,9 +26,7 @@ class InspectSeoHandler implements CommandHandler
         ];
     }
 
-    public function __construct(Ncr $ncr, Key $key, string $siteUrl
-
-    )
+    public function __construct(Ncr $ncr, Key $key, string $siteUrl)
     {
         $this->ncr = $ncr;
         $this->siteUrl = $siteUrl;
