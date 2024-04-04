@@ -49,7 +49,7 @@ class InspectSeoHandler implements CommandHandler
     }
 
     public function checkIndexStatus(Message $node): void {
-        $successStates = ['INDEXING_ALLOWED', 'SUCCESSFUL'];
+        $successStates = ["INDEXING_ALLOWED", "SUCCESSFUL"];
         $ampVerdict = null;
 
         $url = UriTemplateService::expand(
@@ -72,19 +72,19 @@ class InspectSeoHandler implements CommandHandler
 
         $indexingState = $urlStatus->getInspectionResult()->getIndexStatusResult()->getIndexingState();
 
-        if ($node->get('is_unlisted') === 'true' || $node->get('amp_enabled') === "false"){
-            if ($webVerdict === 'PASS') {
+        if ($node->get('is_unlisted') === "true" || $node->get('amp_enabled') === "false"){
+            if ($webVerdict === "PASS") {
                 error_log("Page should not be indexed");
             }
         }
 
         if ($node->get('amp_enabled') === "true"){
-            if ($webVerdict === 'PASS' && $ampVerdict === 'PASS' && in_array($indexingState, $successStates)) {
+            if ($webVerdict === "PASS" && $ampVerdict === "PASS" && in_array($indexingState, $successStates)) {
                 $this->handleIndexingSuccess();
             }
         }
 
-        if ($webVerdict === 'PASS' && in_array($indexingState, $successStates)) {
+        if ($webVerdict === "PASS" && in_array($indexingState, $successStates)) {
             $this->handleIndexingSuccess();
         }
 
