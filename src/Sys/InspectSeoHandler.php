@@ -11,6 +11,8 @@ use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\UriTemplate\UriTemplateService;
 use Google\Service\SearchConsole\InspectUrlIndexResponse;
+use Google\Service\SearchConsole\UrlInspectionResult;
+use function PHPUnit\Framework\callback;
 
 
 class InspectSeoHandler implements CommandHandler
@@ -18,6 +20,10 @@ class InspectSeoHandler implements CommandHandler
     private string $siteUrl;
     private Ncr $ncr;
     private Key $key;
+    private $retryCount = 0;
+
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 60;
 
     public static function handlesCuries(): array
     {
@@ -44,13 +50,16 @@ class InspectSeoHandler implements CommandHandler
         $nodeRef = $command->get('node_ref');
         $article = $this->ncr->getNode($nodeRef);
 
-
-       $this->checkIndexStatus($article);
+        $this->checkIndexStatus($command, $article, $pbjx);
     }
 
-    public function checkIndexStatus(Message $node): void {
+    private function canRetry(): bool
+    {
+        return $this->retryCount < self::MAX_RETRIES;
+    }
+
+    public function checkIndexStatus(Message $command, Message $node, Pbjx $pbjx): void {
         $successStates = ["INDEXING_ALLOWED", "SUCCESSFUL"];
-        $ampVerdict = null;
 
         $url = UriTemplateService::expand(
             "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
@@ -58,15 +67,17 @@ class InspectSeoHandler implements CommandHandler
 
         try {
             $urlStatus = $this->getUrlIndexResponse($url);
-        } catch (\Exception $e) {
-           dump($e->getMessage());
-           return;
+        } catch (\Throwable $e) {
+           throw $e;
+        }
+
+        if (!$urlStatus->getInspectionResult() instanceof UrlInspectionResult) {
+            return;
         }
 
         $webVerdict = $urlStatus->getInspectionResult()->getIndexStatusResult()->getVerdict();
 
-        if ($urlStatus->getInspectionResult() !== null &&
-            $urlStatus->getInspectionResult()->getAmpResult() !== null) {
+        if ($urlStatus->getInspectionResult()->getAmpResult() !== null) {
             $ampVerdict = $urlStatus->getInspectionResult()->getAmpResult()->getVerdict();
         }
 
@@ -81,20 +92,22 @@ class InspectSeoHandler implements CommandHandler
         if ($node->get('amp_enabled') === "true"){
             if ($webVerdict === "PASS" && $ampVerdict === "PASS" && in_array($indexingState, $successStates)) {
                 $this->handleIndexingSuccess();
+                return;
             }
         }
 
         if ($webVerdict === "PASS" && in_array($indexingState, $successStates)) {
             $this->handleIndexingSuccess();
+            return;
         }
 
-        $this->handleIndexingFailure();
+        $this->handleIndexingFailure($command, $pbjx);
     }
 
     public function getUrlIndexResponse(String $url): InspectUrlIndexResponse {
         $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
         $request->setSiteUrl($this->siteUrl);
-        $request->setInspectionUrl($url);
+        $request->setInspectionUrl("https://www.tmz.com/2024/04/04/gypsy-rose-blanchard-holds-hands-ex-fiance-ken-smoke-break-dollar-general/");
         $client = new \Google_Client();
         $client->setAuthConfig(json_decode(base64_decode(Crypto::decrypt(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_OAUTH_CONFIG'), $this->key)), true));
         $client->addScope(\Google_Service_SearchConsole::WEBMASTERS_READONLY);
@@ -103,7 +116,22 @@ class InspectSeoHandler implements CommandHandler
         return $service->urlInspection_index->inspect($request);
     }
 
-    public function handleIndexingSuccess(): void {}
+    public function handleIndexingSuccess(callable $successCallback): void {
+        if (!!$successCallback) {
+            $successCallback();
+        }
+    }
 
-    public function handleIndexingFailure(): void {}
+    public function handleIndexingFailure(Message $command, Pbjx $pbjx, callable $failureCallback): void {
+        if ($this->canRetry()) {
+            $this->retryCount++;
+            $retryCommand = clone $command;
+            $retryCommand->set('search_engines', ['google']);
+            $pbjx->sendAt($retryCommand, time() + self::RETRY_DELAY);
+        }
+
+        if (!!$failureCallback) {
+            $failureCallback();
+        }
+    }
 }
