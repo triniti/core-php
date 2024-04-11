@@ -81,23 +81,24 @@ class InspectSeoHandler implements CommandHandler
         }
 
         $webVerdict = $urlStatus->getInspectionResult()->getIndexStatusResult()->getVerdict();
-        $indexingState = $urlStatus->getInspectionResult()->getIndexStatusResult()->getIndexingState();
         $ampVerdict = $urlStatus->getInspectionResult()->getAmpResult()?->getVerdict();
+        $indexingState = $urlStatus->getInspectionResult()->getIndexStatusResult()->getIndexingState();
+    
         $webPassed = $webVerdict === "PASS" && in_array($indexingState, $successStates);
-
+        $ampDisabledPassed = $node->get('amp_enabled') === false && $webPassed;
         $isUnlistedPassed = $node->get('is_unlisted') === true && $webVerdict === "PASS";
         $ampEnabledFailed = $node->get('amp_enabled') === true && ($webVerdict !== "PASS" || $ampVerdict !== "PASS") && !in_array($indexingState, $successStates);
-        $ampDisabledPassed = $node->get('amp_enabled') === false && (in_array($indexingState, $successStates) && $webVerdict === "PASS");
+
 
         if ($isUnlistedPassed) {
             $this->handleIndexingFailure($command, $pbjx, false, function (){
-                error_log("FAIL - Page is marked as unlisted but has passed indexing checks.");
+                error_log("FAIL - Page is marked as unlisted but has passed indexing check.");
             });
         }
 
         if ($ampDisabledPassed) {
             $this->handleIndexingFailure($command, $pbjx, false, function (){
-                return error_log("FAIL - AMP is disabled and article has passed indexing checks, this is a failure case.");
+                return error_log("FAIL - AMP is disabled and article has passed indexing check.");
             });
         }
 
