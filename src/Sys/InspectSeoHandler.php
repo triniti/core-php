@@ -68,7 +68,7 @@ class InspectSeoHandler implements CommandHandler
             error_log("Node ID: " . $node->get('node_id') . " | URL: {$url}");
             error_log("Retry Count: {$this->retryCount}");
 
-            $this->handleIndexingFailure($command, $pbjx, false, function () {
+            $this->handleIndexingFailure($command, $pbjx, true, function () {
                 error_log("Final failure after retries.");
             });
 
@@ -104,8 +104,9 @@ class InspectSeoHandler implements CommandHandler
             $this->handleIndexingSuccess();
         }
 
-
-        $this->handleIndexingFailure($command, $pbjx, true);
+        $this->handleIndexingFailure($command, $pbjx, true, function () {
+            error_log("Final failure after retries.");
+        });
     }
 
     public function getUrlIndexResponse(String $url): InspectUrlIndexResponse {
