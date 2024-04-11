@@ -25,6 +25,7 @@ class InspectSeoHandler implements CommandHandler
     const MAX_RETRIES = 3;
     const RETRY_DELAY = "+5 minutes";
     const SITE_URL = 'site_url';
+    const FAILED_RETRY_MESSAGE = "Final failure after retries.";
 
     public static function handlesCuries(): array
     {
@@ -69,7 +70,7 @@ class InspectSeoHandler implements CommandHandler
             error_log("Retry Count: {$this->retryCount}");
 
             $this->handleIndexingFailure($command, $pbjx, true, function () {
-                error_log("Final failure after retries.");
+                error_log(self::FAILED_RETRY_MESSAGE);
             });
 
             return;
@@ -82,30 +83,36 @@ class InspectSeoHandler implements CommandHandler
         $webVerdict = $urlStatus->getInspectionResult()->getIndexStatusResult()->getVerdict();
         $indexingState = $urlStatus->getInspectionResult()->getIndexStatusResult()->getIndexingState();
         $ampVerdict = $urlStatus->getInspectionResult()->getAmpResult()?->getVerdict();
+        $webPassed = $webVerdict === "PASS" && in_array($indexingState, $successStates);
 
-        if ($node->get('is_unlisted') === true && $webVerdict === "PASS") {
+        $isUnlistedPassed = $node->get('is_unlisted') === true && $webVerdict === "PASS";
+        $ampEnabledFailed = $node->get('amp_enabled') === true && ($webVerdict !== "PASS" || $ampVerdict !== "PASS") && !in_array($indexingState, $successStates);
+        $ampDisabledPassed = $node->get('amp_enabled') === false && (in_array($indexingState, $successStates) && $webVerdict === "PASS");
+
+        if ($isUnlistedPassed) {
             $this->handleIndexingFailure($command, $pbjx, false, function (){
                 error_log("Page is marked as unlisted but has passed indexing checks, this is a failure case.");
             });
         }
 
-        if ($node->get('amp_enabled') === true && ($webVerdict !== "PASS" || $ampVerdict !== "PASS") && !in_array($indexingState, $successStates)) {
-            $this->handleIndexingFailure($command, $pbjx, true);
-            return;
-        }
-
-        if ($node->get('amp_enabled') === false && in_array($indexingState, $successStates) && $webVerdict === "PASS") {
+        if ($ampDisabledPassed) {
             $this->handleIndexingFailure($command, $pbjx, false, function (){
                 return error_log("AMP is disabled and article has passed indexing checks, this is a failure case.");
             });
         }
 
-        if ($webVerdict === "PASS" && in_array($indexingState, $successStates)) {
+        if ($ampEnabledFailed) {
+            $this->handleIndexingFailure($command, $pbjx, true, function () {
+                error_log(self::FAILED_RETRY_MESSAGE);
+            });
+        }
+
+        if ($webPassed) {
             $this->handleIndexingSuccess();
         }
 
         $this->handleIndexingFailure($command, $pbjx, true, function () {
-            error_log("Final failure after retries.");
+            error_log(self::FAILED_RETRY_MESSAGE);
         });
     }
 
@@ -124,13 +131,15 @@ class InspectSeoHandler implements CommandHandler
     }
 
 
-    public function handleIndexingSuccess(?callable $successCallback): void {
+    public function handleIndexingSuccess(?callable $successCallback): bool {
         if (is_callable($successCallback)) {
             $successCallback();
         }
+
+        return true;
     }
 
-    public function handleIndexingFailure(Message $command, Pbjx $pbjx, bool $shouldRetry, ?callable $failureCallback = null): void {
+    public function handleIndexingFailure(Message $command, Pbjx $pbjx, bool $shouldRetry, ?callable $failureCallback = null): bool {
         if ($shouldRetry && $this->retryCount < self::MAX_RETRIES) {
             $this->retryCount++;
             $retryCommand = clone $command;
@@ -141,5 +150,7 @@ class InspectSeoHandler implements CommandHandler
                 $failureCallback();
             }
         }
+
+        return false;
     }
 }
