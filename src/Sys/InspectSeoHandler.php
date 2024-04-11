@@ -23,7 +23,7 @@ class InspectSeoHandler implements CommandHandler
     protected Flags $flags;
 
     const MAX_RETRIES = 3;
-    const RETRY_DELAY = 60;
+    const RETRY_DELAY = "+5 minutes";
     const SITE_URL = 'site_url';
 
     public static function handlesCuries(): array
@@ -134,7 +134,7 @@ class InspectSeoHandler implements CommandHandler
             $this->retryCount++;
             $retryCommand = clone $command;
             $retryCommand->set('search_engines', ['google']);
-            $pbjx->sendAt($retryCommand, time() + self::RETRY_DELAY);
+            $pbjx->sendAt($retryCommand, strtotime(self::RETRY_DELAY));
         } else {
             if (is_callable($failureCallback)) {
                 $failureCallback();
