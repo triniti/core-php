@@ -4,8 +4,6 @@ declare(strict_types=1);
 namespace Triniti\News;
 
 use Gdbots\Ncr\Event\NodeProjectedEvent;
-use Gdbots\Pbj\Message;
-use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\EventSubscriber;
 use Gdbots\Pbjx\Pbjx;
 use Triniti\Schemas\Sys\Command\InspectSeoV1;
@@ -39,11 +37,7 @@ class ArticleInspectSeoWatcher implements EventSubscriber
         if ($event->isReplay()) {
             return;
         }
-<<<<<<< HEAD
-        
-=======
 
->>>>>>> 80e62fc (clean up watcher)
         $inspectArticleCommand = InspectSeoV1::create()->set('node_ref', $event->get('node_ref'));
         $seoDelay = $this->flags->getBoolean('seo_delay_disabled') ? 'now' : "+5 minutes";
 
