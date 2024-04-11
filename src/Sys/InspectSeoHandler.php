@@ -143,7 +143,8 @@ class InspectSeoHandler implements CommandHandler
         if ($shouldRetry && $this->retryCount < self::MAX_RETRIES) {
             $this->retryCount++;
             $retryCommand = clone $command;
-            $retryCommand->set('search_engines', ['google']);
+            $searchEngines = $retryCommand->get('search_engines');
+            $retryCommand->set('search_engines', [$searchEngines]);
             $pbjx->sendAt($retryCommand, strtotime(self::RETRY_DELAY));
         } else {
             if (is_callable($failureCallback)) {
