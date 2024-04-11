@@ -91,13 +91,13 @@ class InspectSeoHandler implements CommandHandler
 
         if ($isUnlistedPassed) {
             $this->handleIndexingFailure($command, $pbjx, false, function (){
-                error_log("Page is marked as unlisted but has passed indexing checks, this is a failure case.");
+                error_log("FAIL - Page is marked as unlisted but has passed indexing checks.");
             });
         }
 
         if ($ampDisabledPassed) {
             $this->handleIndexingFailure($command, $pbjx, false, function (){
-                return error_log("AMP is disabled and article has passed indexing checks, this is a failure case.");
+                return error_log("FAIL - AMP is disabled and article has passed indexing checks, this is a failure case.");
             });
         }
 
