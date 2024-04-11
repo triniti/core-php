@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 namespace Triniti\News;
 
-use Gdbots\Ncr\NodeProjectedEvent;
+use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\EventSubscriber;
 use Gdbots\Pbjx\Pbjx;
-use Triniti\Schemas\Sys\Command\InspectSeo;
+use Triniti\Schemas\Sys\Command\InspectSeoV1;
 use Triniti\Sys\Flags;
 
 class ArticleInspectSeoWatcher implements EventSubscriber
@@ -31,7 +31,6 @@ class ArticleInspectSeoWatcher implements EventSubscriber
     public function onArticlePublished(NodeProjectedEvent $pbjxEvent): void
     {
         $event = $pbjxEvent->getLastEvent();
-        $node = $pbjxEvent->getNode();
 
         if ($this->flags->getBoolean('subscriber_disabled')){
             return;
@@ -40,19 +39,10 @@ class ArticleInspectSeoWatcher implements EventSubscriber
         if ($event->isReplay()) {
             return;
         }
-
-        if (!$node->get('unlisted')){
-            return;
-        }
-
-        $inspectArticleCommand = InspectSeo::create()->set('node_ref', $event->get('node_ref'));
-        // setting search engines ??
-
+        
+        $inspectArticleCommand = InspectSeoV1::create()->set('node_ref', $event->get('node_ref'));
         $seoDelay = $this->flags->getBoolean('seo_delay_disabled') ? 'now' : "+5 minutes";
 
-        $this->pbjx->send($inspectArticleCommand, strtotime($seoDelay));
-
-        // For prod
-        // $this->pbjx->sendAt($inspectArticleCommand, strtotime($seoDelay));
+        $this->pbjx->sendAt($inspectArticleCommand, strtotime($seoDelay));
     }
 }
