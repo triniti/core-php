@@ -39,7 +39,11 @@ class ArticleInspectSeoWatcher implements EventSubscriber
         if ($event->isReplay()) {
             return;
         }
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> 80e62fc (clean up watcher)
         $inspectArticleCommand = InspectSeoV1::create()->set('node_ref', $event->get('node_ref'));
         $seoDelay = $this->flags->getBoolean('seo_delay_disabled') ? 'now' : "+5 minutes";
 
