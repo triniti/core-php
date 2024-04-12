@@ -92,7 +92,6 @@ class InspectSeoHandler implements CommandHandler
         $isUnlistedPassed = $node->get('is_unlisted') === true && $webVerdict === "PASS";
         $ampEnabledFailed = $node->get('amp_enabled') === true && ($webVerdict !== "PASS" || $ampVerdict !== "PASS") && !in_array($indexingState, $successStates);
 
-
         if ($isUnlistedPassed) {
             $this->handleIndexingFailure($command, $pbjx, false, function (){
                 $this->logger->logger("FAIL - Page is marked as unlisted but has passed indexing check.");
@@ -101,7 +100,7 @@ class InspectSeoHandler implements CommandHandler
 
         if ($ampDisabledPassed) {
             $this->handleIndexingFailure($command, $pbjx, false, function (){
-                return $this->logger->error("FAIL - AMP is disabled and article has passed indexing check.");
+                $this->logger->error("FAIL - AMP is disabled and article has passed indexing check.");
             });
         }
 
