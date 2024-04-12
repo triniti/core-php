@@ -12,12 +12,14 @@ use Gdbots\Pbjx\Pbjx;
 use Gdbots\UriTemplate\UriTemplateService;
 use Google\Service\SearchConsole\InspectUrlIndexResponse;
 use Google\Service\SearchConsole\UrlInspectionResult;
+use Psr\Log\LoggerInterface;
 
 
 class InspectSeoHandler implements CommandHandler
 {
     private Ncr $ncr;
     private Key $key;
+    private LoggerInterface $logger;
     private int $retryCount = 0;
 
     protected Flags $flags;
@@ -34,11 +36,12 @@ class InspectSeoHandler implements CommandHandler
         ];
     }
 
-    public function __construct(Ncr $ncr, Key $key, Flags $flags)
+    public function __construct(Ncr $ncr, Key $key, Flags $flags, LoggerInterface $logger)
     {
         $this->ncr = $ncr;
         $this->key = $key;
         $this->flags = $flags;
+        $this->logger = $logger;
     }
 
     public function handleCommand(Message $command, Pbjx $pbjx): void
@@ -65,12 +68,12 @@ class InspectSeoHandler implements CommandHandler
         try {
             $urlStatus = $this->getUrlIndexResponse($url);
         } catch (\Throwable $e) {
-            error_log("An error occurred in checkIndexStatus. Exception: {$e->getMessage()}");
-            error_log("Node ID: " . $node->get('node_id') . " | URL: {$url}");
-            error_log("Retry Count: {$this->retryCount}");
+            $logger->error("An error occurred in checkIndexStatus. Exception: {$e->getMessage()}");
+            $logger->error("Node ID: " . $node->get('node_id') . " | URL: {$url}");
+            $logger->error("Retry Count: {$this->retryCount}");
 
             $this->handleIndexingFailure($command, $pbjx, true, function () {
-                error_log(self::FAILED_RETRY_MESSAGE);
+                $logger->error(self::FAILED_RETRY_MESSAGE);
             });
 
             return;
@@ -83,7 +86,7 @@ class InspectSeoHandler implements CommandHandler
         $webVerdict = $urlStatus->getInspectionResult()->getIndexStatusResult()->getVerdict();
         $ampVerdict = $urlStatus->getInspectionResult()->getAmpResult()?->getVerdict();
         $indexingState = $urlStatus->getInspectionResult()->getIndexStatusResult()->getIndexingState();
-    
+
         $webPassed = $webVerdict === "PASS" && in_array($indexingState, $successStates);
         $ampDisabledPassed = $node->get('amp_enabled') === false && $webPassed;
         $isUnlistedPassed = $node->get('is_unlisted') === true && $webVerdict === "PASS";
@@ -92,19 +95,19 @@ class InspectSeoHandler implements CommandHandler
 
         if ($isUnlistedPassed) {
             $this->handleIndexingFailure($command, $pbjx, false, function (){
-                error_log("FAIL - Page is marked as unlisted but has passed indexing check.");
+                $his=logger("FAIL - Page is marked as unlisted but has passed indexing check.");
             });
         }
 
         if ($ampDisabledPassed) {
             $this->handleIndexingFailure($command, $pbjx, false, function (){
-                return error_log("FAIL - AMP is disabled and article has passed indexing check.");
+                return $logger->error("FAIL - AMP is disabled and article has passed indexing check.");
             });
         }
 
         if ($ampEnabledFailed) {
             $this->handleIndexingFailure($command, $pbjx, true, function () {
-                error_log(self::FAILED_RETRY_MESSAGE);
+                $logger->error(self::FAILED_RETRY_MESSAGE);
             });
         }
 
@@ -113,7 +116,7 @@ class InspectSeoHandler implements CommandHandler
         }
 
         $this->handleIndexingFailure($command, $pbjx, true, function () {
-            error_log(self::FAILED_RETRY_MESSAGE);
+            $logger->error(self::FAILED_RETRY_MESSAGE);
         });
     }
 
@@ -147,10 +150,8 @@ class InspectSeoHandler implements CommandHandler
             $searchEngines = $retryCommand->get('search_engines');
             $retryCommand->set('search_engines', [$searchEngines]);
             $pbjx->sendAt($retryCommand, strtotime(self::RETRY_DELAY));
-        } else {
-            if (is_callable($failureCallback)) {
-                $failureCallback();
-            }
+        } elseif (is_callable($failureCallback)) {
+            $failureCallback();
         }
 
         return false;
