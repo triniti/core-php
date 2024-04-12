@@ -22,7 +22,6 @@ class InspectSeoHandler implements CommandHandler
     protected LoggerInterface $logger;
     protected Flags $flags;
 
-    const RETRY_DELAY = "+5 minutes";
     const INSPECT_SEO_URL_SITE_URL_FLAG_NAME = 'inspect_seo_site_url';
     const MAX_TRIES_FLAG_NAME = 'max_tries';
     const FAILED_RETRY_MESSAGE = "Final failure after retries.";
@@ -73,7 +72,7 @@ class InspectSeoHandler implements CommandHandler
             $urlStatus = $this->getUrlIndexResponse($url);
         } catch (\Throwable $e) {
             $this->logger->error("An error occurred in checkIndexStatus. Exception: {$e->getMessage()}");
-            $this->logger->error("Node ID: " . $article->get('node_id') . " | URL: {$url}");
+            $this->logger->error("Article ID: " . $article->get('node_id') . " | URL: {$url}");
             $this->logger->error("Retry Count: {$retries}");
 
             $this->handleIndexingFailure(
@@ -82,10 +81,7 @@ class InspectSeoHandler implements CommandHandler
                 $article,
                 true,
                 null,
-                self::FAILED_RETRY_MESSAGE,
-                function () {
-                    $this->logger->error(self::FAILED_RETRY_MESSAGE);
-                },
+                self::FAILED_RETRY_MESSAGE
             );
 
             return;
@@ -112,10 +108,7 @@ class InspectSeoHandler implements CommandHandler
                 $article,
                 true,
                 $inspectSeoResult,
-                self::FAILED_RETRY_MESSAGE,
-                function () {
-                    $this->logger->error(self::FAILED_RETRY_MESSAGE);
-                },
+                self::FAILED_RETRY_MESSAGE
             );
 
             return;
@@ -128,10 +121,7 @@ class InspectSeoHandler implements CommandHandler
                 $article,
                 true,
                 $inspectSeoResult,
-                self::UNLISTED_FAIL_MESSAGE,
-                function (){
-                    $this->logger->logger(self::UNLISTED_FAIL_MESSAGE);
-                }
+                self::UNLISTED_FAIL_MESSAGE
             );
 
             return;
@@ -144,10 +134,7 @@ class InspectSeoHandler implements CommandHandler
                 $article,
                 true,
                 $inspectSeoResult,
-                self::AMP_FAIL_MESSAGE,
-                function (){
-                    $this->logger->error(self::AMP_FAIL_MESSAGE);
-                },
+                self::AMP_FAIL_MESSAGE
             );
 
             return;
@@ -164,10 +151,7 @@ class InspectSeoHandler implements CommandHandler
             $article,
             true,
             $inspectSeoResult,
-            self::FAILED_RETRY_MESSAGE,
-            function () {
-                $this->logger->error(self::FAILED_RETRY_MESSAGE);
-            },
+            self::FAILED_RETRY_MESSAGE
         );
     }
 
@@ -192,7 +176,7 @@ class InspectSeoHandler implements CommandHandler
         }
     }
 
-    public function handleIndexingFailure(Message $command, Pbjx $pbjx, Message $article, bool $shouldRetry, InspectUrlIndexResponse $inspectSeoUrlIndexResponse, string $failMessage = '', ?callable $failureCallback = null): void {
+    public function handleIndexingFailure(Message $command, Pbjx $pbjx, Message $article, bool $shouldRetry, InspectUrlIndexResponse $inspectSeoUrlIndexResponse, string $failMessage = ''): void {
         $retries = $command->get('ctx_retries');
         $maxRetries = $this->flags->getInt('max_tries');
 
@@ -201,9 +185,11 @@ class InspectSeoHandler implements CommandHandler
             $searchEngines = $retryCommand->get('search_engines');
 
             $retryCommand->set('search_engines', [$searchEngines]);
-            $pbjx->sendAt($retryCommand, strtotime(self::RETRY_DELAY));
-        } elseif (is_callable($failureCallback)) {
-            $failureCallback();
+            $pbjx->sendAt($retryCommand, strtotime("+5 minutes"));
+        } 
+
+        if (!empty($failMessage)) {
+            $this->logger->error($failMessage); 
         }
     }
 }
