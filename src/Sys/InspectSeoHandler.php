@@ -68,12 +68,12 @@ class InspectSeoHandler implements CommandHandler
         try {
             $urlStatus = $this->getUrlIndexResponse($url);
         } catch (\Throwable $e) {
-            $logger->error("An error occurred in checkIndexStatus. Exception: {$e->getMessage()}");
-            $logger->error("Node ID: " . $node->get('node_id') . " | URL: {$url}");
-            $logger->error("Retry Count: {$this->retryCount}");
+            $this->logger->error("An error occurred in checkIndexStatus. Exception: {$e->getMessage()}");
+            $this->logger->error("Node ID: " . $node->get('node_id') . " | URL: {$url}");
+            $this->logger->error("Retry Count: {$this->retryCount}");
 
             $this->handleIndexingFailure($command, $pbjx, true, function () {
-                $logger->error(self::FAILED_RETRY_MESSAGE);
+                $this->logger->error(self::FAILED_RETRY_MESSAGE);
             });
 
             return;
@@ -95,19 +95,19 @@ class InspectSeoHandler implements CommandHandler
 
         if ($isUnlistedPassed) {
             $this->handleIndexingFailure($command, $pbjx, false, function (){
-                $his=logger("FAIL - Page is marked as unlisted but has passed indexing check.");
+                $this->logger->logger("FAIL - Page is marked as unlisted but has passed indexing check.");
             });
         }
 
         if ($ampDisabledPassed) {
             $this->handleIndexingFailure($command, $pbjx, false, function (){
-                return $logger->error("FAIL - AMP is disabled and article has passed indexing check.");
+                return $this->logger->error("FAIL - AMP is disabled and article has passed indexing check.");
             });
         }
 
         if ($ampEnabledFailed) {
             $this->handleIndexingFailure($command, $pbjx, true, function () {
-                $logger->error(self::FAILED_RETRY_MESSAGE);
+                $this->logger->error(self::FAILED_RETRY_MESSAGE);
             });
         }
 
@@ -116,7 +116,7 @@ class InspectSeoHandler implements CommandHandler
         }
 
         $this->handleIndexingFailure($command, $pbjx, true, function () {
-            $logger->error(self::FAILED_RETRY_MESSAGE);
+            $this->logger->error(self::FAILED_RETRY_MESSAGE);
         });
     }
 
@@ -143,7 +143,7 @@ class InspectSeoHandler implements CommandHandler
         return true;
     }
 
-    public function handleIndexingFailure(Message $command, Pbjx $pbjx, bool $shouldRetry, ?callable $failureCallback = null): bool {
+    public function handleIndexingFailure(Message $command, Pbjx $pbjx, bool $shouldRetry, ?callable $failureCallback = null, ?callable $apiCallback = null): bool {
         if ($shouldRetry && $this->retryCount < self::MAX_RETRIES) {
             $this->retryCount++;
             $retryCommand = clone $command;
@@ -152,6 +152,10 @@ class InspectSeoHandler implements CommandHandler
             $pbjx->sendAt($retryCommand, strtotime(self::RETRY_DELAY));
         } elseif (is_callable($failureCallback)) {
             $failureCallback();
+        }
+
+        if (is_callable($apiCallback)) {
+            $apiCallback();
         }
 
         return false;
