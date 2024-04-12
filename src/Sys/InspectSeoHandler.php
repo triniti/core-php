@@ -24,9 +24,8 @@ class InspectSeoHandler implements CommandHandler
 
     protected Flags $flags;
 
-    const MAX_RETRIES = 3;
     const RETRY_DELAY = "+5 minutes";
-    const SITE_URL = 'site_url';
+    const INSPECT_SEO_URL_SITE_URL_FLAG_NAME = 'inspect_seo_site_url';
     const FAILED_RETRY_MESSAGE = "Final failure after retries.";
     const UNLISTED_FAIL_MESSAGE = "FAIL - Page is marked as unlisted but has passed indexing check.";
     const AMP_FAIL_MESSAGE = "FAIL - AMP is disabled and article has passed indexing check.";
@@ -49,34 +48,43 @@ class InspectSeoHandler implements CommandHandler
     public function handleCommand(Message $command, Pbjx $pbjx): void
     {
         $searchEngines = $command->get('search_engines', []);
-        if (!empty($searchEngines) && !in_array('google', $searchEngines)) {
+        if (!empty($searchEngines)) {
             return;
         }
 
         $nodeRef = $command->get('node_ref');
         $article = $this->ncr->getNode($nodeRef);
 
-        $this->checkIndexStatus($command, $article, $pbjx);
+        if ($searchEngines[0] === "google") {
+            $this->checkIndexStatusForGoogle($command, $article, $pbjx, $searchEngines);
+        }
     }
 
 
-    public function checkIndexStatus(Message $command, Message $node, Pbjx $pbjx): void {
+    public function checkIndexStatusForGoogle(Message $command, Message $article, Pbjx $pbjx): void {
         $successStates = ["INDEXING_ALLOWED", "SUCCESSFUL"];
 
         $url = UriTemplateService::expand(
-            "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
+            "{$article::schema()->getQName()}.canonical", $article->getUriTemplateVars()
         );
 
         try {
             $urlStatus = $this->getUrlIndexResponse($url);
         } catch (\Throwable $e) {
-            $this->logger->error("An error occurred in checkIndexStatus. Exception: {$e->getMessage()}");
-            $this->logger->error("Node ID: " . $node->get('node_id') . " | URL: {$url}");
-            $this->logger->error("Retry Count: {$this->retryCount}");
-
-            $this->handleIndexingFailure($command, $pbjx, true, function () {
-                $this->logger->error(self::FAILED_RETRY_MESSAGE);
-            });
+            $this->handleIndexingFailure(
+                $command,
+                $pbjx,
+                $article,
+                true,
+                $inspectSeoResult,
+                self::FAILED_RETRY_MESSAGE,
+                function () {
+                    $this->logger->error("An error occurred in checkIndexStatus. Exception: {$e->getMessage()}");
+                    $this->logger->error("Node ID: " . $article->get('node_id') . " | URL: {$url}");
+                    $this->logger->error("Retry Count: {$this->retryCount}");
+                    $this->logger->error(self::FAILED_RETRY_MESSAGE);
+                },
+            );
 
             return;
         }
@@ -85,76 +93,85 @@ class InspectSeoHandler implements CommandHandler
             return;
         }
 
-        $indexingStatus = [
-           'webVerdict' => $urlStatus->getInspectionResult()->getIndexStatusResult()->getVerdict(),
-           'ampVerdict' => $urlStatus->getInspectionResult()->getAmpResult()?->getVerdict(),
-           'indexingState' => $urlStatus->getInspectionResult()->getIndexStatusResult()->getIndexingState() 
-        ];
+        $inspectSeoResult = $urlStatus->getInspectionResult();
+        $webVerdict = $inspectSeoResult->getIndexStatusResult()->getVerdict();
+        $ampVerdict = $inspectSeoResult->getAmpResult()?->getVerdict();
+        $indexingState = $inspectSeoResult->getIndexStatusResult()->getIndexingState();
 
-        $webPassed = $indexingStatus->get('webVerdict') === "PASS" && in_array($indexingStatus->get('indexingState'), $successStates);
-        $ampDisabledPassed = $node->get('amp_enabled') === false && $webPassed;
-        $isUnlistedPassed = $node->get('is_unlisted') === true && $indexingStatus->get('webVerdict') === "PASS";
-        $ampEnabledFailed = $node->get('amp_enabled') === true && ($indexingStatus->get('webVerdict') !== "PASS" || $indexingStatus->get('ampVerdict') !== "PASS") && !in_array($indexingStatus->get('indexingState'), $successStates);
+        $webPassed = $webVerdict === "PASS" && in_array($indexingState, $successStates);
+        $ampDisabledPassed = !$node->get('amp_enabled') && $webPassed;
+        $isUnlistedPassed = $node->get('is_unlisted') && $webVerdict === "PASS";
+        $ampEnabledFailed = $node->get('amp_enabled') && ($webVerdict !== "PASS" || $ampVerdict !== "PASS") && !in_array($indexingState, $successStates);
 
+        if ($ampEnabledFailed || $webVerdict === "FAIL") {
+            $this->handleIndexingFailure(
+                $command,
+                $pbjx,
+                $article,
+                true,
+                $inspectSeoResult,
+                self::FAILED_RETRY_MESSAGE,
+                function () {
+                    $this->logger->error(self::FAILED_RETRY_MESSAGE);
+                },
+            );
+
+            return;
+        }
 
         if ($isUnlistedPassed) {
             $this->handleIndexingFailure(
-                $command, 
-                $pbjx, 
-                false,
+                $command,
+                $pbjx,
+                $article,
+                true,
+                $inspectSeoResult,
                 self::UNLISTED_FAIL_MESSAGE,
                 function (){
                     $this->logger->logger(self::UNLISTED_FAIL_MESSAGE);
-                }, 
-                $indexingStatus
+                }
             );
+
+            return;
         }
 
         if ($ampDisabledPassed) {
             $this->handleIndexingFailure(
-                $command, 
-                $pbjx, 
-                false, 
+                $command,
+                $pbjx,
+                $article,
+                true,
+                $inspectSeoResult,
                 self::AMP_FAIL_MESSAGE,
                 function (){
                     $this->logger->error(self::AMP_FAIL_MESSAGE);
-                }, 
-                $indexingStatus
+                },
             );
-        }
 
-        if ($ampEnabledFailed) {
-            $this->handleIndexingFailure(
-                $command, 
-                $pbjx, 
-                true,
-                self::FAILED_RETRY_MESSAGE,
-                function () {
-                    $this->logger->error(self::FAILED_RETRY_MESSAGE);
-                }, 
-                $indexingStatus
-            );
+            return;
         }
 
         if ($webPassed) {
             $this->handleIndexingSuccess();
+            return;
         }
 
         $this->handleIndexingFailure(
-            $command, 
-            $pbjx, 
+            $command,
+            $pbjx,
+            $article,
             true,
+            $inspectSeoResult,
             self::FAILED_RETRY_MESSAGE,
             function () {
                 $this->logger->error(self::FAILED_RETRY_MESSAGE);
-            }, 
-            $indexingStatus
+            },
         );
     }
 
     public function getUrlIndexResponse(String $url): InspectUrlIndexResponse {
         $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
-        $request->setSiteUrl($this->flags->getString(self::SITE_URL));
+        $request->setSiteUrl($this->flags->getString(self::INSPECT_SEO_URL_SITE_URL_FLAG_NAME));
         $request->setInspectionUrl($url);
 
         $client = new \Google_Client();
@@ -167,29 +184,24 @@ class InspectSeoHandler implements CommandHandler
     }
 
 
-    public function handleIndexingSuccess(?callable $successCallback): bool {
+    public function handleIndexingSuccess(?callable $successCallback): void {
         if (is_callable($successCallback)) {
             $successCallback();
         }
-
-        return true;
     }
 
-    public function handleIndexingFailure(Message $command, Pbjx $pbjx, string $failMessage, bool $shouldRetry, ?callable $failureCallback = null, ?callable $apiCallback = null): bool {
-        if ($shouldRetry && $this->retryCount < self::MAX_RETRIES) {
-            $this->retryCount++;
+    public function handleIndexingFailure(Message $command, Pbjx $pbjx, Message $article, bool $shouldRetry, InspectUrlIndexResponse $inspectSeoUrlIndexResponse, string $failMessage = '', ?callable $failureCallback = null): void {
+        $retries = $command->get('ctx_retries');
+        $maxRetries = $this->flags->getInt('max_tries');
+        
+        if ($shouldRetry && $retries < $maxRetries) {
             $retryCommand = clone $command;
             $searchEngines = $retryCommand->get('search_engines');
+            
             $retryCommand->set('search_engines', [$searchEngines]);
             $pbjx->sendAt($retryCommand, strtotime(self::RETRY_DELAY));
         } elseif (is_callable($failureCallback)) {
             $failureCallback();
         }
-
-        if (is_callable($apiCallback)) {
-            $apiCallback($command, $indexingStatus, $failMessage);
-        }
-
-        return false;
     }
 }
