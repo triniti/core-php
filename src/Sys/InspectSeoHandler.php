@@ -177,16 +177,20 @@ class InspectSeoHandler implements CommandHandler
     }
 
     public function handleIndexingFailure(Message $command, Pbjx $pbjx, Message $article, bool $shouldRetry, InspectUrlIndexResponse $inspectSeoUrlIndexResponse, string $failMessage = ''): void {
-        $retries = $command->get('ctx_retries');
-        $maxRetries = $this->flags->getInt('max_tries');
-
-        if ($shouldRetry && $retries < $maxRetries) {
-            $retryCommand = clone $command;
-            $searchEngines = $retryCommand->get('search_engines');
-
-            $retryCommand->set('search_engines', [$searchEngines]);
-            $pbjx->sendAt($retryCommand, strtotime("+5 minutes"));
-        } 
+        $isRetryEnabled = $this->flags->getBoolean('retry_enabled');
+        
+        if ($isRetryEnabled) {
+            $retries = $command->get('ctx_retries');
+            $maxRetries = $this->flags->getInt('max_tries');
+    
+            if ($shouldRetry && $retries < $maxRetries) {
+                $retryCommand = clone $command;
+                $searchEngines = $retryCommand->get('search_engines');
+    
+                $retryCommand->set('search_engines', [$searchEngines]);
+                $pbjx->sendAt($retryCommand, strtotime("+5 minutes"));
+            } 
+        }
 
         if (!empty($failMessage)) {
             $this->logger->error($failMessage); 
