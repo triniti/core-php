@@ -19,7 +19,7 @@ class InspectSeoHandler implements CommandHandler
 {
     private Ncr $ncr;
     private Key $key;
-    private LoggerInterface $logger;
+    protected LoggerInterface $logger;
     protected Flags $flags;
 
     const RETRY_DELAY = "+5 minutes";
@@ -47,7 +47,7 @@ class InspectSeoHandler implements CommandHandler
     public function handleCommand(Message $command, Pbjx $pbjx): void
     {
         $searchEngines = $command->get('search_engines', []);
-        
+
         if (empty($searchEngines)) {
             return;
         }
@@ -75,7 +75,7 @@ class InspectSeoHandler implements CommandHandler
             $this->logger->error("An error occurred in checkIndexStatus. Exception: {$e->getMessage()}");
             $this->logger->error("Node ID: " . $article->get('node_id') . " | URL: {$url}");
             $this->logger->error("Retry Count: {$retries}");
-            
+
             $this->handleIndexingFailure(
                 $command,
                 $pbjx,
