@@ -38,7 +38,7 @@ class ArticleInspectSeoWatcher implements EventSubscriber
             return;
         }
 
-        $inspectArticleCommand = InspectSeoV1::create()->set('node_ref', $event->get('node_ref'));
+        $inspectArticleCommand = InspectSeoV1::create()->set('node_ref', $event->get('node_ref'))->set('search_engines', $event->get('search_engines'));
         $seoDelay = $this->flags->getBoolean('seo_delay_disabled') ? 'now' : "+1 minute";
 
         if ('prod' === getenv('APP_ENV')) {

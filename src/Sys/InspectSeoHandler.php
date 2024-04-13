@@ -110,7 +110,6 @@ class InspectSeoHandler implements CommandHandler
             return;
         }
 
-
         if ($isUnlistedPassed) {
             $this->handleIndexingFailure(
                 $command,
@@ -185,7 +184,6 @@ class InspectSeoHandler implements CommandHandler
                 } else {
                     $pbjx->send($retryCommand);
                 }
-               
             } else {
                 $this->logger->error("Final failure after retries.");
             }
