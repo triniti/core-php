@@ -24,9 +24,6 @@ class InspectSeoHandler implements CommandHandler
 
     const INSPECT_SEO_URL_SITE_URL_FLAG_NAME = 'inspect_seo_site_url';
     const MAX_TRIES_FLAG_NAME = 'max_tries';
-    const FAILED_RETRY_MESSAGE = "Final failure after retries.";
-    const UNLISTED_FAIL_MESSAGE = "FAIL - Page is marked as unlisted but has passed indexing check.";
-    const AMP_FAIL_MESSAGE = "FAIL - AMP is disabled and article has passed indexing check.";
 
     public static function handlesCuries(): array
     {
@@ -48,6 +45,7 @@ class InspectSeoHandler implements CommandHandler
         $searchEngines = $command->get('search_engines', []);
 
         if (empty($searchEngines)) {
+            $this->logger->error("A search engine must be passed in.");
             return;
         }
 
@@ -80,8 +78,7 @@ class InspectSeoHandler implements CommandHandler
                 $pbjx,
                 $article,
                 true,
-                null,
-                self::FAILED_RETRY_MESSAGE
+                null
             );
 
             return;
@@ -107,12 +104,12 @@ class InspectSeoHandler implements CommandHandler
                 $pbjx,
                 $article,
                 true,
-                $inspectSeoResult,
-                self::FAILED_RETRY_MESSAGE
+                $inspectSeoResult
             );
 
             return;
         }
+
 
         if ($isUnlistedPassed) {
             $this->handleIndexingFailure(
@@ -121,7 +118,7 @@ class InspectSeoHandler implements CommandHandler
                 $article,
                 true,
                 $inspectSeoResult,
-                self::UNLISTED_FAIL_MESSAGE
+                "FAIL - Page is marked as unlisted but has passed indexing check."
             );
 
             return;
@@ -134,7 +131,7 @@ class InspectSeoHandler implements CommandHandler
                 $article,
                 true,
                 $inspectSeoResult,
-                self::AMP_FAIL_MESSAGE
+                "FAIL - AMP is disabled and article has passed indexing check."
             );
 
             return;
@@ -150,8 +147,7 @@ class InspectSeoHandler implements CommandHandler
             $pbjx,
             $article,
             true,
-            $inspectSeoResult,
-            self::FAILED_RETRY_MESSAGE
+            $inspectSeoResult
         );
     }
 
@@ -177,23 +173,26 @@ class InspectSeoHandler implements CommandHandler
     }
 
     public function handleIndexingFailure(Message $command, Pbjx $pbjx, Message $article, bool $shouldRetry, InspectUrlIndexResponse $inspectSeoUrlIndexResponse, string $failMessage = ''): void {
-        $isRetryEnabled = $this->flags->getBoolean('retry_enabled');
-        
-        if ($isRetryEnabled) {
-            $retries = $command->get('ctx_retries');
-            $maxRetries = $this->flags->getInt('max_tries');
-    
-            if ($shouldRetry && $retries < $maxRetries) {
+        $retries = $command->get('ctx_retries');
+        $maxRetries = $this->flags->getInt('max_tries');
+
+        if ($shouldRetry) {
+            if ($retries < $maxRetries){
                 $retryCommand = clone $command;
-                $searchEngines = $retryCommand->get('search_engines');
-    
-                $retryCommand->set('search_engines', [$searchEngines]);
-                $pbjx->sendAt($retryCommand, strtotime("+5 minutes"));
-            } 
+
+                if ('prod' === getenv('APP_ENV')) {
+                    $pbjx->sendAt($retryCommand, strtotime("+5 minutes"));
+                } else {
+                    $pbjx->send($retryCommand);
+                }
+               
+            } else {
+                $this->logger->error("Final failure after retries.");
+            }
         }
 
         if (!empty($failMessage)) {
-            $this->logger->error($failMessage); 
+            $this->logger->error($failMessage);
         }
     }
 }
