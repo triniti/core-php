@@ -117,7 +117,7 @@ class InspectSeoHandler implements CommandHandler
                 $article,
                 true,
                 $inspectSeoResult,
-                "FAIL - Page is marked as unlisted but has passed indexing check."
+                "FAIL - Article is marked as unlisted but has passed indexing check."
             );
 
             return;
@@ -164,12 +164,7 @@ class InspectSeoHandler implements CommandHandler
         return $service->urlInspection_index->inspect($request);
     }
 
-
-    public function handleIndexingSuccess(?callable $successCallback): void {
-        if (is_callable($successCallback)) {
-            $successCallback();
-        }
-    }
+    public function handleIndexingSuccess(): void {}
 
     public function handleIndexingFailure(Message $command, Pbjx $pbjx, Message $article, bool $shouldRetry, InspectUrlIndexResponse $inspectSeoUrlIndexResponse, string $failMessage = ''): void {
         $retries = $command->get('ctx_retries');
