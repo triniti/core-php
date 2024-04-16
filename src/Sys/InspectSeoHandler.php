@@ -13,6 +13,7 @@ use Gdbots\UriTemplate\UriTemplateService;
 use Google\Service\SearchConsole\InspectUrlIndexResponse;
 use Google\Service\SearchConsole\UrlInspectionResult;
 use Psr\Log\LoggerInterface;
+use Triniti\Sys\IndexSeoStatusForGoogle;
 
 
 class InspectSeoHandler implements CommandHandler
@@ -23,7 +24,7 @@ class InspectSeoHandler implements CommandHandler
     protected Flags $flags;
 
     const INSPECT_SEO_URL_SITE_URL_FLAG_NAME = 'inspect_seo_site_url';
-    const INSPECT_SEO_MAX_TRIES_FLAG_NAME = 'inspect_seo_max_tries';
+    const MAX_TRIES_FLAG_NAME = 'inspect_seo_max_tries';
     const INSPECT_SEO_DELAY_FLAG_NAME = 'inspect_seo_delay_flag';
 
     public static function handlesCuries(): array
@@ -52,38 +53,22 @@ class InspectSeoHandler implements CommandHandler
 
         $nodeRef = $command->get('node_ref');
         $article = $this->ncr->getNode($nodeRef);
-        $retries = $command->get('ctx_retries');
-        $maxRetries = $this->flags->getInt(self::INSPECT_SEO_MAX_TRIES_FLAG_NAME);
-        
+
         foreach ($searchEngines as $searchEngine) {
             $methodName = 'checkIndexStatusFor' . ucfirst($searchEngine);
-            
             if (method_exists($this, $methodName)) {
                 $indexStatus = $this->$methodName($command, $article, $pbjx);
 
                 if ($indexStatus->get('success')){
                     $this->handleIndexingSuccess();
                 } else {
-                    if ($retries < $maxRetries){
-                        $retryCommand = clone $command;
-                        $retryCommand->set('ctx_retries', 1 + $retryCommand->get('ctx_retries'));
-
-                        if ('prod' === getenv('APP_ENV')) {
-                            $pbjx->sendAt($retryCommand, strtotime($this->flags->getString(self::INSPECT_SEO_DELAY_FLAG_NAME)));
-                        } else {
-                            $pbjx->send($retryCommand);
-                        }
-                    } else {
-                        $this->logger->error("Final failure after retries.");
-                        $this->handleIndexingFailure($command, $article, $indexStatus-get('response'));
-                    }
+                    $this->handleRetry($command, $pbjx, $article, $indexStatus);
                 }
             } else {
                 $this->logger->warning("Method {$methodName} does not exist for search engine {$searchEngine}.");
             }
         }
     }
-
 
 
     public function checkIndexStatusForGoogle(Message $command, Message $article): IndexSeoStatusForGoogle {
@@ -121,8 +106,9 @@ class InspectSeoHandler implements CommandHandler
         $ampDisabledPassed = !$article->get('amp_enabled') && $webPassed;
         $isUnlistedPassed = $article->get('is_unlisted') && $webVerdict === "PASS";
         $ampEnabledFailed = $article->get('amp_enabled') && ($webVerdict !== "PASS" || $ampVerdict !== "PASS") && !in_array($indexingState, $successStates);
+        $hasFailed = $webVerdict === "FAIL";
 
-        if ($ampEnabledFailed || $webVerdict === "FAIL" || $isUnlistedPassed || $ampDisabledPassed || !$webPassed) {
+        if ($hasFailed || $ampEnabledFailed || $isUnlistedPassed || $ampDisabledPassed || !$webPassed) {
             $status->set('success', false);
         }
 
@@ -148,4 +134,19 @@ class InspectSeoHandler implements CommandHandler
     public function handleIndexingSuccess(): void {}
 
     public function handleIndexingFailure(Message $command, Message $article, InspectUrlIndexResponse $inspectSeoUrlIndexResponse): void {}
+
+    public function handleRetry(Message $command, Pbjx $pbjx, Message $article, IndexSeoStatusForGoogle $indexStatus): void {
+        $retries = $command->get('ctx_retries');
+        $maxRetries = $this->flags->getInt('max_tries');
+
+        if ($retries < $maxRetries){
+            $retryCommand = clone $command;
+            $retryCommand->set('ctx_retries', 1 + $retryCommand->get('ctx_retries'));
+
+            $pbjx->sendAt($retryCommand, strtotime($this->flags->getString(self::INSPECT_SEO_DELAY_FLAG_NAME)));
+        } else {
+            $this->logger->error("Final failure after retries.");
+            $this->handleIndexingFailure($command, $article, $indexStatus-get('response'));
+        }
+    }
 }
