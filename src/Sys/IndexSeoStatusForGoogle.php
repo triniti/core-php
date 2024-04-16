@@ -1,6 +1,9 @@
 <?php
 declare(strict_types=1);
 
+use Google\Service\SearchConsole\InspectUrlIndexResponse;
+
+
 class IndexSeoStatusForGoogle {
     public $success;
     public $response;

@@ -86,7 +86,6 @@ class InspectSeoHandler implements CommandHandler
     }
 
 
-
     public function checkIndexStatusForGoogle(Message $command, Message $article): IndexSeoStatusForGoogle {
         $successStates = ["INDEXING_ALLOWED", "SUCCESSFUL"];
         $status = new IndexSeoStatusForGoogle();
@@ -122,8 +121,9 @@ class InspectSeoHandler implements CommandHandler
         $ampDisabledPassed = !$article->get('amp_enabled') && $webPassed;
         $isUnlistedPassed = $article->get('is_unlisted') && $webVerdict === "PASS";
         $ampEnabledFailed = $article->get('amp_enabled') && ($webVerdict !== "PASS" || $ampVerdict !== "PASS") && !in_array($indexingState, $successStates);
+        $hasFailed = $webVerdict === "FAIL";
 
-        if ($ampEnabledFailed || $webVerdict === "FAIL" || $isUnlistedPassed || $ampDisabledPassed || !$webPassed) {
+        if ($hasFailed || $ampEnabledFailed || $isUnlistedPassed || $ampDisabledPassed || !$webPassed) {
             $status->set('success', false);
         }
 
