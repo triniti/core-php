@@ -13,7 +13,7 @@ use Gdbots\UriTemplate\UriTemplateService;
 use Google\Service\SearchConsole\InspectUrlIndexResponse;
 use Google\Service\SearchConsole\UrlInspectionResult;
 use Psr\Log\LoggerInterface;
-
+use Triniti\Sys\IndexSeoStatusForGoogle;
 
 
 class InspectSeoHandler implements CommandHandler
