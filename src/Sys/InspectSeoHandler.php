@@ -15,6 +15,7 @@ use Google\Service\SearchConsole\UrlInspectionResult;
 use Psr\Log\LoggerInterface;
 
 
+
 class InspectSeoHandler implements CommandHandler
 {
     private Ncr $ncr;
@@ -23,7 +24,8 @@ class InspectSeoHandler implements CommandHandler
     protected Flags $flags;
 
     const INSPECT_SEO_URL_SITE_URL_FLAG_NAME = 'inspect_seo_site_url';
-    const MAX_TRIES_FLAG_NAME = 'max_tries';
+    const MAX_TRIES_FLAG_NAME = 'inspect_seo_max_tries';
+    const INSPECT_SEO_DELAY_FLAG_NAME = 'inspect_seo_delay_flag';
 
     public static function handlesCuries(): array
     {
@@ -52,15 +54,42 @@ class InspectSeoHandler implements CommandHandler
         $nodeRef = $command->get('node_ref');
         $article = $this->ncr->getNode($nodeRef);
 
-        if ($searchEngines[0] === "google") {
-            $this->checkIndexStatusForGoogle($command, $article, $pbjx);
+        foreach ($searchEngines as $searchEngine) {
+            $methodName = 'checkIndexStatusFor' . ucfirst($searchEngine);
+            if (method_exists($this, $methodName)) {
+                $indexStatus = $this->$methodName($command, $article, $pbjx);
+
+                if ($indexStatus->get('success')){
+                    $this->handleIndexingSuccess();
+                } else {
+                    $retries = $command->get('ctx_retries');
+                    $maxRetries = $this->flags->getInt('max_tries');
+
+                    if ($retries < $maxRetries){
+                        $retryCommand = clone $command;
+                        $retryCommand->set('ctx_retries', 1 + $retryCommand->get('ctx_retries'));
+
+                        if ('prod' === getenv('APP_ENV')) {
+                            $pbjx->sendAt($retryCommand, strtotime($this->flags->getString(self::INSPECT_SEO_DELAY_FLAG_NAME)));
+                        } else {
+                            $pbjx->send($retryCommand);
+                        }
+                    } else {
+                        $this->logger->error("Final failure after retries.");
+                        $this->handleIndexingFailure($command, $article, $indexStatus-get('response'));
+                    }
+                }
+            } else {
+                $this->logger->warning("Method {$methodName} does not exist for search engine {$searchEngine}.");
+            }
         }
     }
 
 
-    public function checkIndexStatusForGoogle(Message $command, Message $article, Pbjx $pbjx): void {
+
+    public function checkIndexStatusForGoogle(Message $command, Message $article): IndexSeoStatusForGoogle {
         $successStates = ["INDEXING_ALLOWED", "SUCCESSFUL"];
-        $retries = $command->get('ctx_retries');
+        $status = new IndexSeoStatusForGoogle();
 
         $url = UriTemplateService::expand(
             "{$article::schema()->getQName()}.canonical", $article->getUriTemplateVars()
@@ -69,23 +98,19 @@ class InspectSeoHandler implements CommandHandler
         try {
             $urlStatus = $this->getUrlIndexResponse($url);
         } catch (\Throwable $e) {
-            $this->logger->error("An error occurred in checkIndexStatus. Exception: {$e->getMessage()}");
-            $this->logger->error("Article ID: " . $article->get('node_id') . " | URL: {$url}");
-            $this->logger->error("Retry Count: {$retries}");
+            $errorMessage = "An error occurred in checkIndexStatus. Exception: {$e->getMessage()}" .
+                " | Article ID: " . $article->get('node_id') .
+                " | URL: {$url}" .
+                " | Retry Count: {$command->get('ctx_retries')}";
 
-            $this->handleIndexingFailure(
-                $command,
-                $pbjx,
-                $article,
-                true,
-                null
-            );
+            $status->set('error', $errorMessage);
+            $this->logger->error($errorMessage);
 
-            return;
+            return $status;
         }
 
         if (!$urlStatus->getInspectionResult() instanceof UrlInspectionResult) {
-            return;
+            return $status;
         }
 
         $inspectSeoResult = $urlStatus->getInspectionResult();
@@ -98,56 +123,13 @@ class InspectSeoHandler implements CommandHandler
         $isUnlistedPassed = $article->get('is_unlisted') && $webVerdict === "PASS";
         $ampEnabledFailed = $article->get('amp_enabled') && ($webVerdict !== "PASS" || $ampVerdict !== "PASS") && !in_array($indexingState, $successStates);
 
-        if ($ampEnabledFailed || $webVerdict === "FAIL") {
-            $this->handleIndexingFailure(
-                $command,
-                $pbjx,
-                $article,
-                true,
-                $inspectSeoResult
-            );
-
-            return;
+        if ($ampEnabledFailed || $webVerdict === "FAIL" || $isUnlistedPassed || $ampDisabledPassed || !$webPassed) {
+            $status->set('success', false);
         }
 
-        if ($isUnlistedPassed) {
-            $this->handleIndexingFailure(
-                $command,
-                $pbjx,
-                $article,
-                true,
-                $inspectSeoResult,
-                "FAIL - Article is marked as unlisted but has passed indexing check."
-            );
+        $status->set('$inspectUrlIndexResponse', $inspectSeoResult);
 
-            return;
-        }
-
-        if ($ampDisabledPassed) {
-            $this->handleIndexingFailure(
-                $command,
-                $pbjx,
-                $article,
-                true,
-                $inspectSeoResult,
-                "FAIL - AMP is disabled and article has passed indexing check."
-            );
-
-            return;
-        }
-
-        if ($webPassed) {
-            $this->handleIndexingSuccess();
-            return;
-        }
-
-        $this->handleIndexingFailure(
-            $command,
-            $pbjx,
-            $article,
-            true,
-            $inspectSeoResult
-        );
+        return $status;
     }
 
     public function getUrlIndexResponse(String $url): InspectUrlIndexResponse {
@@ -166,26 +148,5 @@ class InspectSeoHandler implements CommandHandler
 
     public function handleIndexingSuccess(): void {}
 
-    public function handleIndexingFailure(Message $command, Pbjx $pbjx, Message $article, bool $shouldRetry, InspectUrlIndexResponse $inspectSeoUrlIndexResponse, string $failMessage = ''): void {
-        $retries = $command->get('ctx_retries');
-        $maxRetries = $this->flags->getInt('max_tries');
-
-        if ($shouldRetry) {
-            if ($retries < $maxRetries){
-                $retryCommand = clone $command;
-
-                if ('prod' === getenv('APP_ENV')) {
-                    $pbjx->sendAt($retryCommand, strtotime("+5 minutes"));
-                } else {
-                    $pbjx->send($retryCommand);
-                }
-            } else {
-                $this->logger->error("Final failure after retries.");
-            }
-        }
-
-        if (!empty($failMessage)) {
-            $this->logger->error($failMessage);
-        }
-    }
+    public function handleIndexingFailure(Message $command, Message $article, InspectUrlIndexResponse $inspectSeoUrlIndexResponse): void {}
 }
