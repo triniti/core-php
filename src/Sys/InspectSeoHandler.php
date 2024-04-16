@@ -25,7 +25,7 @@ class InspectSeoHandler implements CommandHandler
 
     const INSPECT_SEO_URL_SITE_URL_FLAG_NAME = 'inspect_seo_site_url';
     const MAX_TRIES_FLAG_NAME = 'inspect_seo_max_tries';
-    const INSPECT_SEO_DELAY_FLAG_NAME = 'inspect_seo_delay_flag';
+    const INSPECT_SEO_RETRY_DELAY_FLAG_NAME = 'inspect_seo_retry_delay_flag';
 
     public static function handlesCuries(): array
     {
@@ -119,7 +119,7 @@ class InspectSeoHandler implements CommandHandler
 
     public function getUrlIndexResponse(String $url): InspectUrlIndexResponse {
         $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
-        $request->setSiteUrl($this->flags->getString(self::INSPECT_SEO_URL_SITE_URL_FLAG_NAME));
+        $request->setSiteUrl($this->flags->getString(self::INSPECT_SEO_RETRY_DELAY_FLAG_NAME));
         $request->setInspectionUrl($url);
 
         $client = new \Google_Client();

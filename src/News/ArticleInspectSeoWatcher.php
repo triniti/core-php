@@ -13,7 +13,10 @@ class ArticleInspectSeoWatcher implements EventSubscriber
 {
     protected Flags $flags;
     protected Pbjx $pbjx;
- 
+
+    const INSPECT_SEO_INITIAL_DELAY_FLAG_NAME = "inspect_seo_initial_delay_flag_name";
+    const INSPECT_SEO_NO_DELAY_FLAG_NAME = "inspect_seo_no_delay_flag_name";
+
     public function __construct(Flags $flags, Pbjx $pbjx) {
         $this->flags = $flags;
         $this->pbjx = $pbjx;
@@ -39,12 +42,8 @@ class ArticleInspectSeoWatcher implements EventSubscriber
         }
 
         $inspectArticleCommand = InspectSeoV1::create()->set('node_ref', $event->get('node_ref'))->set('search_engines', $event->get('search_engines'));
-        $seoDelay = $this->flags->getBoolean('seo_delay_disabled') ? 'now' : "+1 minute";
+        $seoDelay = $this->flags->getBoolean('seo_delay_disabled') ? self::INSPECT_SEO_NO_DELAY_FLAG_NAME : self::INSPECT_SEO_INITIAL_DELAY_FLAG_NAME;
 
-        if ('prod' === getenv('APP_ENV')) {
-            $this->pbjx->sendAt($inspectArticleCommand, strtotime($seoDelay));
-        } else {
-            $this->pbjx->send($inspectArticleCommand);
-        }
+        $this->pbjx->sendAt($inspectArticleCommand, strtotime($seoDelay));
     }
 }
