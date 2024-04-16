@@ -13,7 +13,6 @@ use Gdbots\UriTemplate\UriTemplateService;
 use Google\Service\SearchConsole\InspectUrlIndexResponse;
 use Google\Service\SearchConsole\UrlInspectionResult;
 use Psr\Log\LoggerInterface;
-use Triniti\Sys\IndexSeoStatusForGoogle;
 
 
 class InspectSeoHandler implements CommandHandler
@@ -24,7 +23,7 @@ class InspectSeoHandler implements CommandHandler
     protected Flags $flags;
 
     const INSPECT_SEO_URL_SITE_URL_FLAG_NAME = 'inspect_seo_site_url';
-    const MAX_TRIES_FLAG_NAME = 'inspect_seo_max_tries';
+    const INSPECT_SEO_MAX_TRIES_FLAG_NAME = 'inspect_seo_max_tries';
     const INSPECT_SEO_DELAY_FLAG_NAME = 'inspect_seo_delay_flag';
 
     public static function handlesCuries(): array
@@ -53,18 +52,18 @@ class InspectSeoHandler implements CommandHandler
 
         $nodeRef = $command->get('node_ref');
         $article = $this->ncr->getNode($nodeRef);
-
+        $retries = $command->get('ctx_retries');
+        $maxRetries = $this->flags->getInt(self::INSPECT_SEO_MAX_TRIES_FLAG_NAME);
+        
         foreach ($searchEngines as $searchEngine) {
             $methodName = 'checkIndexStatusFor' . ucfirst($searchEngine);
+            
             if (method_exists($this, $methodName)) {
                 $indexStatus = $this->$methodName($command, $article, $pbjx);
 
                 if ($indexStatus->get('success')){
                     $this->handleIndexingSuccess();
                 } else {
-                    $retries = $command->get('ctx_retries');
-                    $maxRetries = $this->flags->getInt('max_tries');
-
                     if ($retries < $maxRetries){
                         $retryCommand = clone $command;
                         $retryCommand->set('ctx_retries', 1 + $retryCommand->get('ctx_retries'));
@@ -84,6 +83,7 @@ class InspectSeoHandler implements CommandHandler
             }
         }
     }
+
 
 
     public function checkIndexStatusForGoogle(Message $command, Message $article): IndexSeoStatusForGoogle {
@@ -121,9 +121,8 @@ class InspectSeoHandler implements CommandHandler
         $ampDisabledPassed = !$article->get('amp_enabled') && $webPassed;
         $isUnlistedPassed = $article->get('is_unlisted') && $webVerdict === "PASS";
         $ampEnabledFailed = $article->get('amp_enabled') && ($webVerdict !== "PASS" || $ampVerdict !== "PASS") && !in_array($indexingState, $successStates);
-        $hasFailed = $webVerdict === "FAIL";
 
-        if ($hasFailed || $ampEnabledFailed || $isUnlistedPassed || $ampDisabledPassed || !$webPassed) {
+        if ($ampEnabledFailed || $webVerdict === "FAIL" || $isUnlistedPassed || $ampDisabledPassed || !$webPassed) {
             $status->set('success', false);
         }
 
