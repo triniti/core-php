@@ -133,7 +133,7 @@ class InspectSeoHandler implements CommandHandler
         $seoEventInspectedCommand->set('inspection_response', $inspectionResult);
         $seoEventInspectedCommand->set('search_engine', $searchEngine);
 
-       return$this->pbjx->request($seoEventInspectedCommand);
+       return $this->pbjx->request($seoEventInspectedCommand);
     }
 
     public function handleIndexingSuccess(): void {}
