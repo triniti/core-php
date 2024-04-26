@@ -81,7 +81,7 @@ class InspectSeoHandler implements CommandHandler
         }
     }
 
-    public function checkIndexStatusForGoogle(Message $command) {
+    public function checkIndexStatusForGoogle(Message $command): bool {
         $nodeRef = $command->get('node_ref');
         $node = $this->ncr->getNode($nodeRef);
         $indexStatus = null;
@@ -109,6 +109,8 @@ class InspectSeoHandler implements CommandHandler
         } else {
           $this->handleIndexingFailure($command, $node,  $indexStatus->getInspectionResult());
         }
+
+        return $result == "PASSED";
     }
 
 
