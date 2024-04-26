@@ -21,6 +21,7 @@ class InspectSeoHandler implements CommandHandler
 {
     private Ncr $ncr;
     private Key $key;
+    private InspectUrlIndexResponse $inspectSeoUrlIndexResponse;
     protected LoggerInterface $logger;
     protected Flags $flags;
 
@@ -35,13 +36,14 @@ class InspectSeoHandler implements CommandHandler
         ];
     }
 
-    public function __construct(Ncr $ncr, Key $key, Flags $flags, LoggerInterface $logger, Pbjx $pbjx)
+    public function __construct(Ncr $ncr, Key $key, Flags $flags, LoggerInterface $logger, Pbjx $pbjx, InspectUrlIndexResponse $inspectSeoUrlIndexResponse)
     {
         $this->ncr = $ncr;
         $this->key = $key;
         $this->flags = $flags;
         $this->logger = $logger;
         $this->pbjx = $pbjx;
+        $this->inspectSeoUrlIndexResponse = $inspectSeoUrlIndexResponse;
     }
 
     public function handleCommand(Message $originalCommand, Pbjx $pbjx): void
@@ -69,6 +71,7 @@ class InspectSeoHandler implements CommandHandler
 
             if ($isIndexed) {
                 $enginesToRemove[] = $searchEngine;
+                $this->handleIndexingSuccess();
             }
         }
 
@@ -84,14 +87,13 @@ class InspectSeoHandler implements CommandHandler
     public function checkIndexStatusForGoogle(Message $command): bool {
         $nodeRef = $command->get('node_ref');
         $node = $this->ncr->getNode($nodeRef);
-        $indexStatus = null;
 
         $url = UriTemplateService::expand(
             "{$node::schema()->getQName()}.canonical", $ $node->getUriTemplateVars()
         );
 
         try {
-            $indexStatus = $this->getUrlIndexResponse($url);
+            $this->setIndexStatusResponse($this->getUrlIndexResponse($url));
         } catch (\Throwable $e) {
             dump($e->getTraceAsString());
             $errorMessage = "An error occurred in checkIndexStatus. Exception: {$e->getMessage()} " .
@@ -102,15 +104,17 @@ class InspectSeoHandler implements CommandHandler
             $this->logger->error($errorMessage);
         }
 
-        $result = $this->triggerSeoInspectedWatcher($nodeRef, $indexStatus->getInspectionResult(), "google");
-
-        if ($result == "PASSED") {
-            $this->handleIndexingSuccess();
-        } else {
-          $this->handleIndexingFailure($command, $node,  $indexStatus->getInspectionResult());
-        }
+        $result = $this->triggerSeoInspectedWatcher($nodeRef, $this->inspectSeoUrlIndexResponse->getInspectionResult(), "google");
 
         return $result == "PASSED";
+    }
+
+    public function setIndexStatusResponse(InspectUrlIndexResponse $response): void {
+        $this->inspectSeoUrlIndexResponse = $response;
+    }
+
+    public function getIndexStatusResponse(){
+        return $this->inspectSeoUrlIndexResponse;
     }
 
 
@@ -140,7 +144,7 @@ class InspectSeoHandler implements CommandHandler
 
     public function handleIndexingFailure(Message $command, Message $node, InspectUrlIndexResponse $inspectSeoUrlIndexResponse): void {}
 
-    public function handleRetry(Message $command, Pbjx $pbjx): void {
+    public function handleRetry(Message $command, Message $node, Pbjx $pbjx): void {
         $maxRetries = $this->flags->getInt('max_retries', 5);
         $retries = $command->get('ctx_retries', 0);
         $nodeRef = $command->get('node_ref');
@@ -149,9 +153,14 @@ class InspectSeoHandler implements CommandHandler
             $retryCommand = clone $command;
             $retryCommand->set('ctx_retries', 1 + $retryCommand->get('ctx_retries'));
 
-            $pbjx->sendAt($retryCommand, strtotime(self::INSPECT_SEO_RETRY_DELAY_FLAG_NAME ));
+            if (getenv('APP_ENV') === 'prod') {
+                $pbjx->sendAt($retryCommand, strtotime(self::INSPECT_SEO_RETRY_DELAY_FLAG_NAME ));
+            } else {
+                $pbjx->send($retryCommand);
+            }
         } else {
             $this->triggerSeoInspectedWatcher($nodeRef, null,"google");
+            $this->handleIndexingFailure($command, $node, $this->getIndexStatusResponse());
             $this->logger->error("Final failure after retries.");
         }
     }
