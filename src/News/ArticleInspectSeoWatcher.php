@@ -41,9 +41,11 @@ class ArticleInspectSeoWatcher implements EventSubscriber
             return;
         }
 
-        $inspectArticleCommand = InspectSeoV1::create()->set('node_ref', $event->get('node_ref'))->set('search_engines', $event->get('search_engines'));
+        $inspectArticleCommand = InspectSeoV1::create()
+            ->set('node_ref', $event->get('node_ref'));
+
         $seoDelay = $this->flags->getBoolean('seo_delay_disabled') ? self::INSPECT_SEO_NO_DELAY_FLAG_NAME : self::INSPECT_SEO_INITIAL_DELAY_FLAG_NAME;
 
-        $this->pbjx->sendAt($inspectArticleCommand, strtotime($seoDelay));
+        $this->pbjx->send($inspectArticleCommand);
     }
 }

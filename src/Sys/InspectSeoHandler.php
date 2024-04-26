@@ -65,7 +65,11 @@ class InspectSeoHandler implements CommandHandler
                 continue;
             }
 
-            $this->$methodName($command, $pbjx, $searchEngine);
+            $isIndexed = $this->$methodName($command, $pbjx, $searchEngine);
+
+            if ($isIndexed) {
+                $enginesToRemove[] = $searchEngine;
+            }
         }
 
         foreach ($enginesToRemove as $searchEngine) {
@@ -77,11 +81,10 @@ class InspectSeoHandler implements CommandHandler
         }
     }
 
-    public function checkIndexStatusForGoogle(Message $command): void {
+    public function checkIndexStatusForGoogle(Message $command) {
         $nodeRef = $command->get('node_ref');
         $node = $this->ncr->getNode($nodeRef);
         $indexStatus = null;
-
 
         $url = UriTemplateService::expand(
             "{$node::schema()->getQName()}.canonical", $ $node->getUriTemplateVars()
@@ -99,7 +102,13 @@ class InspectSeoHandler implements CommandHandler
             $this->logger->error($errorMessage);
         }
 
-        $this->sendEvent($nodeRef, $indexStatus->getInspectionResult(), "google");
+        $result = $this->triggerSeoInspectedWatcher($nodeRef, $indexStatus->getInspectionResult(), "google");
+
+        if ($result == "PASSED") {
+            $this->handleIndexingSuccess();
+        } else {
+          $this->handleIndexingFailure($command, $node,  $indexStatus->getInspectionResult());
+        }
     }
 
 
@@ -108,7 +117,7 @@ class InspectSeoHandler implements CommandHandler
         $request->setSiteUrl(self::INSPECT_SEO_HANDLER_GOOGLE_SITE_URL_FLAG_NAME);
         $request->setInspectionUrl($url);
         $client = new \Google_Client();
-        $client->setAuthConfig(dump(json_decode(base64_decode(Crypto::decrypt(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_OAUTH_CONFIG'), $this->key)), true)));
+        $client->setAuthConfig(json_decode(base64_decode(Crypto::decrypt(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_OAUTH_CONFIG'), $this->key)), true));
         $client->addScope(\Google_Service_SearchConsole::WEBMASTERS_READONLY);
 
         $service = new \Google_Service_SearchConsole($client);
@@ -116,27 +125,23 @@ class InspectSeoHandler implements CommandHandler
         return $service->urlInspection_index->inspect($request);
     }
 
-    public function sendEvent(NodeRef $nodeRef, UrlInspectionResult $inspectionResult, string $searchEngine) : void {
+    public function triggerSeoInspectedWatcher(NodeRef $nodeRef, UrlInspectionResult $inspectionResult, string $searchEngine): Message {
         $seoEventInspectedCommand = SeoInspectedV1::create();
         $seoEventInspectedCommand->set('node_ref', $nodeRef);
         $seoEventInspectedCommand->set('inspection_response', $inspectionResult);
         $seoEventInspectedCommand->set('search_engine', $searchEngine);
 
-        $this->pbjx->send($seoEventInspectedCommand);
+       return$this->pbjx->request($seoEventInspectedCommand);
     }
-
-    public function examineResult(UrlInspectionResult $result): string {}
 
     public function handleIndexingSuccess(): void {}
 
-    public function handleIndexingFailure(Message $command, Message $article, InspectUrlIndexResponse $inspectSeoUrlIndexResponse): void {}
+    public function handleIndexingFailure(Message $command, Message $node, InspectUrlIndexResponse $inspectSeoUrlIndexResponse): void {}
 
     public function handleRetry(Message $command, Pbjx $pbjx): void {
         $maxRetries = $this->flags->getInt('max_retries', 5);
         $retries = $command->get('ctx_retries', 0);
         $nodeRef = $command->get('node_ref');
-        $node = $this->ncr->getNode($nodeRef);
-
 
         if ($retries <= $maxRetries){
             $retryCommand = clone $command;
@@ -144,9 +149,8 @@ class InspectSeoHandler implements CommandHandler
 
             $pbjx->sendAt($retryCommand, strtotime(self::INSPECT_SEO_RETRY_DELAY_FLAG_NAME ));
         } else {
-            $this->sendEvent(); // Event should be sent if max retries have been reached
+            $this->triggerSeoInspectedWatcher($nodeRef, null,"google");
             $this->logger->error("Final failure after retries.");
-            $this->handleIndexingFailure($command, $node, );
         }
     }
 }
