@@ -117,7 +117,6 @@ class InspectSeoHandler implements CommandHandler
         return $this->inspectSeoUrlIndexResponse;
     }
 
-
     public function getUrlIndexResponse(String $url): InspectUrlIndexResponse {
         $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
         $request->setSiteUrl(self::INSPECT_SEO_HANDLER_GOOGLE_SITE_URL_FLAG_NAME);
@@ -142,7 +141,9 @@ class InspectSeoHandler implements CommandHandler
 
     public function handleIndexingSuccess(): void {}
 
-    public function handleIndexingFailure(Message $command, Message $node, InspectUrlIndexResponse $inspectSeoUrlIndexResponse): void {}
+    public function handleIndexingFailure(Message $command, Message $node, InspectUrlIndexResponse $inspectSeoUrlIndexResponse): void {
+        $this->logger->error("Final failure after retries.");
+    }
 
     public function handleRetry(Message $command, Message $node, Pbjx $pbjx): void {
         $maxRetries = $this->flags->getInt('max_retries', 5);
@@ -161,7 +162,6 @@ class InspectSeoHandler implements CommandHandler
         } else {
             $this->triggerSeoInspectedWatcher($nodeRef, null,"google");
             $this->handleIndexingFailure($command, $node, $this->getIndexStatusResponse());
-            $this->logger->error("Final failure after retries.");
         }
     }
 }
