@@ -21,6 +21,7 @@ class InspectSeoHandler implements CommandHandler
 {
     private Ncr $ncr;
     private Key $key;
+    private Pbjx $pbjx;
     private InspectUrlIndexResponse $inspectSeoUrlIndexResponse;
     protected LoggerInterface $logger;
     protected Flags $flags;
