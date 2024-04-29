@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Triniti\News;
+namespace Triniti\Sys;
 
 use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Pbjx\EventSubscriber;
