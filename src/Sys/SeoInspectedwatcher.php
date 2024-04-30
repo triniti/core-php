@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Triniti\Sys;
 
-use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Pbjx\EventSubscriber;
 
 class SeoInspectedWatcher implements EventSubscriber
@@ -14,6 +13,4 @@ class SeoInspectedWatcher implements EventSubscriber
             'triniti:sys:event:seo-inspected' => 'onSeoInspected',
         ];
     }
-
-    public function onSeoInspected(NodeProjectedEvent $pbjxEvent): void {}
 }
