@@ -5,6 +5,7 @@ namespace Triniti\Sys;
 
 use Defuse\Crypto\Crypto;
 use Defuse\Crypto\Key;
+use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\WellKnown\NodeRef;
@@ -12,8 +13,8 @@ use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\UriTemplate\UriTemplateService;
 use Google\Service\SearchConsole\InspectUrlIndexResponse;
-use Google\Service\SearchConsole\UrlInspectionResult;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Triniti\Schemas\Sys\Event\SeoInspectedV1;
 
 
@@ -21,10 +22,12 @@ class InspectSeoHandler implements CommandHandler
 {
     private Ncr $ncr;
     private Key $key;
-    private Pbjx $pbjx;
+    private Flags $flags;
+    protected Pbjx $pbjx;
     private InspectUrlIndexResponse $inspectSeoUrlIndexResponse;
+    private bool $isIndexed;
     protected LoggerInterface $logger;
-    protected Flags $flags;
+
 
     const INSPECT_SEO_HANDLER_GOOGLE_SITE_URL_FLAG_NAME = 'inspect_seo_handler_google_site_url';
     const MAX_TRIES_FLAG_NAME = 'inspect_seo_max_tries';
@@ -37,14 +40,15 @@ class InspectSeoHandler implements CommandHandler
         ];
     }
 
-    public function __construct(Ncr $ncr, Key $key, Flags $flags, LoggerInterface $logger, Pbjx $pbjx, InspectUrlIndexResponse $inspectSeoUrlIndexResponse)
+    public function __construct(Ncr $ncr, Key $key, Flags $flags, Pbjx $pbjx, InspectUrlIndexResponse $inspectSeoUrlIndexResponse = null, bool $isIndexed = false, ?LoggerInterface $logger = null)
     {
         $this->ncr = $ncr;
         $this->key = $key;
         $this->flags = $flags;
-        $this->logger = $logger;
         $this->pbjx = $pbjx;
         $this->inspectSeoUrlIndexResponse = $inspectSeoUrlIndexResponse;
+        $this->isIndexed = $isIndexed;
+        $this->logger = $logger ?: new NullLogger();
     }
 
     public function handleCommand(Message $originalCommand, Pbjx $pbjx): void
@@ -55,10 +59,13 @@ class InspectSeoHandler implements CommandHandler
 
         $command->clear('search_engines');
         foreach ($searchEngines as $searchEngine) {
-            $command->addToSet('search_engines', $searchEngine);
+            $command->addToSet('search_engines', [$searchEngine]);
         }
 
         $enginesToRemove = [];
+
+        $nodeRef = $command->get('node_ref');
+        $node = $this->ncr->getNode($nodeRef);
 
         foreach ($searchEngines as $searchEngine) {
             $methodName = 'checkIndexStatusFor' . ucfirst($searchEngine);
@@ -68,9 +75,9 @@ class InspectSeoHandler implements CommandHandler
                 continue;
             }
 
-            $isIndexed = $this->$methodName($command, $pbjx, $searchEngine);
+            $this->$methodName($command, $node);
 
-            if ($isIndexed) {
+            if ($this->getIsIndexed()) {
                 $enginesToRemove[] = $searchEngine;
                 $this->handleIndexingSuccess();
             }
@@ -81,20 +88,17 @@ class InspectSeoHandler implements CommandHandler
         }
 
         if (!empty($command->get('search_engines'))) {
-            $this->handleRetry($command, $pbjx);
+            $this->handleRetry($command, $node, $pbjx);
         }
     }
 
-    public function checkIndexStatusForGoogle(Message $command): bool {
-        $nodeRef = $command->get('node_ref');
-        $node = $this->ncr->getNode($nodeRef);
-
-        $url = UriTemplateService::expand(
-            "{$node::schema()->getQName()}.canonical", $ $node->getUriTemplateVars()
-        );
-
+    public function checkIndexStatusForGoogle(Message $command, Message $node): void {
         try {
-            $this->setIndexStatusResponse($this->getUrlIndexResponse($url));
+            $url = UriTemplateService::expand(
+            "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
+            );
+
+            $this->getUrlIndexResponse("https://www.tmz.com/2024/04/22/luke-bryan-fall-performance-slip/");
         } catch (\Throwable $e) {
             dump($e->getTraceAsString());
             $errorMessage = "An error occurred in checkIndexStatus. Exception: {$e->getMessage()} " .
@@ -105,51 +109,72 @@ class InspectSeoHandler implements CommandHandler
             $this->logger->error($errorMessage);
         }
 
-        $result = $this->triggerSeoInspectedWatcher($nodeRef, $this->inspectSeoUrlIndexResponse->getInspectionResult(), "google");
-
-        return $result == "PASSED";
+        $nodeRef = $command->get('node_ref');
+        $this->triggerSeoInspectedWatcher($nodeRef, $this->getIndexStatusResponse(), "google");
     }
 
-    public function setIndexStatusResponse(InspectUrlIndexResponse $response): void {
+
+    public function setIsIndexed($response): void {
+        $this->isIndexed = $response == "PASSED";
+    }
+
+    public function getIsIndexed(): bool {
+        return $this->isIndexed;
+    }
+
+    public function setIndexStatusResponse($response): void {
         $this->inspectSeoUrlIndexResponse = $response;
     }
 
-    public function getIndexStatusResponse(){
+    public function getIndexStatusResponse(): InspectUrlIndexResponse
+    {
         return $this->inspectSeoUrlIndexResponse;
     }
 
-    public function getUrlIndexResponse(String $url): InspectUrlIndexResponse {
+    public function getUrlIndexResponse(String $url): void {
         $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
-        $request->setSiteUrl(self::INSPECT_SEO_HANDLER_GOOGLE_SITE_URL_FLAG_NAME);
+        $request->setSiteUrl('sc-domain:tmz.com');
         $request->setInspectionUrl($url);
         $client = new \Google_Client();
-        $client->setAuthConfig(json_decode(base64_decode(Crypto::decrypt(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_OAUTH_CONFIG'), $this->key)), true));
+        $client->setAuthConfig(dump(json_decode(base64_decode(Crypto::decrypt(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_OAUTH_CONFIG'), $this->key)), true)));
         $client->addScope(\Google_Service_SearchConsole::WEBMASTERS_READONLY);
-
         $service = new \Google_Service_SearchConsole($client);
+        $response = $service->urlInspection_index->inspect($request);
 
-        return $service->urlInspection_index->inspect($request);
+        $this->setIndexStatusResponse($response);
     }
 
-    public function triggerSeoInspectedWatcher(NodeRef $nodeRef, UrlInspectionResult $inspectionResult, string $searchEngine): Message {
-        $seoEventInspectedCommand = SeoInspectedV1::create();
-        $seoEventInspectedCommand->set('node_ref', $nodeRef);
-        $seoEventInspectedCommand->set('inspection_response', $inspectionResult);
-        $seoEventInspectedCommand->set('search_engine', $searchEngine);
+    public function triggerSeoInspectedWatcher(NodeRef $nodeRef, InspectUrlIndexResponse $inspectUrlIndexResponse, string $searchEngine): void {
+        $event = SeoInspectedV1::create();
+        $node = $this->ncr->getNode($nodeRef);
 
-       return $this->pbjx->request($seoEventInspectedCommand);
+        $event->set('node_ref', $nodeRef);
+        $event->set('inspection_response', json_encode($inspectUrlIndexResponse));
+        $event->set('search_engine', $searchEngine);
+
+        if (!$event->has('inspection_response')) {
+            return;
+        }
+
+        try {
+            $seoInspectedWatcher = new SeoInspectedWatcher($this->ncr);
+            $response = $seoInspectedWatcher->onSeoInspected(new NodeProjectedEvent($node, $event));
+
+            $this->setIsIndexed($response);
+        } catch (\Throwable $e){
+            $this->logger->error($e);
+        }
     }
 
     public function handleIndexingSuccess(): void {}
 
-    public function handleIndexingFailure(Message $command, Message $node, InspectUrlIndexResponse $inspectSeoUrlIndexResponse): void {
-        $this->logger->error("Final failure after retries.");
+    public function handleIndexingFailure(Message $command, Message $node, InspectUrlIndexResponse $inspectSeoUrlIndexResponse, string $searchEngine): void {
+        $this->triggerSeoInspectedWatcher($node->generateNodeRef(), $inspectSeoUrlIndexResponse, $searchEngine);
     }
 
     public function handleRetry(Message $command, Message $node, Pbjx $pbjx): void {
         $maxRetries = $this->flags->getInt('max_retries', 5);
         $retries = $command->get('ctx_retries', 0);
-        $nodeRef = $command->get('node_ref');
 
         if ($retries <= $maxRetries){
             $retryCommand = clone $command;
@@ -161,8 +186,8 @@ class InspectSeoHandler implements CommandHandler
                 $pbjx->send($retryCommand);
             }
         } else {
-            $this->triggerSeoInspectedWatcher($nodeRef, null,"google");
-            $this->handleIndexingFailure($command, $node, $this->getIndexStatusResponse());
+            $this->handleIndexingFailure($command, $node, $this->getIndexStatusResponse(), $command->get('search_engine'));
+            $this->logger->error("Final failure after retries.");
         }
     }
 }
