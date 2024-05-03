@@ -84,11 +84,12 @@ class InspectSeoHandler implements CommandHandler
         }
 
         foreach ($enginesToRemove as $searchEngine) {
-            $command->removeFromSet('search_engines', $searchEngine);
+            $command->removeFromSet('search_engines', [$searchEngine]);
         }
 
         if (!empty($command->get('search_engines'))) {
-            $this->handleRetry($command, $node, $pbjx);
+            $searchEngine = $command->get('search_engines')[0];
+            $this->handleRetry($command, $node, $pbjx, $searchEngine);
         }
     }
 
@@ -115,7 +116,7 @@ class InspectSeoHandler implements CommandHandler
 
 
     public function setIsIndexed($response): void {
-        $this->isIndexed = $response;
+        $this->isIndexed = $response == "PASSED";
     }
 
     public function getIsIndexed(): bool {
@@ -168,11 +169,11 @@ class InspectSeoHandler implements CommandHandler
 
     public function handleIndexingSuccess(): void {}
 
-    public function handleIndexingFailure(Message $command, Message $node, InspectUrlIndexResponse $inspectSeoUrlIndexResponse, string $searchEngine): void {
+    public function handleIndexingFailure(Message $command, Message $node, mixed $inspectSeoUrlIndexResponse, string $searchEngine): void {
         $this->triggerSeoInspectedWatcher($node->generateNodeRef(), $inspectSeoUrlIndexResponse, $searchEngine);
     }
 
-    public function handleRetry(Message $command, Message $node, Pbjx $pbjx): void {
+    public function handleRetry(Message $command, Message $node, Pbjx $pbjx, string $searchEngine): void {
         $maxRetries = $this->flags->getInt('max_retries', 5);
         $retries = $command->get('ctx_retries', 0);
 
@@ -186,7 +187,7 @@ class InspectSeoHandler implements CommandHandler
                 $pbjx->send($retryCommand);
             }
         } else {
-            $this->handleIndexingFailure($command, $node, $this->getIndexStatusResponse(), $command->get('search_engine'));
+            $this->handleIndexingFailure($command, $node, $this->getIndexStatusResponse(),  $searchEngine);
             $this->logger->error("Final failure after retries.");
         }
     }

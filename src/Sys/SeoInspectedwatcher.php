@@ -31,7 +31,8 @@ class SeoInspectedWatcher implements EventSubscriber
 
         if ($node->get('search_engine') == "google") {
             $successStates = ['INDEXING_ALLOWED', 'SUCCESSFUL'];
-            $indexStatusResult = $inspectSeoResponse->inspectionResult->indexStatusResult;
+            $inspectionResult = $inspectSeoResponse->inspectionResult;
+            $indexStatusResult = $inspectionResult->indexStatusResult;
             $webVerdict =  $indexStatusResult->verdict;
             $indexingState =  $indexStatusResult->indexingState;
 
@@ -40,9 +41,16 @@ class SeoInspectedWatcher implements EventSubscriber
             $hasFailed = $webVerdict === "FAIL";
 
             $ampEnabled = $entity->has('amp_enabled') && $entity->get('amp_enabled');
+            $ampVerdict = null;
             $ampDisabledPassed = !$ampEnabled && $webPassed;
 
-            $ampVerdict = $inspectSeoResponse->inspectionResult?->ampResult?->verdict;
+            if ($ampEnabled){
+                if (isset($inspectionResult->ampResult) && isset($inspectionResult->ampResult->verdict)) {
+                    $ampVerdict = $inspectionResult->ampResult->verdict;
+                } else {
+                    $ampVerdict = "FAIL";
+                }
+            }
 
             $hasAmpIssue = $ampEnabled && ($webVerdict !== "PASS" || $ampVerdict !== "PASS") || $ampDisabledPassed;
             $hasGeneralIssue = $hasFailed || $isUnlistedPassed || !$webPassed;
@@ -50,6 +58,6 @@ class SeoInspectedWatcher implements EventSubscriber
             $status = ($hasGeneralIssue || $hasAmpIssue) ? 'FAILED' : 'PASSED';
         }
 
-        return $status == "PASSED";
+        return $status;
     }
 }
