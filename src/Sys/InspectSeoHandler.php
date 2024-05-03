@@ -98,7 +98,7 @@ class InspectSeoHandler implements CommandHandler
             "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
             );
 
-            $this->getUrlIndexResponse("https://www.tmz.com/2024/04/22/luke-bryan-fall-performance-slip/");
+            $this->getUrlIndexResponse($url);
         } catch (\Throwable $e) {
             dump($e->getTraceAsString());
             $errorMessage = "An error occurred in checkIndexStatus. Exception: {$e->getMessage()} " .

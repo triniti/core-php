@@ -29,7 +29,6 @@ class SeoInspectedWatcher implements EventSubscriber
         $inspectSeoResponse = json_decode($node->get('inspection_response', true));
         $status = null;
 
-
         if ($node->get('search_engine') == "google") {
             $successStates = ['INDEXING_ALLOWED', 'SUCCESSFUL'];
             $indexStatusResult = $inspectSeoResponse->inspectionResult->indexStatusResult;
