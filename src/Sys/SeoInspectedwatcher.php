@@ -42,7 +42,7 @@ class SeoInspectedWatcher implements EventSubscriber
             $ampEnabled = $entity->has('amp_enabled') && $entity->get('amp_enabled');
             $ampDisabledPassed = !$ampEnabled && $webPassed;
 
-            $ampVerdict =   $inspectSeoResponse->inspectionResult?->ampResult?->verdict;
+            $ampVerdict = $inspectSeoResponse->inspectionResult?->ampResult?->verdict;
 
             $hasAmpIssue = $ampEnabled && ($webVerdict !== "PASS" || $ampVerdict !== "PASS") || $ampDisabledPassed;
             $hasGeneralIssue = $hasFailed || $isUnlistedPassed || !$webPassed;
