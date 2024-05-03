@@ -115,7 +115,7 @@ class InspectSeoHandler implements CommandHandler
 
 
     public function setIsIndexed($response): void {
-        $this->isIndexed = $response == "PASSED";
+        $this->isIndexed = $response;
     }
 
     public function getIsIndexed(): bool {

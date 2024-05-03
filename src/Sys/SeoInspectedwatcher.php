@@ -50,6 +50,6 @@ class SeoInspectedWatcher implements EventSubscriber
             $status = ($hasGeneralIssue || $hasAmpIssue) ? 'FAILED' : 'PASSED';
         }
 
-        return $status;
+        return $status == "PASSED";
     }
 }
