@@ -98,7 +98,7 @@ class InspectSeoHandler implements CommandHandler
         );
 
         try {
-            $this->getUrlIndexResponse($url);
+            $this->getUrlIndexResponseForGoogle($url);
         } catch (\Throwable $e) {
             dump($e->getTraceAsString());
             $errorMessage = "An error occurred in checkIndexStatus. Exception: {$e->getMessage()} " .
@@ -130,7 +130,7 @@ class InspectSeoHandler implements CommandHandler
         return $this->inspectSeoUrlIndexResponse;
     }
 
-    public function getUrlIndexResponse(String $url): void {
+    public function getUrlIndexResponseForGoogle(String $url): void {
         $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
         $request->setSiteUrl('sc-domain:tmz.com');
         $request->setInspectionUrl($url);
