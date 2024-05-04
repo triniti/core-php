@@ -94,11 +94,11 @@ class InspectSeoHandler implements CommandHandler
     }
 
     public function checkIndexStatusForGoogle(Message $command, Message $node): void {
-        try {
-            $url = UriTemplateService::expand(
+        $url = UriTemplateService::expand(
             "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
-            );
+        );
 
+        try {
             $this->getUrlIndexResponse($url);
         } catch (\Throwable $e) {
             dump($e->getTraceAsString());
@@ -137,7 +137,7 @@ class InspectSeoHandler implements CommandHandler
         $request->setSiteUrl('sc-domain:tmz.com');
         $request->setInspectionUrl($url);
         $client = new \Google_Client();
-        $client->setAuthConfig(dump(json_decode(base64_decode(Crypto::decrypt(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_OAUTH_CONFIG'), $this->key)), true)));
+        $client->setAuthConfig(json_decode(base64_decode(Crypto::decrypt(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_OAUTH_CONFIG'), $this->key)), true));
         $client->addScope(\Google_Service_SearchConsole::WEBMASTERS_READONLY);
         $service = new \Google_Service_SearchConsole($client);
         $response = $service->urlInspection_index->inspect($request);
