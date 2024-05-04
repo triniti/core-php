@@ -28,7 +28,6 @@ class InspectSeoHandler implements CommandHandler
     private bool $isIndexed;
     protected LoggerInterface $logger;
 
-
     const INSPECT_SEO_HANDLER_GOOGLE_SITE_URL_FLAG_NAME = 'inspect_seo_handler_google_site_url';
     const MAX_TRIES_FLAG_NAME = 'inspect_seo_max_tries';
     const INSPECT_SEO_RETRY_DELAY_FLAG_NAME = 'inspect_seo_retry_delay_flag';
@@ -113,10 +112,9 @@ class InspectSeoHandler implements CommandHandler
         $nodeRef = $command->get('node_ref');
         $this->triggerSeoInspectedWatcher($nodeRef, $this->getIndexStatusResponse(), "google");
     }
-
-
-    public function setIsIndexed($response): void {
-        $this->isIndexed = $response == "PASSED";
+    
+    public function setIsIndexed(bool $indexed): void {
+        $this->isIndexed = $indexed;
     }
 
     public function getIsIndexed(): bool {

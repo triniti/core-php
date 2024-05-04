@@ -23,7 +23,7 @@ class SeoInspectedWatcher implements EventSubscriber
         ];
     }
 
-    public function onSeoInspected(NodeProjectedEvent $pbjxEvent): string {
+    public function onSeoInspected(NodeProjectedEvent $pbjxEvent): bool {
         $node = $pbjxEvent->getLastEvent();
         $entity = $this->ncr->getNode($node->get('node_ref'));
         $inspectSeoResponse = json_decode($node->get('inspection_response', true));
@@ -58,6 +58,6 @@ class SeoInspectedWatcher implements EventSubscriber
             $status = ($hasGeneralIssue || $hasAmpIssue) ? 'FAILED' : 'PASSED';
         }
 
-        return $status;
+        return $status == "PASSED";
     }
 }
