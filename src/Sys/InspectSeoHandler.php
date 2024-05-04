@@ -16,7 +16,6 @@ use Google\Service\SearchConsole\InspectUrlIndexResponse;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Triniti\Schemas\Sys\Event\SeoInspectedV1;
-use Triniti\Sys\SeoInspectedWatcher;
 
 
 class InspectSeoHandler implements CommandHandler
