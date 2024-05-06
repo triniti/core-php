@@ -56,7 +56,7 @@ class InspectSeoHandler implements CommandHandler
         $retryCommand->set('ctx_retries', $command->get('ctx_retries', 0) + 1);
         $searchEngines = $retryCommand->get('search_engines', ['google']);
         $retryCommand->clear('search_engines');
-        
+
         foreach ($searchEngines as $searchEngine) {
             $command->addToSet('search_engines', [$searchEngine]);
         }
@@ -168,9 +168,9 @@ class InspectSeoHandler implements CommandHandler
 
     public function handleIndexingFailure(Message $command, Message $node, mixed $inspectSeoUrlIndexResponse, string $searchEngine, bool $hasExceededMaxTries = false): void {
         $this->triggerSeoInspectedWatcher($node->generateNodeRef(), $inspectSeoUrlIndexResponse, $searchEngine);
-        
+
         if ($hasExceededMaxTries) {
-            $this->logger->error("Final failure after retries."); 
+            $this->logger->error("Final failure after retries.");
         }
     }
 
