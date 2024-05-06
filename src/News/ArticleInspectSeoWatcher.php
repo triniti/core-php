@@ -46,9 +46,9 @@ class ArticleInspectSeoWatcher implements EventSubscriber
             ->set('node_ref', $event->get('node_ref'));
 
 
-        $seoDelay = $this->flags->getInt($this->flags->getBoolean(self::INSPECT_SEO_DISABLED_FLAG_NAME) ? self::INSPECT_SEO_NO_DELAY_FLAG_NAME : self::INSPECT_SEO_INITIAL_DELAY_FLAG_NAME);
-
         if (getenv('APP_ENV') === 'prod') {
+            $selectedFlag =$this->flags->getBoolean(self::INSPECT_SEO_DISABLED_FLAG_NAME) ? self::INSPECT_SEO_NO_DELAY_FLAG_NAME : self::INSPECT_SEO_INITIAL_DELAY_FLAG_NAME;
+            $seoDelay = $this->flags->getInt($selectedFlag);
             $this->pbjx->sendAt($inspectArticleCommand, $seoDelay);
         } else {
             $this->pbjx->send($inspectArticleCommand);
