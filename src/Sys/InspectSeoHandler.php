@@ -59,17 +59,17 @@ class InspectSeoHandler implements CommandHandler
 
     public function handleCommand(Message $command, Pbjx $pbjx): void
     {
-        $retryCommand = clone $command;
-        $retryCommand->set('ctx_retries', $command->get('ctx_retries', 0) + 1);
-        $searchEngines = $retryCommand->get('search_engines', ['google']);
-        $retryCommand->clear('search_engines');
+        $initialCommand = clone $command;
+        $initialCommand->set('ctx_retries', $command->get('ctx_retries', 0) + 1);
+        $searchEngines = $initialCommand->get('search_engines', ['google']);
+        $initialCommand->clear('search_engines');
 
         foreach ($searchEngines as $searchEngine) {
-            $retryCommand->addToSet('search_engines', [$searchEngine]);
+            $initialCommand->addToSet('search_engines', [$searchEngine]);
         }
 
         $enginesToRemove = [];
-        $nodeRef = $command->get('node_ref');
+        $nodeRef = $initialCommand->get('node_ref');
         $node = $this->ncr->getNode($nodeRef);
 
         foreach ($searchEngines as $searchEngine) {
@@ -80,21 +80,21 @@ class InspectSeoHandler implements CommandHandler
                 continue;
             }
 
-            $this->$methodName($command, $node, $searchEngine);
+            $this->$methodName($initialCommand, $node, $searchEngine);
 
             if ($this->getIsIndexed()) {
                 $enginesToRemove[] = $searchEngine;
-                $this->handleIndexingSuccess();
+                $this->handleIndexingSuccess($initialCommand);
             }
         }
 
         foreach ($enginesToRemove as $searchEngine) {
-            $retryCommand->removeFromSet('search_engines', [$searchEngine]);
+            $initialCommand->removeFromSet('search_engines', [$searchEngine]);
         }
 
-        if (!empty($retryCommand->get('search_engines'))) {
-            $searchEngine =  $retryCommand->get('search_engines')[0];
-            $this->handleRetry($retryCommand, $node, $pbjx, $searchEngine);
+        if (!empty($initialCommand->get('search_engines'))) {
+            $searchEngine = $initialCommand->get('search_engines')[0];
+            $this->handleRetry($initialCommand, $node, $pbjx, $searchEngine);
         }
     }
 
@@ -185,18 +185,22 @@ class InspectSeoHandler implements CommandHandler
         }
     }
 
-    public function handleIndexingSuccess(): void {}
+    public function handleIndexingSuccess(Message $command): Message {
+        return $command;
+    }
 
     /**
      * @throws GdbotsPbjException
      * @throws GdbotsNcrException
      */
-    public function handleIndexingFailure(Message $command, Message $node, mixed $inspectSeoUrlIndexResponse, string $searchEngine, bool $hasExceededMaxTries = false): void {
+    public function handleIndexingFailure(Message $command, Message $node, mixed $inspectSeoUrlIndexResponse, string $searchEngine, bool $hasExceededMaxTries = false): Message {
         $this->triggerSeoInspectedWatcher($node->generateNodeRef(), $inspectSeoUrlIndexResponse, $searchEngine);
 
         if ($hasExceededMaxTries) {
             $this->logger->error("Final failure after retries.");
         }
+
+        return $command;
     }
 
     /**
@@ -205,12 +209,12 @@ class InspectSeoHandler implements CommandHandler
      * @throws GdbotsPbjException
      * @throws GdbotsNcrException
      */
-    public function handleRetry(Message $command, Message $node, Pbjx $pbjx, string $searchEngine): void {
+    public function handleRetry(Message $command, Message $node, Pbjx $pbjx, string $searchEngine): Message {
         $maxRetries = $this->flags->getInt(self::INSPECT_SEO_MAX_TRIES_FLAG_NAME);
         $retries = $command->get('ctx_retries', 0);
+        $retryCommand = clone $command;
 
         if ($retries <= $maxRetries){
-            $retryCommand = clone $command;
             $retryCommand->set('ctx_retries', 1 + $retryCommand->get('ctx_retries'));
 
             if (getenv('APP_ENV') === 'prod') {
@@ -221,5 +225,7 @@ class InspectSeoHandler implements CommandHandler
         } else {
             $this->handleIndexingFailure($command, $node, $this->getIndexStatusResponse(),  $searchEngine, true);
         }
+
+        return $retryCommand;
     }
 }
