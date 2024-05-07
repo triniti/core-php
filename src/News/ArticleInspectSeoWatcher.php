@@ -47,7 +47,7 @@ class ArticleInspectSeoWatcher implements EventSubscriber
 
 
         if (getenv('APP_ENV') === 'prod') {
-            $selectedFlag =$this->flags->getBoolean(self::INSPECT_SEO_DISABLED_FLAG_NAME) ? self::INSPECT_SEO_NO_DELAY_FLAG_NAME : self::INSPECT_SEO_INITIAL_DELAY_FLAG_NAME;
+            $selectedFlag = $this->flags->getBoolean(self::INSPECT_SEO_DISABLED_FLAG_NAME) ? self::INSPECT_SEO_NO_DELAY_FLAG_NAME : self::INSPECT_SEO_INITIAL_DELAY_FLAG_NAME;
             $seoDelay = $this->flags->getInt($selectedFlag);
             $this->pbjx->sendAt($inspectArticleCommand, $seoDelay);
         } else {
