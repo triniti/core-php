@@ -4,17 +4,24 @@ declare(strict_types=1);
 namespace Triniti\Sys;
 
 use Defuse\Crypto\Crypto;
+use Defuse\Crypto\Exception\EnvironmentIsBrokenException;
+use Defuse\Crypto\Exception\WrongKeyOrModifiedCiphertextException;
 use Defuse\Crypto\Key;
 use Gdbots\Ncr\Event\NodeProjectedEvent;
+use Gdbots\Ncr\Exception\GdbotsNcrException;
 use Gdbots\Ncr\Ncr;
+use Gdbots\Pbj\Exception\GdbotsPbjException;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\CommandHandler;
+use Gdbots\Pbjx\Exception\GdbotsPbjxException;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\UriTemplate\UriTemplateService;
+use Google\Service\Exception;
 use Google\Service\SearchConsole\InspectUrlIndexResponse;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Throwable;
 use Triniti\Schemas\Sys\Event\SeoInspectedV1;
 
 
@@ -58,7 +65,7 @@ class InspectSeoHandler implements CommandHandler
         $retryCommand->clear('search_engines');
 
         foreach ($searchEngines as $searchEngine) {
-            $command->addToSet('search_engines', [$searchEngine]);
+            $retryCommand->addToSet('search_engines', [$searchEngine]);
         }
 
         $enginesToRemove = [];
@@ -82,15 +89,19 @@ class InspectSeoHandler implements CommandHandler
         }
 
         foreach ($enginesToRemove as $searchEngine) {
-            $command->removeFromSet('search_engines', [$searchEngine]);
+            $retryCommand->removeFromSet('search_engines', [$searchEngine]);
         }
 
-        if (!empty($command->get('search_engines'))) {
-            $searchEngine = $command->get('search_engines')[0];
-            $this->handleRetry($command, $node, $pbjx, $searchEngine);
+        if (!empty($retryCommand->get('search_engines'))) {
+            $searchEngine =  $retryCommand->get('search_engines')[0];
+            $this->handleRetry($retryCommand, $node, $pbjx, $searchEngine);
         }
     }
 
+    /**
+     * @throws GdbotsPbjException
+     * @throws GdbotsNcrException
+     */
     public function checkIndexStatusForGoogle(Message $command, Message $node, string $searchEngine = "google"): void {
         $url = UriTemplateService::expand(
             "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
@@ -98,7 +109,7 @@ class InspectSeoHandler implements CommandHandler
 
         try {
             $this->getUrlIndexResponseForGoogle($url);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $errorMessage = "An error occurred in checkIndexStatus for {$searchEngine}. Exception: {$e->getMessage()} " .
                 " | Node ID: " . $node->get('node_id') .
                 " | URL: {$url}" .
@@ -129,6 +140,12 @@ class InspectSeoHandler implements CommandHandler
         return $this->inspectSeoUrlIndexResponse;
     }
 
+    /**
+     * @throws Exception
+     * @throws \Google\Exception
+     * @throws WrongKeyOrModifiedCiphertextException
+     * @throws EnvironmentIsBrokenException
+     */
     public function getUrlIndexResponseForGoogle(String $url): void {
         $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
         $request->setSiteUrl($this->flags->getString(self::INSPECT_SEO_HANDLER_GOOGLE_SITE_URL_FLAG_NAME));
@@ -142,6 +159,10 @@ class InspectSeoHandler implements CommandHandler
         $this->setIndexStatusResponse($response);
     }
 
+    /**
+     * @throws GdbotsPbjException
+     * @throws GdbotsNcrException
+     */
     public function triggerSeoInspectedWatcher(NodeRef $nodeRef, InspectUrlIndexResponse $inspectUrlIndexResponse, string $searchEngine): void {
         $event = SeoInspectedV1::create();
         $node = $this->ncr->getNode($nodeRef);
@@ -159,13 +180,17 @@ class InspectSeoHandler implements CommandHandler
             $indexed = $seoInspectedWatcher->onSeoInspected(new NodeProjectedEvent($node, $event));
 
             $this->setIsIndexed($indexed);
-        } catch (\Throwable $e){
+        } catch (Throwable $e){
             $this->logger->error($e);
         }
     }
 
     public function handleIndexingSuccess(): void {}
 
+    /**
+     * @throws GdbotsPbjException
+     * @throws GdbotsNcrException
+     */
     public function handleIndexingFailure(Message $command, Message $node, mixed $inspectSeoUrlIndexResponse, string $searchEngine, bool $hasExceededMaxTries = false): void {
         $this->triggerSeoInspectedWatcher($node->generateNodeRef(), $inspectSeoUrlIndexResponse, $searchEngine);
 
@@ -174,6 +199,12 @@ class InspectSeoHandler implements CommandHandler
         }
     }
 
+    /**
+     * @throws Throwable
+     * @throws GdbotsPbjxException
+     * @throws GdbotsPbjException
+     * @throws GdbotsNcrException
+     */
     public function handleRetry(Message $command, Message $node, Pbjx $pbjx, string $searchEngine): void {
         $maxRetries = $this->flags->getInt(self::INSPECT_SEO_MAX_TRIES_FLAG_NAME);
         $retries = $command->get('ctx_retries', 0);
