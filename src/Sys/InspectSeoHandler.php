@@ -119,7 +119,7 @@ class InspectSeoHandler implements CommandHandler
             $this->logger->error($errorMessage);
         }
 
-        $this->triggerSeoInspectedWatcher($command->get('nodeRef'), $this->getIndexStatusResponse(), $searchEngine);
+        $this->triggerSeoInspectedWatcher($node->generateNodeRef(), $this->getIndexStatusResponse(), $searchEngine);
     }
 
     public function setIsIndexed(bool $indexed): void {
