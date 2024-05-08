@@ -119,8 +119,7 @@ class InspectSeoHandler implements CommandHandler
             $this->logger->error($errorMessage);
         }
 
-        $nodeRef = $command->get('node_ref');
-        $this->triggerSeoInspectedWatcher($nodeRef, $this->getIndexStatusResponse(), $searchEngine);
+        $this->triggerSeoInspectedWatcher($command->get('nodeRef'), $this->getIndexStatusResponse(), $searchEngine);
     }
 
     public function setIsIndexed(bool $indexed): void {
@@ -166,6 +165,7 @@ class InspectSeoHandler implements CommandHandler
     public function triggerSeoInspectedWatcher(NodeRef $nodeRef, InspectUrlIndexResponse $inspectUrlIndexResponse, string $searchEngine): void {
         $event = SeoInspectedV1::create();
         $node = $this->ncr->getNode($nodeRef);
+        $indexed = null;
 
         $event->set('node_ref', $nodeRef);
         $event->set('inspection_response', json_encode($inspectUrlIndexResponse));
@@ -178,24 +178,19 @@ class InspectSeoHandler implements CommandHandler
         try {
             $seoInspectedWatcher = new SeoInspectedWatcher($this->ncr);
             $indexed = $seoInspectedWatcher->onSeoInspected(new NodeProjectedEvent($node, $event));
-
-            $this->setIsIndexed($indexed);
         } catch (Throwable $e){
             $this->logger->error($e);
         }
+
+        $this->setIsIndexed($indexed);
     }
 
     public function handleIndexingSuccess(Message $command): Message {
         return $command;
     }
 
-    /**
-     * @throws GdbotsPbjException
-     * @throws GdbotsNcrException
-     */
-    public function handleIndexingFailure(Message $command, Message $node, mixed $inspectSeoUrlIndexResponse, string $searchEngine, bool $hasExceededMaxTries = false): Message {
-        $this->triggerSeoInspectedWatcher($node->generateNodeRef(), $inspectSeoUrlIndexResponse, $searchEngine);
 
+    public function handleIndexingFailure(Message $command, Message $node, mixed $inspectSeoUrlIndexResponse, string $searchEngine, bool $hasExceededMaxTries = false): Message {
         if ($hasExceededMaxTries) {
             $this->logger->error("Final failure after retries.");
         }
