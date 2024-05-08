@@ -209,7 +209,7 @@ class InspectSeoHandler implements CommandHandler
         $retries = $command->get('ctx_retries', 0);
         $retryCommand = clone $command;
 
-        if ($retries <= $maxRetries){
+        if ($retries < $maxRetries){
             $retryCommand->set('ctx_retries', 1 + $retryCommand->get('ctx_retries'));
 
             if (getenv('APP_ENV') === 'prod') {
