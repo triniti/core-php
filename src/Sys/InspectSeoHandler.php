@@ -92,9 +92,11 @@ class InspectSeoHandler implements CommandHandler
             $initialCommand->removeFromSet('search_engines', [$searchEngine]);
         }
 
+        dump("Attempting command with:", $initialCommand->get('search_engines'));
+
         if (!empty($initialCommand->get('search_engines'))) {
             $searchEngine = $initialCommand->get('search_engines')[0];
-            $this->handleRetry($initialCommand, $node, $pbjx, $searchEngine);
+            $this->handleRetry($initialCommand, $node, $pbjx, $searchEngine, $initialCommand->get('ctx_retries'));
         }
     }
 
@@ -190,11 +192,7 @@ class InspectSeoHandler implements CommandHandler
     }
 
 
-    public function handleIndexingFailure(Message $command, Message $node, mixed $inspectSeoUrlIndexResponse, string $searchEngine, bool $hasExceededMaxTries = false): Message {
-        if ($hasExceededMaxTries) {
-            $this->logger->error("Final failure after retries.");
-        }
-
+    public function handleIndexingFailure(Message $command, Message $node, mixed $inspectSeoUrlIndexResponse, string $searchEngine): Message {
         return $command;
     }
 
@@ -204,13 +202,12 @@ class InspectSeoHandler implements CommandHandler
      * @throws GdbotsPbjException
      * @throws GdbotsNcrException
      */
-    public function handleRetry(Message $command, Message $node, Pbjx $pbjx, string $searchEngine): Message {
-        $maxRetries = $this->flags->getInt(self::INSPECT_SEO_MAX_TRIES_FLAG_NAME);
-        $retries = $command->get('ctx_retries', 0);
+    public function handleRetry(Message $command, Message $node, Pbjx $pbjx, string $searchEngine, int $retries): void {
+        $maxRetries = $this->flags->getInt(self::INSPECT_SEO_MAX_TRIES_FLAG_NAME, 5);;
         $retryCommand = clone $command;
 
         if ($retries < $maxRetries){
-            $retryCommand->set('ctx_retries', 1 + $retryCommand->get('ctx_retries'));
+            $retryCommand->set('ctx_retries', $retryCommand->get('ctx_retries'));
 
             if (getenv('APP_ENV') === 'prod') {
                 $pbjx->sendAt($retryCommand, strtotime($this->flags->getString(self::INSPECT_SEO_RETRY_DELAY_FLAG_NAME )));
@@ -220,7 +217,5 @@ class InspectSeoHandler implements CommandHandler
         } else {
             $this->handleIndexingFailure($command, $node, $this->getIndexStatusResponse(),  $searchEngine, true);
         }
-
-        return $retryCommand;
     }
 }
