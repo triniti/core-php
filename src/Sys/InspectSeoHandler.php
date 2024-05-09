@@ -36,7 +36,7 @@ class InspectSeoHandler implements CommandHandler
     private bool $isRetrying;
     protected LoggerInterface $logger;
 
-    const INSPECT_SEO_GOOGLE_SITE_URL_FLAG_NAME = 'inspect_seo_google_site_url';
+    const INSPECT_SEO_GOOGLE_SITE_URL_FLAG_NAME = 'inspect_seo_handler_google_site_url';
     const INSPECT_SEO_MAX_TRIES_FLAG_NAME = 'inspect_seo_max_tries';
     const INSPECT_SEO_RETRY_DELAY_FLAG_NAME = 'inspect_seo_retry_delay';
 
@@ -63,7 +63,6 @@ class InspectSeoHandler implements CommandHandler
     {
         $initialCommand = clone $command;
         $initialCommand->set('ctx_retries', $command->get('ctx_retries', 0));
-        dump($initialCommand->get('ctx_retries'));
         $searchEngines = $initialCommand->get('search_engines', ['google']);
         $initialCommand->clear('search_engines');
 
