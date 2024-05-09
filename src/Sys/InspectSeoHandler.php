@@ -93,8 +93,9 @@ class InspectSeoHandler implements CommandHandler
         }
 
         if (!empty($initialCommand->get('search_engines'))) {
-            $searchEngine = $initialCommand->get('search_engines')[0];
-            $this->handleRetry($initialCommand, $node, $pbjx, $searchEngine, $initialCommand->get('ctx_retries'));
+            foreach ($searchEngines as $searchEngine) {
+                $this->handleRetry($initialCommand, $node, $pbjx, $searchEngine, $initialCommand->get('ctx_retries'));
+            }
         }
     }
 
