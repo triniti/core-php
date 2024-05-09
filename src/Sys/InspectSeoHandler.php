@@ -190,7 +190,6 @@ class InspectSeoHandler implements CommandHandler
         return $command;
     }
 
-
     public function handleIndexingFailure(Message $command, Message $node, mixed $inspectSeoUrlIndexResponse, string $searchEngine): Message {
         return $command;
     }
