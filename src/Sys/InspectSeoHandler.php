@@ -36,7 +36,7 @@ class InspectSeoHandler implements CommandHandler
     private bool $isRetrying;
     protected LoggerInterface $logger;
 
-    const INSPECT_SEO_GOOGLE_SITE_URL_FLAG_NAME = 'inspect_seo_handler_google_site_url';
+    const INSPECT_SEO_GOOGLE_SITE_URL_FLAG_NAME = 'inspect_seo_google_site_url';
     const INSPECT_SEO_MAX_TRIES_FLAG_NAME = 'inspect_seo_max_tries';
     const INSPECT_SEO_RETRY_DELAY_FLAG_NAME = 'inspect_seo_retry_delay';
 
@@ -47,7 +47,7 @@ class InspectSeoHandler implements CommandHandler
         ];
     }
 
-    public function __construct(Ncr $ncr, Key $key, Flags $flags, Pbjx $pbjx, InspectUrlIndexResponse $inspectSeoUrlIndexResponse = null, bool $isIndexed = false, bool $isRetrying = true, ?LoggerInterface $logger = null)
+    public function __construct(Ncr $ncr, Key $key, Flags $flags, Pbjx $pbjx, InspectUrlIndexResponse $inspectSeoUrlIndexResponse = null, bool $isIndexed = false, bool $isRetrying = false, ?LoggerInterface $logger = null)
     {
         $this->ncr = $ncr;
         $this->key = $key;
