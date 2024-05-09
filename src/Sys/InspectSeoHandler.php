@@ -213,7 +213,7 @@ class InspectSeoHandler implements CommandHandler
                 $pbjx->send($retryCommand);
             }
         } else {
-            $this->handleIndexingFailure($command, $node, $this->getIndexStatusResponse(),  $searchEngine);
+            $this->handleIndexingFailure($command, $node, $this->getIndexStatusResponse(), $searchEngine);
         }
     }
 }
