@@ -60,7 +60,7 @@ class InspectSeoHandler implements CommandHandler
     public function handleCommand(Message $command, Pbjx $pbjx): void
     {
         $initialCommand = clone $command;
-        $initialCommand->set('ctx_retries', $command->get('ctx_retries', 0) + 1);
+        $initialCommand->set('ctx_retries', $command->get('ctx_retries', 0));
         $searchEngines = $initialCommand->get('search_engines', ['google']);
         $initialCommand->clear('search_engines');
 
@@ -205,7 +205,7 @@ class InspectSeoHandler implements CommandHandler
         $retryCommand = clone $command;
 
         if ($retries < $maxRetries){
-            $retryCommand->set('ctx_retries', $retryCommand->get('ctx_retries'));
+            $retryCommand->set('ctx_retries', $retryCommand->get('ctx_retries') + 1);
 
             if (getenv('APP_ENV') === 'prod') {
                 $pbjx->sendAt($retryCommand, strtotime($this->flags->getString(self::INSPECT_SEO_RETRY_DELAY_FLAG_NAME )));
