@@ -208,7 +208,7 @@ class InspectSeoHandler implements CommandHandler
             $retryCommand->set('ctx_retries', $retryCommand->get('ctx_retries') + 1);
 
             if (getenv('APP_ENV') === 'prod') {
-                $pbjx->sendAt($retryCommand, strtotime($this->flags->getString(self::INSPECT_SEO_RETRY_DELAY_FLAG_NAME )));
+                $pbjx->sendAt($retryCommand, strtotime($this->flags->getString(self::INSPECT_SEO_RETRY_DELAY_FLAG_NAME)));
             } else {
                 $pbjx->send($retryCommand);
             }
