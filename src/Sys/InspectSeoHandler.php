@@ -33,6 +33,7 @@ class InspectSeoHandler implements CommandHandler
     protected Pbjx $pbjx;
     private InspectUrlIndexResponse $inspectSeoUrlIndexResponse;
     private bool $isIndexed;
+    private bool $isRetrying;
     protected LoggerInterface $logger;
 
     const INSPECT_SEO_GOOGLE_SITE_URL_FLAG_NAME = 'inspect_seo_google_site_url';
@@ -46,7 +47,7 @@ class InspectSeoHandler implements CommandHandler
         ];
     }
 
-    public function __construct(Ncr $ncr, Key $key, Flags $flags, Pbjx $pbjx, InspectUrlIndexResponse $inspectSeoUrlIndexResponse = null, bool $isIndexed = false, ?LoggerInterface $logger = null)
+    public function __construct(Ncr $ncr, Key $key, Flags $flags, Pbjx $pbjx, InspectUrlIndexResponse $inspectSeoUrlIndexResponse = null, bool $isIndexed = false, bool $isRetrying = true, ?LoggerInterface $logger = null)
     {
         $this->ncr = $ncr;
         $this->key = $key;
@@ -54,6 +55,7 @@ class InspectSeoHandler implements CommandHandler
         $this->pbjx = $pbjx;
         $this->inspectSeoUrlIndexResponse = $inspectSeoUrlIndexResponse;
         $this->isIndexed = $isIndexed;
+        $this->isRetrying = $isRetrying;
         $this->logger = $logger ?: new NullLogger();
     }
 
@@ -61,6 +63,7 @@ class InspectSeoHandler implements CommandHandler
     {
         $initialCommand = clone $command;
         $initialCommand->set('ctx_retries', $command->get('ctx_retries', 0));
+        dump($initialCommand->get('ctx_retries'));
         $searchEngines = $initialCommand->get('search_engines', ['google']);
         $initialCommand->clear('search_engines');
 
@@ -85,6 +88,8 @@ class InspectSeoHandler implements CommandHandler
             if ($this->getIsIndexed()) {
                 $enginesToRemove[] = $searchEngine;
                 $this->handleIndexingSuccess($initialCommand);
+            } else {
+                $this->setIsRetrying(true);
             }
         }
 
@@ -92,7 +97,7 @@ class InspectSeoHandler implements CommandHandler
             $initialCommand->removeFromSet('search_engines', [$searchEngine]);
         }
 
-        if (!empty($initialCommand->get('search_engines'))) {
+        if (!empty($initialCommand->get('search_engines')) && $this->getIsRetrying()) {
             foreach ($searchEngines as $searchEngine) {
                 $this->handleRetry($initialCommand, $node, $pbjx, $searchEngine, $initialCommand->get('ctx_retries'));
             }
@@ -129,6 +134,14 @@ class InspectSeoHandler implements CommandHandler
 
     public function getIsIndexed(): bool {
         return $this->isIndexed;
+    }
+
+    public function setIsRetrying(bool $retrying): void {
+        $this->isRetrying = $retrying;
+    }
+
+    public function getIsRetrying(): bool {
+        return $this->isRetrying;
     }
 
     public function setIndexStatusResponse($response): void {
@@ -208,12 +221,13 @@ class InspectSeoHandler implements CommandHandler
             $retryCommand->set('ctx_retries', $retryCommand->get('ctx_retries') + 1);
 
             if (getenv('APP_ENV') === 'prod') {
-                $pbjx->sendAt($retryCommand, strtotime($this->flags->getString(self::INSPECT_SEO_RETRY_DELAY_FLAG_NAME)));
+                $pbjx->sendAt($retryCommand, strtotime($this->flags->getString(self::INSPECT_SEO_RETRY_DELAY_FLAG_NAME )));
             } else {
                 $pbjx->send($retryCommand);
             }
         } else {
-            $this->handleIndexingFailure($command, $node, $this->getIndexStatusResponse(), $searchEngine);
+            $this->setIsRetrying(false);
+            $this->handleIndexingFailure($command, $node, $this->getIndexStatusResponse(),  $searchEngine);
         }
     }
 }
