@@ -35,7 +35,7 @@ class InspectSeoHandler implements CommandHandler
     private bool $isIndexed;
     protected LoggerInterface $logger;
 
-    const INSPECT_SEO_HANDLER_GOOGLE_SITE_URL_FLAG_NAME = 'inspect_seo_handler_google_site_url';
+    const INSPECT_SEO_GOOGLE_SITE_URL_FLAG_NAME = 'inspect_seo_google_site_url';
     const INSPECT_SEO_MAX_TRIES_FLAG_NAME = 'inspect_seo_max_tries';
     const INSPECT_SEO_RETRY_DELAY_FLAG_NAME = 'inspect_seo_retry_delay';
 
@@ -92,8 +92,6 @@ class InspectSeoHandler implements CommandHandler
             $initialCommand->removeFromSet('search_engines', [$searchEngine]);
         }
 
-        dump("Attempting command with:", $initialCommand->get('search_engines'));
-
         if (!empty($initialCommand->get('search_engines'))) {
             $searchEngine = $initialCommand->get('search_engines')[0];
             $this->handleRetry($initialCommand, $node, $pbjx, $searchEngine, $initialCommand->get('ctx_retries'));
@@ -110,6 +108,7 @@ class InspectSeoHandler implements CommandHandler
         );
 
         try {
+            dump($url);
             $this->getUrlIndexResponseForGoogle($url);
         } catch (Throwable $e) {
             $errorMessage = "An error occurred in checkIndexStatus for {$searchEngine}. Exception: {$e->getMessage()} " .
@@ -149,7 +148,7 @@ class InspectSeoHandler implements CommandHandler
      */
     public function getUrlIndexResponseForGoogle(String $url): void {
         $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
-        $request->setSiteUrl($this->flags->getString(self::INSPECT_SEO_HANDLER_GOOGLE_SITE_URL_FLAG_NAME));
+        $request->setSiteUrl(dump($this->flags->getString(self::INSPECT_SEO_GOOGLE_SITE_URL_FLAG_NAME)));
         $request->setInspectionUrl($url);
         $client = new \Google_Client();
         $client->setAuthConfig(json_decode(base64_decode(Crypto::decrypt(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_OAUTH_CONFIG'), $this->key)), true));
@@ -157,7 +156,7 @@ class InspectSeoHandler implements CommandHandler
         $service = new \Google_Service_SearchConsole($client);
         $response = $service->urlInspection_index->inspect($request);
 
-        $this->setIndexStatusResponse($response);
+        $this->setIndexStatusResponse(dump($response));
     }
 
     /**
@@ -179,7 +178,10 @@ class InspectSeoHandler implements CommandHandler
 
         try {
             $seoInspectedWatcher = new SeoInspectedWatcher($this->ncr);
+            dump($node);
+            dump($event);
             $indexed = $seoInspectedWatcher->onSeoInspected(new NodeProjectedEvent($node, $event));
+            dump($indexed);
         } catch (Throwable $e){
             $this->logger->error($e);
         }
@@ -215,7 +217,7 @@ class InspectSeoHandler implements CommandHandler
                 $pbjx->send($retryCommand);
             }
         } else {
-            $this->handleIndexingFailure($command, $node, $this->getIndexStatusResponse(),  $searchEngine, true);
+            $this->handleIndexingFailure($command, $node, $this->getIndexStatusResponse(),  $searchEngine);
         }
     }
 }
