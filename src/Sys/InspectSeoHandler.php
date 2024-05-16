@@ -4,42 +4,23 @@ declare(strict_types=1);
 namespace Triniti\Sys;
 
 use Defuse\Crypto\Crypto;
-use Defuse\Crypto\Exception\EnvironmentIsBrokenException;
-use Defuse\Crypto\Exception\WrongKeyOrModifiedCiphertextException;
-use Defuse\Crypto\Key;
-use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Ncr\Exception\GdbotsNcrException;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Exception\GdbotsPbjException;
 use Gdbots\Pbj\Message;
-use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\CommandHandler;
-use Gdbots\Pbjx\Exception\GdbotsPbjxException;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Pbjx\StreamId;
 use Gdbots\UriTemplate\UriTemplateService;
-use Google\Service\Exception;
 use Google\Service\SearchConsole\InspectUrlIndexResponse;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Throwable;
 use Triniti\Schemas\Sys\Event\SeoInspectedV1;
+use Defuse\Crypto\Key;
 
 
 class InspectSeoHandler implements CommandHandler
 {
-    private Ncr $ncr;
-    private Key $key;
-    private Flags $flags;
-    protected Pbjx $pbjx;
-    private InspectUrlIndexResponse $inspectSeoUrlIndexResponse;
-    private bool $isIndexed;
-    private bool $isRetrying;
-    private int $retries;
-    private array $enginesToRemove;
-    private array $searchEngines;
-    protected LoggerInterface $logger;
-
     const INSPECT_SEO_GOOGLE_SITE_URL_FLAG_NAME = 'inspect_seo_handler_google_site_url';
     const INSPECT_SEO_DELAY_DISABLED_FLAG_NAME = "inspect_seo_delay_disabled";
     const INSPECT_SEO_MAX_TRIES_FLAG_NAME = 'inspect_seo_max_tries';
@@ -52,19 +33,14 @@ class InspectSeoHandler implements CommandHandler
         ];
     }
 
-    public function __construct(Ncr $ncr, Key $key, Flags $flags, Pbjx $pbjx, InspectUrlIndexResponse $inspectSeoUrlIndexResponse = null, bool $isIndexed = false, bool $isRetrying = false, array $enginesToRemove = [], array $searchEngines = [], $retries = 0, ?LoggerInterface $logger = null)
+    public function __construct(
+        private readonly Ncr $ncr,
+        private readonly Key $key,
+        private readonly Flags $flags,
+        private readonly Pbjx $pbjx,
+        private readonly LoggerInterface $logger = new NullLogger(),
+      )
     {
-        $this->ncr = $ncr;
-        $this->key = $key;
-        $this->flags = $flags;
-        $this->pbjx = $pbjx;
-        $this->inspectSeoUrlIndexResponse = $inspectSeoUrlIndexResponse;
-        $this->isIndexed = $isIndexed;
-        $this->isRetrying = $isRetrying;
-        $this->enginesToRemove = $enginesToRemove;
-        $this->retries = $retries;
-        $this->searchEngines = $searchEngines;
-        $this->logger = $logger ?: new NullLogger();
     }
 
     public function handleCommand(Message $command, Pbjx $pbjx): void
@@ -114,7 +90,7 @@ class InspectSeoHandler implements CommandHandler
             $url = UriTemplateService::expand(
                 "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
             );
-            $request->setInspectionUrl("https://www.tmz.com/2024/05/15/chiefs-harrison-butker-evokes-taylor-swift-in-controversial-commencement-speech/");
+            $request->setInspectionUrl($url);
             $client = new \Google_Client();
             $client->addScope(\Google_Service_SearchConsole::WEBMASTERS_READONLY);
 
@@ -145,7 +121,7 @@ class InspectSeoHandler implements CommandHandler
         if (!empty($conclusionMessage)) {
             $this->putEvent($command, $node, $response, $searchEngine);
             $this->sendSlackAlert($node,$response, $searchEngine, $conclusionMessage, $isUnlisted, $ampEnabled);
-            return $command;;
+            return $command;
         }
 
 
@@ -158,15 +134,8 @@ class InspectSeoHandler implements CommandHandler
         return $command;
     }
 
-       public function handleIndexingSuccess(Message $command): Message {
-        return $command;
-    }
 
-    public function handleIndexingFailure(Message $command, Message $node, mixed $inspectSeoUrlIndexResponse, string $searchEngine): Message {
-        return $command;
-    }
-
- private function isConclusive(InspectUrlIndexResponse|null $response, int $currentRetries, int $maxRetries, Message $node, string $searchEngine): string {
+    private function isConclusive(InspectUrlIndexResponse|null $response, int $currentRetries, int $maxRetries, Message $node, string $searchEngine): string {
         $conclusionMessage = "";
 
         if ($searchEngine == "google" && $response) {
@@ -202,17 +171,7 @@ class InspectSeoHandler implements CommandHandler
             }
         }
 
-    return $conclusionMessage;
-}
-
-
-    public function setIndexStatusResponse($response): void {
-        $this->inspectSeoUrlIndexResponse = $response;
-    }
-
-    public function getIndexStatusResponse(): InspectUrlIndexResponse
-    {
-        return $this->inspectSeoUrlIndexResponse;
+        return $conclusionMessage;
     }
 
 
