@@ -134,23 +134,27 @@ class InspectSeoHandler implements CommandHandler
             return false;
         }
 
-        $inspectionResult = $response->inspectionResult;
-        $indexStatusResult = $inspectionResult->indexStatusResult;
+        $isConclusive = false;
 
-        $webNotIndexed = $indexStatusResult->verdict !== 'PASS';
-        $isUnlisted = $node->get('is_unlisted');
-
-        $ampResult = $inspectionResult->ampResult ?? null;
-        $ampEnabled = $node->has('amp_enabled') && $node->get('amp_enabled');
-
-        $ampNotIndexed = $ampEnabled && ($ampResult === null || $ampResult->verdict !== 'PASS');
-        $isConclusive =  ($isUnlisted && $webNotIndexed) ||  (!$isUnlisted && !$webNotIndexed) || ($ampEnabled && $ampNotIndexed) || (!$ampEnabled && $ampResult && $ampResult->verdict === 'PASS');
+        if ($searchEngine == "google"){
+            $inspectionResult = $response->inspectionResult;
+            $indexStatusResult = $inspectionResult->indexStatusResult;
+    
+            $webNotIndexed = $indexStatusResult->verdict !== 'PASS';
+            $isUnlisted = $node->get('is_unlisted');
+    
+            $ampResult = $inspectionResult->ampResult ?? null;
+            $ampEnabled = $node->has('amp_enabled') && $node->get('amp_enabled');
+    
+            $ampNotIndexed = $ampEnabled && ($ampResult === null || $ampResult->verdict !== 'PASS');
+            $isConclusive =  ($isUnlisted && $webNotIndexed) ||  (!$isUnlisted && !$webNotIndexed) || ($ampEnabled && $ampNotIndexed) || (!$ampEnabled && $ampResult && $ampResult->verdict === 'PASS');
+        }
 
         if ($isConclusive || ($currentRetries >= $maxRetries)) {
             return true;
         }
 
-        return false;
+        return $isConclusive;
     }
 
 
