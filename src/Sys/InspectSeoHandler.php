@@ -112,19 +112,13 @@ class InspectSeoHandler implements CommandHandler
 
         $retries = $command->get('ctx_retries');
         $maxRetries = $this->flags->getInt(self::INSPECT_SEO_MAX_TRIES_FLAG_NAME, 5);
-        $isUnlisted = $node->get('is_unlisted');
-
-        $ampEnabled = $node->has('amp_enabled') && $node->get('amp_enabled');
-
-        $conclusionMessage = $this->isConclusive($response, $retries, $maxRetries, $node, $searchEngine);
-
-        if (!empty($conclusionMessage)) {
+        
+        if ($this->isConclusive($response, $retries, $maxRetries, $node, $searchEngine)) {
+            $this->handleInspectSeoFailure($command, $node, $response, $searchEngine);
             $this->putEvent($command, $node, $response, $searchEngine);
-            $this->sendSlackAlert($node,$response, $searchEngine, $conclusionMessage, $isUnlisted, $ampEnabled);
             return $command;
         }
-
-
+        
         if ($retries >= $maxRetries) {
             $this->putEvent($command, $node, $response, $searchEngine);
         } else {
@@ -135,9 +129,9 @@ class InspectSeoHandler implements CommandHandler
     }
 
 
-    private function isConclusive(InspectUrlIndexResponse|null $response, int $currentRetries, int $maxRetries, Message $node, string $searchEngine): string {
-        if ($searchEngine !== "google" || !$response) {
-            return "";
+    private function isConclusive(InspectUrlIndexResponse|null $response, int $currentRetries, int $maxRetries, Message $node, string $searchEngine): bool {
+        if (empty($searchEngine)  || $response == null) {
+            return false;
         }
 
         $inspectionResult = $response->inspectionResult;
@@ -150,28 +144,13 @@ class InspectSeoHandler implements CommandHandler
         $ampEnabled = $node->has('amp_enabled') && $node->get('amp_enabled');
 
         $ampNotIndexed = $ampEnabled && ($ampResult === null || $ampResult->verdict !== 'PASS');
+        $isConclusive =  ($isUnlisted && $webNotIndexed) ||  (!$isUnlisted && !$webNotIndexed) || ($ampEnabled && $ampNotIndexed) || (!$ampEnabled && $ampResult && $ampResult->verdict === 'PASS');
 
-        if ($isUnlisted && $webNotIndexed) {
-             return "is_unlisted:true and not indexed for web";
+        if ($isConclusive || ($currentRetries >= $maxRetries)) {
+            return true;
         }
 
-        if (!$isUnlisted && !$webNotIndexed) {
-            return "is_unlisted:false and yes indexed for web";
-        }
-
-        if ($ampEnabled && $ampNotIndexed) {
-            return "amp_enabled:true and not indexed for amp";
-        }
-
-        if (!$ampEnabled && $ampResult && $ampResult->verdict === 'PASS') {
-            return "amp_enabled:false and yes indexed for amp";
-        }
-
-        if ($currentRetries >= $maxRetries) {
-            return "inconclusive and exceeded retries";
-        }
-
-        return "";
+        return false;
     }
 
 
@@ -201,6 +180,12 @@ class InspectSeoHandler implements CommandHandler
             ->getEventStore()->putEvents($streamId, [$event], null, ['causator' => $command]);
     }
 
-    public function sendSlackAlert(Message $node, mixed $inspectSeoUrlIndexResponse, string $searchEngine, string $conclusionMessage, bool $isUnlisted = false, bool $ampEnabled = false): void {}
+    public function handleInspectSeoFailure(Message $command, Message $node, mixed $response, string $searchEngine): Message {
+         return $command;
+    }
+
+    public function handleInspectSeoSuccess(Message $command): Message {
+         return $command;
+    }
 }
 
