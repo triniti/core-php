@@ -45,7 +45,7 @@ class InspectSeoHandler implements CommandHandler
 
     public function handleCommand(Message $command, Pbjx $pbjx): void
     {
-        $searchEngines = $command->get('search_engines', ['google', 'bing']);
+        $searchEngines = $command->get('search_engines', ['google']);
         $retryCommand = clone $command;
         $retryCommand->clear('search_engines');
 
