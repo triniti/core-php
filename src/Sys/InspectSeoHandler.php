@@ -45,7 +45,7 @@ class InspectSeoHandler implements CommandHandler
 
     public function handleCommand(Message $command, Pbjx $pbjx): void
     {
-        $searchEngines = $command->get('search_engines', ['google']);
+        $searchEngines = $command->get('search_engines', ['google', 'bing']);
         $retryCommand = clone $command;
         $retryCommand->clear('search_engines');
 
@@ -136,42 +136,42 @@ class InspectSeoHandler implements CommandHandler
 
 
     private function isConclusive(InspectUrlIndexResponse|null $response, int $currentRetries, int $maxRetries, Message $node, string $searchEngine): string {
-        $conclusionMessage = "";
-
-        if ($searchEngine == "google" && $response) {
-            $inspectionResult = $response->inspectionResult;
-            $indexStatusResult = $inspectionResult->indexStatusResult;
-
-            $webNotIndexed = $indexStatusResult->verdict !== 'PASS';
-            $isUnlisted = $node->get('is_unlisted');
-
-            $ampResult = $inspectionResult->ampResult ?? null;
-            $ampEnabled = $node->has('amp_enabled') && $node->get('amp_enabled');
-
-            $ampNotIndexed = $ampEnabled && ($ampResult === null || $ampResult->verdict !== 'PASS');
-
-            if ($ampEnabled && $ampNotIndexed) {
-                  $conclusionMessage = "amp_enabled:true and not indexed for amp";
-            }
-
-            if (!$ampEnabled && $ampResult && $ampResult->verdict === 'PASS') {
-                $conclusionMessage = "amp_enabled:false and yes indexed for amp";
-            }
-
-            if ($isUnlisted && $webNotIndexed) {
-                 $conclusionMessage = "is_unlisted:true and not indexed for web";
-            }
-
-            if (!$isUnlisted && !$webNotIndexed) {
-                $conclusionMessage = "is_unlisted:false and yes indexed for web";
-            }
-
-            if ($currentRetries >= $maxRetries) {
-                $conclusionMessage = "inconclusive and exceeded retries";
-            }
+        if ($searchEngine !== "google" || !$response) {
+            return "";
         }
 
-        return $conclusionMessage;
+        $inspectionResult = $response->inspectionResult;
+        $indexStatusResult = $inspectionResult->indexStatusResult;
+
+        $webNotIndexed = $indexStatusResult->verdict !== 'PASS';
+        $isUnlisted = $node->get('is_unlisted');
+
+        $ampResult = $inspectionResult->ampResult ?? null;
+        $ampEnabled = $node->has('amp_enabled') && $node->get('amp_enabled');
+
+        $ampNotIndexed = $ampEnabled && ($ampResult === null || $ampResult->verdict !== 'PASS');
+
+        if ($isUnlisted && $webNotIndexed) {
+             return "is_unlisted:true and not indexed for web";
+        }
+
+        if (!$isUnlisted && !$webNotIndexed) {
+            return "is_unlisted:false and yes indexed for web";
+        }
+
+        if ($ampEnabled && $ampNotIndexed) {
+            return "amp_enabled:true and not indexed for amp";
+        }
+
+        if (!$ampEnabled && $ampResult && $ampResult->verdict === 'PASS') {
+            return "amp_enabled:false and yes indexed for amp";
+        }
+
+        if ($currentRetries >= $maxRetries) {
+            return "inconclusive and exceeded retries";
+        }
+
+        return "";
     }
 
 
