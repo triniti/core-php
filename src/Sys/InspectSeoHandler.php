@@ -146,7 +146,7 @@ class InspectSeoHandler implements CommandHandler
             $ampResult = $inspectionResult->ampResult ?? null;
             $ampEnabled = $node->has('amp_enabled') && $node->get('amp_enabled');
     
-            $ampNotIndexed = $ampEnabled && ($ampResult === null || $ampResult->verdict !== 'PASS');
+            $ampNotIndexed = $ampEnabled && ($ampResult == null || $ampResult->verdict !== 'PASS');
             $isConclusive =  ($isUnlisted && $webNotIndexed) ||  (!$isUnlisted && !$webNotIndexed) || ($ampEnabled && $ampNotIndexed) || (!$ampEnabled && $ampResult && $ampResult->verdict === 'PASS');
         }
 
