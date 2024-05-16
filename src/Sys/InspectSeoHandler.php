@@ -16,6 +16,7 @@ use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Exception\GdbotsPbjxException;
 use Gdbots\Pbjx\Pbjx;
+use Gdbots\Schemas\Pbjx\StreamId;
 use Gdbots\UriTemplate\UriTemplateService;
 use Google\Service\Exception;
 use Google\Service\SearchConsole\InspectUrlIndexResponse;
@@ -34,9 +35,13 @@ class InspectSeoHandler implements CommandHandler
     private InspectUrlIndexResponse $inspectSeoUrlIndexResponse;
     private bool $isIndexed;
     private bool $isRetrying;
+    private int $retries;
+    private array $enginesToRemove;
+    private array $searchEngines;
     protected LoggerInterface $logger;
 
-    const INSPECT_SEO_GOOGLE_SITE_URL_FLAG_NAME = 'inspect_seo_google_site_url';
+    const INSPECT_SEO_GOOGLE_SITE_URL_FLAG_NAME = 'inspect_seo_handler_google_site_url';
+    const INSPECT_SEO_DELAY_DISABLED_FLAG_NAME = "inspect_seo_delay_disabled";
     const INSPECT_SEO_MAX_TRIES_FLAG_NAME = 'inspect_seo_max_tries';
     const INSPECT_SEO_RETRY_DELAY_FLAG_NAME = 'inspect_seo_retry_delay';
 
@@ -47,7 +52,7 @@ class InspectSeoHandler implements CommandHandler
         ];
     }
 
-    public function __construct(Ncr $ncr, Key $key, Flags $flags, Pbjx $pbjx, InspectUrlIndexResponse $inspectSeoUrlIndexResponse = null, bool $isIndexed = false, bool $isRetrying = false, ?LoggerInterface $logger = null)
+    public function __construct(Ncr $ncr, Key $key, Flags $flags, Pbjx $pbjx, InspectUrlIndexResponse $inspectSeoUrlIndexResponse = null, bool $isIndexed = false, bool $isRetrying = false, array $enginesToRemove = [], array $searchEngines = [], $retries = 0, ?LoggerInterface $logger = null)
     {
         $this->ncr = $ncr;
         $this->key = $key;
@@ -56,92 +61,150 @@ class InspectSeoHandler implements CommandHandler
         $this->inspectSeoUrlIndexResponse = $inspectSeoUrlIndexResponse;
         $this->isIndexed = $isIndexed;
         $this->isRetrying = $isRetrying;
+        $this->enginesToRemove = $enginesToRemove;
+        $this->retries = $retries;
+        $this->searchEngines = $searchEngines;
         $this->logger = $logger ?: new NullLogger();
     }
 
     public function handleCommand(Message $command, Pbjx $pbjx): void
     {
-        $initialCommand = clone $command;
-        $initialCommand->set('ctx_retries', $command->get('ctx_retries', 0));
-        $searchEngines = $initialCommand->get('search_engines', ['google']);
-        $initialCommand->clear('search_engines');
-
-        foreach ($searchEngines as $searchEngine) {
-            $initialCommand->addToSet('search_engines', [$searchEngine]);
-        }
-
-        $enginesToRemove = [];
-        $nodeRef = $initialCommand->get('node_ref');
-        $node = $this->ncr->getNode($nodeRef);
-
-        foreach ($searchEngines as $searchEngine) {
-            $methodName = 'checkIndexStatusFor' . ucfirst($searchEngine);
-
-            if (!method_exists($this, $methodName)) {
-                $enginesToRemove[] = $searchEngine;
-                continue;
-            }
-
-            $this->$methodName($initialCommand, $node, $searchEngine);
-
-            if ($this->getIsIndexed()) {
-                $enginesToRemove[] = $searchEngine;
-                $this->handleIndexingSuccess($initialCommand);
-            } else {
-                $this->setIsRetrying(true);
-            }
-        }
-
-        foreach ($enginesToRemove as $searchEngine) {
-            $initialCommand->removeFromSet('search_engines', [$searchEngine]);
-        }
-
-        if (!empty($initialCommand->get('search_engines')) && $this->getIsRetrying()) {
-            foreach ($searchEngines as $searchEngine) {
-                $this->handleRetry($initialCommand, $node, $pbjx, $searchEngine, $initialCommand->get('ctx_retries'));
-            }
-        }
-    }
-
-    /**
-     * @throws GdbotsPbjException
-     * @throws GdbotsNcrException
-     */
-    public function checkIndexStatusForGoogle(Message $command, Message $node, string $searchEngine = "google"): void {
-        $url = UriTemplateService::expand(
-            "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
-        );
+        $searchEngines = $command->get('search_engines', ['google', 'bing']);
+        $retryCommand = clone $command;
+        $retryCommand->clear('search_engines');
 
         try {
-            $this->getUrlIndexResponseForGoogle($url);
-        } catch (Throwable $e) {
-            $errorMessage = "An error occurred in checkIndexStatus for {$searchEngine}. Exception: {$e->getMessage()} " .
-                " | Node ID: " . $node->get('node_id') .
-                " | URL: {$url}" .
-                " | Retry Count: {$command->get('ctx_retries')}" .
-                " | Stack Track: {$e->getTraceAsString()}";
-
-            $this->logger->error($errorMessage);
+            $node = $this->ncr->getNode($retryCommand->get('node_ref'));
+        } catch (NodeNotFound $e) {
+            $this->logger->error('Unable to get node!');
+            return;
         }
 
-        $this->triggerSeoInspectedWatcher($node->generateNodeRef(), $this->getIndexStatusResponse(), $searchEngine);
+        foreach ($searchEngines as $searchEngine) {
+            $retryCommand = $this->checkIndexStatus($retryCommand, $node, $searchEngine);
+        }
+
+        if (empty($retryCommand->get('search_engines'))) {
+            return;
+        }
+
+        $retries = $retryCommand->get('ctx_retries');
+        $maxRetries = $this->flags->getInt(self::INSPECT_SEO_MAX_TRIES_FLAG_NAME, 5);
+
+        if ($retries >= $maxRetries) {
+            $this->logger->error('No more retries left!');
+            return;
+        }
+        $retryCommand->set('ctx_retries', $retries + 1);
+        $pbjx->send($retryCommand);
     }
 
-    public function setIsIndexed(bool $indexed): void {
-        $this->isIndexed = $indexed;
+
+    public function checkIndexStatus(Message $command, Message $node, $searchEngine): Message {
+        if (!$searchEngine) {
+            $this->logger->warning('Unable to handle this search engine...');
+            return $command;
+        }
+
+        $response = null;
+
+        if ($searchEngine == "google") {
+            $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
+            $request->setSiteUrl($this->flags->getString(self::INSPECT_SEO_GOOGLE_SITE_URL_FLAG_NAME));
+            $url = UriTemplateService::expand(
+                "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
+            );
+            $request->setInspectionUrl("https://www.tmz.com/2024/05/15/chiefs-harrison-butker-evokes-taylor-swift-in-controversial-commencement-speech/");
+            $client = new \Google_Client();
+            $client->addScope(\Google_Service_SearchConsole::WEBMASTERS_READONLY);
+
+            try {
+                $base64EncodedAuthConfig = Crypto::decrypt(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_OAUTH_CONFIG'), $this->key);
+                $client->setAuthConfig(json_decode(base64_decode($base64EncodedAuthConfig), true));
+                $service = new \Google_Service_SearchConsole($client);
+                $response = $service->urlInspection_index->inspect($request);
+            } catch (\Throwable $e) {
+                $errorMessage = "An error occurred in checkIndexStatus for google. Exception: {$e->getMessage()} " .
+                    " | Node ID: " . $node->get('node_id') .
+                    " | URL: {$url}" .
+                    " | Retry Count: {$command->get('ctx_retries')}" .
+                    " | Stack Track: {$e->getTraceAsString()}";
+
+                $this->logger->error($errorMessage);
+            }
+        }
+
+        $retries = $command->get('ctx_retries');
+        $maxRetries = $this->flags->getInt(self::INSPECT_SEO_MAX_TRIES_FLAG_NAME, 5);
+        $isUnlisted = $node->get('is_unlisted');
+
+        $ampEnabled = $node->has('amp_enabled') && $node->get('amp_enabled');
+
+        $conclusionMessage = $this->isConclusive($response, $retries, $maxRetries, $node, $searchEngine);
+
+        if (!empty($conclusionMessage)) {
+            $this->putEvent($command, $node, $response, $searchEngine);
+            $this->sendSlackAlert($node,$response, $searchEngine, $conclusionMessage, $isUnlisted, $ampEnabled);
+            return $command;;
+        }
+
+
+        if ($retries >= $maxRetries) {
+            $this->putEvent($command, $node, $response, $searchEngine);
+        } else {
+            $command->addToSet('search_engines', [$searchEngine]);
+        }
+
+        return $command;
     }
 
-    public function getIsIndexed(): bool {
-        return $this->isIndexed;
+       public function handleIndexingSuccess(Message $command): Message {
+        return $command;
     }
 
-    public function setIsRetrying(bool $retrying): void {
-        $this->isRetrying = $retrying;
+    public function handleIndexingFailure(Message $command, Message $node, mixed $inspectSeoUrlIndexResponse, string $searchEngine): Message {
+        return $command;
     }
 
-    public function getIsRetrying(): bool {
-        return $this->isRetrying;
-    }
+ private function isConclusive(InspectUrlIndexResponse|null $response, int $currentRetries, int $maxRetries, Message $node, string $searchEngine): string {
+        $conclusionMessage = "";
+
+        if ($searchEngine == "google" && $response) {
+            $inspectionResult = $response->inspectionResult;
+            $indexStatusResult = $inspectionResult->indexStatusResult;
+
+            $webNotIndexed = $indexStatusResult->verdict !== 'PASS';
+            $isUnlisted = $node->get('is_unlisted');
+
+            $ampResult = $inspectionResult->ampResult ?? null;
+            $ampEnabled = $node->has('amp_enabled') && $node->get('amp_enabled');
+
+            $ampNotIndexed = $ampEnabled && ($ampResult === null || $ampResult->verdict !== 'PASS');
+
+            if ($ampEnabled && $ampNotIndexed) {
+                  $conclusionMessage = "amp_enabled:true and not indexed for amp";
+            }
+
+            if (!$ampEnabled && $ampResult && $ampResult->verdict === 'PASS') {
+                $conclusionMessage = "amp_enabled:false and yes indexed for amp";
+            }
+
+            if ($isUnlisted && $webNotIndexed) {
+                 $conclusionMessage = "is_unlisted:true and not indexed for web";
+            }
+
+            if (!$isUnlisted && !$webNotIndexed) {
+                $conclusionMessage = "is_unlisted:false and yes indexed for web";
+            }
+
+            if ($currentRetries >= $maxRetries) {
+                $conclusionMessage = "inconclusive and exceeded retries";
+            }
+        }
+
+    return $conclusionMessage;
+}
+
 
     public function setIndexStatusResponse($response): void {
         $this->inspectSeoUrlIndexResponse = $response;
@@ -152,81 +215,33 @@ class InspectSeoHandler implements CommandHandler
         return $this->inspectSeoUrlIndexResponse;
     }
 
-    /**
-     * @throws Exception
-     * @throws \Google\Exception
-     * @throws WrongKeyOrModifiedCiphertextException
-     * @throws EnvironmentIsBrokenException
-     */
-    public function getUrlIndexResponseForGoogle(String $url): void {
-        $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
-        $request->setSiteUrl($this->flags->getString(self::INSPECT_SEO_GOOGLE_SITE_URL_FLAG_NAME));
-        $request->setInspectionUrl($url);
-        $client = new \Google_Client();
-        $client->setAuthConfig(json_decode(base64_decode(Crypto::decrypt(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_OAUTH_CONFIG'), $this->key)), true));
-        $client->addScope(\Google_Service_SearchConsole::WEBMASTERS_READONLY);
-        $service = new \Google_Service_SearchConsole($client);
-        $response = $service->urlInspection_index->inspect($request);
-
-        $this->setIndexStatusResponse($response);
-    }
 
     /**
      * @throws GdbotsPbjException
      * @throws GdbotsNcrException
      */
-    public function triggerSeoInspectedWatcher(NodeRef $nodeRef, InspectUrlIndexResponse $inspectUrlIndexResponse, string $searchEngine): void {
-        $event = SeoInspectedV1::create();
-        $node = $this->ncr->getNode($nodeRef);
-        $indexed = null;
+     private function putEvent(Message $command, Message $node, InspectUrlIndexResponse|null $response, string $searchEngine): void {
+        $nodeRef = $node->generateNodeRef();
+        $event = SeoInspectedV1::create()
+            ->set('node_ref', $node->generateNodeRef())
+            ->set('search_engine', $searchEngine);
 
-        $event->set('node_ref', $nodeRef);
-        $event->set('inspection_response', json_encode($inspectUrlIndexResponse));
-        $event->set('search_engine', $searchEngine);
-
-        if (!$event->has('inspection_response')) {
-            return;
+        if ($response !== null) {
+            $event->set('inspection_response', json_encode($response));
         }
 
-        try {
-            $seoInspectedWatcher = new SeoInspectedWatcher($this->ncr);
-            $indexed = $seoInspectedWatcher->onSeoInspected(new NodeProjectedEvent($node, $event));
-        } catch (Throwable $e){
-            $this->logger->error($e);
-        }
+        $streamId = StreamId::fromString(sprintf(
+            '%s:%s:%s',
+            $nodeRef->getVendor(),
+            $nodeRef->getLabel(),
+            $nodeRef->getId()
+        ));
 
-        $this->setIsIndexed($indexed);
+        $this->pbjx
+            ->copyContext($command, $event)
+            ->getEventStore()->putEvents($streamId, [$event], null, ['causator' => $command]);
     }
 
-    public function handleIndexingSuccess(Message $command): Message {
-        return $command;
-    }
-
-    public function handleIndexingFailure(Message $command, Message $node, mixed $inspectSeoUrlIndexResponse, string $searchEngine): Message {
-        return $command;
-    }
-
-    /**
-     * @throws Throwable
-     * @throws GdbotsPbjxException
-     * @throws GdbotsPbjException
-     * @throws GdbotsNcrException
-     */
-    public function handleRetry(Message $command, Message $node, Pbjx $pbjx, string $searchEngine, int $retries): void {
-        $maxRetries = $this->flags->getInt(self::INSPECT_SEO_MAX_TRIES_FLAG_NAME, 5);;
-        $retryCommand = clone $command;
-
-        if ($retries < $maxRetries){
-            $retryCommand->set('ctx_retries', $retryCommand->get('ctx_retries') + 1);
-
-            if (getenv('APP_ENV') === 'prod') {
-                $pbjx->sendAt($retryCommand, strtotime($this->flags->getString(self::INSPECT_SEO_RETRY_DELAY_FLAG_NAME )));
-            } else {
-                $pbjx->send($retryCommand);
-            }
-        } else {
-            $this->setIsRetrying(false);
-            $this->handleIndexingFailure($command, $node, $this->getIndexStatusResponse(),  $searchEngine);
-        }
-    }
+    public function sendSlackAlert(Message $node, mixed $inspectSeoUrlIndexResponse, string $searchEngine, string $conclusionMessage, bool $isUnlisted = false, bool $ampEnabled = false): void {}
 }
+
