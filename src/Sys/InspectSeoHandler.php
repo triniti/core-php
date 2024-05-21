@@ -4,10 +4,8 @@ declare(strict_types=1);
 namespace Triniti\Sys;
 
 use Defuse\Crypto\Crypto;
-use Gdbots\Ncr\Exception\GdbotsNcrException;
 use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Ncr\Ncr;
-use Gdbots\Pbj\Exception\GdbotsPbjException;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Pbjx;
@@ -133,7 +131,7 @@ class InspectSeoHandler implements CommandHandler
         }
 
         $retries = $command->get('ctx_retries');
-        $maxRetries = $this->flags->getInt(self::INSPECT_SEO_MAX_RETRIES_FLAG_NAME, 5);
+        $maxRetries = $this->flags->getInt('inspect_seo_max_retries', 5);
 
         if ($retries >= $maxRetries) {
             $this->logger->error('Number of retries for SEO inspection exceeded maximum.', [
