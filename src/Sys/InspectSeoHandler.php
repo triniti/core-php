@@ -76,7 +76,7 @@ class InspectSeoHandler implements CommandHandler
 
             $pbjx->sendAt(
                 $retryCommand,
-                strtotime("+" . $this->flags->getInt('inspect_seo_retry_delay') . "minutes"),
+                strtotime("+" . $this->flags->getInt('inspect_seo_retry_delay', 15) . "minutes"),
                 "{$nodeRef}.inspect-seo"
             );
         }
@@ -122,7 +122,7 @@ class InspectSeoHandler implements CommandHandler
         $ampResult = $inspectionResult->getAmpResult() ?? null;
 
         $isConclusiveForWeb = $indexStatusResult && ($indexStatusResult->getVerdict() === 'PASS' || $indexStatusResult->getVerdict() === 'FAIL');
-        $isConclusiveForAmp = !$node::schema()->hasField("amp_enabled") || ($ampResult && ($ampResult->getVerdict() === 'PASS' || $ampResult->getVerdict() === 'FAIL'));
+        $isConclusiveForAmp = !$node::schema()->hasField('amp_enabled') || ($ampResult && ($ampResult->getVerdict() === 'PASS' || $ampResult->getVerdict() === 'FAIL'));
 
         if ($isConclusiveForWeb && $isConclusiveForAmp) {
             $this->putEvent($retryCommand, $node, 'google', $response);
@@ -137,7 +137,7 @@ class InspectSeoHandler implements CommandHandler
                 'node_ref' => $retryCommand->get('node_ref'),
                 'retries' => $retries,
                 'max_retries' => $maxRetries,
-                'index_status_verdict' => $indexStatusResult ? $indexStatusResult->getVerdict() : 'N/A',
+                'web_result_verdict' => $indexStatusResult ? $indexStatusResult->getVerdict() : 'N/A',
                 'amp_result_verdict' => $ampResult ? $ampResult->getVerdict() : 'N/A',
                 'is_conclusive_for_web' => $isConclusiveForWeb,
                 'is_conclusive_for_amp' => $isConclusiveForAmp,
