@@ -5,7 +5,6 @@ This changelog references the relevant changes done in 2.x versions.
 ## v2.6.0
 * Add `Triniti\News\ArticleInspectSeoWatcher` to watch for published articles to start seo
 * Add `Triniti\Sys\InspectSeoHandler` to handle seo inspection
-* Add `Triniti\Sys\SeoInspectedwatcher` to decide if a response is a pass or fail
 
 
 ## v2.5.3
