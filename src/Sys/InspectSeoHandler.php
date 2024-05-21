@@ -22,9 +22,9 @@ use Defuse\Crypto\Key;
 
 class InspectSeoHandler implements CommandHandler
 {
-    const INSPECT_SEO_GOOGLE_SITE_URL_FLAG_NAME = 'inspect_seo_handler_google_site_url';
+    const INSPECT_SEO_GOOGLE_SITE_URL_FLAG_NAME = "inspect_seo_google_site_url";
     const INSPECT_SEO_RETRY_DELAY_FLAG_NAME = "inspect_seo_retry_delay";
-    const INSPECT_SEO_MAX_RETRIES_FLAG_NAME = 'inspect_seo_max_retries';
+    const INSPECT_SEO_MAX_RETRIES_FLAG_NAME = "inspect_seo_max_retries";
 
     public static function handlesCuries(): array
     {
