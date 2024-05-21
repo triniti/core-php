@@ -22,9 +22,6 @@ use Defuse\Crypto\Key;
 
 class InspectSeoHandler implements CommandHandler
 {
-    const INSPECT_SEO_RETRY_DELAY_FLAG_NAME = "inspect_seo_retry_delay";
-    'inspect_seo_max_retries' = "inspect_seo_max_retries";
-
     public static function handlesCuries(): array
     {
         return [
