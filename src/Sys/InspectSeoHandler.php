@@ -112,7 +112,6 @@ class InspectSeoHandler implements CommandHandler
             ]);
         }
 
-
         if ($response === null) {
             return $retryCommand;
         }
