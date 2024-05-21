@@ -40,6 +40,6 @@ class ArticleInspectSeoWatcher implements EventSubscriber
         $inspectArticleCommand = InspectSeoV1::create()
             ->set('node_ref', $event->get('node_ref'));
 
-        $this->pbjx->sendAt($inspectArticleCommand, $this->flags->getInt('inspect_seo_delay'));
+        $this->pbjx->sendAt($inspectArticleCommand,  strtotime("+" . $this->flags->getInt('inspect_seo_delay') . "minutes"));
     }
 }
