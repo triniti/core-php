@@ -49,7 +49,7 @@ class InspectSeoHandler implements CommandHandler
         try {
             $node = $this->ncr->getNode($nodeRef);
         } catch (NodeNotFound $e) {
-            $this->logger->error('Unable to get node for searchEngines processing.', [
+            $this->logger->error('Unable to get node for search engines processing.', [
                 'exception' => $e,
                 'node_ref' => $retryCommand->get('node_ref')
             ]);
