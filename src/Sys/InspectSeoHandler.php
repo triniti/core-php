@@ -22,9 +22,8 @@ use Defuse\Crypto\Key;
 
 class InspectSeoHandler implements CommandHandler
 {
-    const INSPECT_SEO_GOOGLE_SITE_URL_FLAG_NAME = "inspect_seo_google_site_url";
     const INSPECT_SEO_RETRY_DELAY_FLAG_NAME = "inspect_seo_retry_delay";
-    const INSPECT_SEO_MAX_RETRIES_FLAG_NAME = "inspect_seo_max_retries";
+    'inspect_seo_max_retries' = "inspect_seo_max_retries";
 
     public static function handlesCuries(): array
     {
@@ -53,7 +52,7 @@ class InspectSeoHandler implements CommandHandler
         try {
             $node = $this->ncr->getNode($nodeRef);
         } catch (NodeNotFound $e) {
-            $this->logger->error('Unable to get node for search engines processing.', [
+            $this->logger->error('Unable to get node for searchEngines processing.', [
                 'exception' => $e,
                 'node_ref' => $retryCommand->get('node_ref')
             ]);
@@ -75,14 +74,14 @@ class InspectSeoHandler implements CommandHandler
         }
 
         $retries = $command->get('ctx_retries');
-        $maxRetries = $this->flags->getInt(self::INSPECT_SEO_MAX_RETRIES_FLAG_NAME, 5);
+        $maxRetries = $this->flags->getInt('inspect_seo_max_retries', 5);
 
         if ($retries < $maxRetries) {
             $retryCommand->set('ctx_retries', $retryCommand->get('ctx_retries') + 1);
 
             $pbjx->sendAt(
                 $retryCommand,
-                strtotime("+15 minutes"),
+                strtotime("+" . $this->flags->getInt('inspect_seo_retry_delay') . "minutes"),
                 "{$nodeRef}.inspect-seo"
             );
         }
@@ -97,13 +96,14 @@ class InspectSeoHandler implements CommandHandler
     {
         $retryCommand = clone $command;
         $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
-        $request->setSiteUrl($this->flags->getString(self::INSPECT_SEO_GOOGLE_SITE_URL_FLAG_NAME));
+        $request->setSiteUrl($this->flags->getString('inspect_seo_google_site_url'));
         $url = UriTemplateService::expand(
             "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
         );
         $request->setInspectionUrl($url);
         $client = new \Google_Client();
         $client->addScope(\Google_Service_SearchConsole::WEBMASTERS_READONLY);
+
         $response = null;
 
         try {
@@ -120,6 +120,7 @@ class InspectSeoHandler implements CommandHandler
                 'stack_trace' => $e->getTraceAsString(),
             ]);
         }
+
 
         if ($response === null) {
             return $retryCommand;
