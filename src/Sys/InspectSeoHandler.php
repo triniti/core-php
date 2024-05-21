@@ -85,10 +85,6 @@ class InspectSeoHandler implements CommandHandler
     }
 
 
-    /**
-     * @throws GdbotsPbjException
-     * @throws GdbotsNcrException
-     */
     public function checkIndexStatusForGoogle(Message $command, Message $node): Message
     {
         $retryCommand = clone $command;
