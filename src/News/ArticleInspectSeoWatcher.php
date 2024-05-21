@@ -11,12 +11,11 @@ use Triniti\Sys\Flags;
 
 class ArticleInspectSeoWatcher implements EventSubscriber
 {
-    protected Flags $flags;
-    protected Pbjx $pbjx;
-
-    public function __construct(Flags $flags, Pbjx $pbjx) {
-        $this->flags = $flags;
-        $this->pbjx = $pbjx;
+    public function __construct(
+        private readonly Flags $flags,
+        private readonly Pbjx  $pbjx,
+    )
+    {
     }
 
     public static function getSubscribedEvents(): array
