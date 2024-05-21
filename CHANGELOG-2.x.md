@@ -8,6 +8,14 @@ This changelog references the relevant changes done in 2.x versions.
 * Add `Triniti\Sys\SeoInspectedwatcher` to decide if a response is a pass or fail
 
 
+## v2.5.3
+* Use field-based jobId for Jwplayer SyncMedia commands
+
+
+## v2.5.2
+* Apple Notification Failures: CMS Re-Push
+
+
 ## v2.5.1
 * Allow file details to change when asset nodes are updated
 * Do not clear file_etag when enriching assets with s3 object

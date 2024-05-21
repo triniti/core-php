@@ -364,7 +364,11 @@ class SyncMediaHandler implements CommandHandler
         $newCommand = clone $command;
         $newCommand->set('ctx_retries', 1 + $newCommand->get('ctx_retries'));
         $pbjx->copyContext($command, $newCommand);
-        $jobId = $command->get('node_ref') . '.sync-jwplayer-media';
+        $jobIdSegments = [$newCommand->get('node_ref'), 'sync-jwplayer-media'];
+        if ($newCommand->has('fields')) {
+            $jobIdSegments[] = implode(',', $newCommand->get('fields'));
+        }
+        $jobId = implode('.', $jobIdSegments);
         $pbjx->sendAt($newCommand, $timestamp, $jobId);
     }
 
