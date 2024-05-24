@@ -31,7 +31,6 @@ class InspectSeoHandler implements CommandHandler
         private readonly Ncr             $ncr,
         private readonly Key             $key,
         private readonly Flags           $flags,
-        private readonly Pbjx            $pbjx,
         private readonly LoggerInterface $logger = new NullLogger(),
     )
     {
@@ -49,7 +48,7 @@ class InspectSeoHandler implements CommandHandler
         } catch (NodeNotFound $e) {
             $this->logger->error('Unable to get node for search engines processing.', [
                 'exception' => $e,
-                'node_ref' => $retryCommand->get('node_ref')
+                'node_ref' => $nodeRef
             ]);
             return;
         }
@@ -61,7 +60,7 @@ class InspectSeoHandler implements CommandHandler
                 continue;
             }
 
-            $retryCommand = $this->$methodName($command, $node);
+            $retryCommand = $this->$methodName($retryCommand, $node);
         }
 
         if (empty($retryCommand->get('search_engines'))) {
@@ -105,7 +104,7 @@ class InspectSeoHandler implements CommandHandler
         } catch (\Throwable $e) {
             $this->logger->error('An error occurred in checkIndexStatus for google.', [
                 'exception' => $e,
-                'node_id' => $node->get('node_id'),
+                'node_ref' => $nodeRef,
                 'url' => $url,
                 'retry_count' => $command->get('ctx_retries'),
                 'stack_trace' => $e->getTraceAsString(),
@@ -113,7 +112,7 @@ class InspectSeoHandler implements CommandHandler
         }
 
         if ($response === null) {
-            return $retryCommand;
+            return $command;
         }
 
         $inspectionResult = $response->getInspectionResult();
@@ -162,16 +161,12 @@ class InspectSeoHandler implements CommandHandler
             $event->set('inspection_response', json_encode($response));
         }
 
-        $streamId = StreamId::fromString(sprintf(
-            '%s:%s:%s',
-            $nodeRef->getVendor(),
-            $nodeRef->getLabel(),
-            $nodeRef->getId()
-        ));
+        $streamId = StreamId::fromNodeRef($nodeRef);
 
         $this->pbjx
             ->copyContext($command, $event)
-            ->getEventStore()->putEvents($streamId, [$event], null, ['causator' => $command]);
+            ->getEventStore()
+            ->putEvents($streamId, [$event], null, ['causator' => $command]);
     }
 }
 
