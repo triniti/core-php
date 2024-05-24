@@ -122,7 +122,6 @@ class InspectSeoHandler implements CommandHandler
 
         $inspectionResult = $response->getInspectionResult();
         $indexStatusResult = $inspectionResult->getIndexStatusResult() ?? null;
-
         $ampResult = $inspectionResult->getAmpResult() ?? null;
 
         $isConclusiveForWeb = $indexStatusResult && ($indexStatusResult->getVerdict() === 'PASS' || $indexStatusResult->getVerdict() === 'FAIL');
