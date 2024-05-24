@@ -160,16 +160,14 @@ class InspectSeoHandler implements CommandHandler
     }
 
 
-    private function putEvent(Message $command, Pbjx $pbjx, Message $node, string $searchEngine, ?InspectUrlIndexResponse $response = null): void
+    private function putEvent(Message $command, Pbjx $pbjx, Message $node, string $searchEngine, InspectUrlIndexResponse $response): void
     {
         $nodeRef = $node->generateNodeRef();
         $event = SeoInspectedV1::create()
             ->set('node_ref', $node->generateNodeRef())
             ->set('search_engine', $searchEngine);
 
-        if ($response !== null) {
-            $event->set('inspection_response', json_encode($response));
-        }
+        $event->set('inspection_response', json_encode($response));
 
         $streamId = StreamId::fromNodeRef($nodeRef);
 
