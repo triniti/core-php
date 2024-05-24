@@ -39,7 +39,7 @@ class InspectSeoHandler implements CommandHandler
     public function handleCommand(Message $command, Pbjx $pbjx): void
     {
         $searchEngines = $command->get('search_engines', ['google']);
-        $nodeRef = $retryCommand->get('node_ref');
+        $nodeRef = $command->get('node_ref');
 
         try {
             $node = $this->ncr->getNode($nodeRef);
