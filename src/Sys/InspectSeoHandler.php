@@ -60,7 +60,7 @@ class InspectSeoHandler implements CommandHandler
                 continue;
             }
 
-            $retryCommand = $this->$methodName($retryCommand, $node);
+            $retryCommand = $this->$methodName($retryCommand, $pbjx, $node);
         }
 
         if (empty($retryCommand->get('search_engines'))) {
@@ -75,18 +75,23 @@ class InspectSeoHandler implements CommandHandler
 
             $pbjx->sendAt(
                 $retryCommand,
-                $this->flags->getInt('inspect_seo_retry_delay', "+15 minutes"),
+                $this->flags->getString('inspect_seo_retry_delay', "+15 minutes"),
                 "{$nodeRef}.inspect-seo"
             );
         }
     }
 
 
-    public function checkIndexStatusForGoogle(Message $command, Message $node): Message
+    public function checkIndexStatusForGoogle(Message $command, Pbjx $pbjx, Message $node): Message
     {
-        $retryCommand = clone $command;
         $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
-        $request->setSiteUrl($this->flags->getString('inspect_seo_google_site_url'));
+        $siteUrl = $this->flags->getString('inspect_seo_google_site_url', '');
+
+        if (empty($siteUrl)) {
+            return $command;
+        }
+
+        $request->setSiteUrl();
         $url = UriTemplateService::expand(
             "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
         );
@@ -104,7 +109,7 @@ class InspectSeoHandler implements CommandHandler
         } catch (\Throwable $e) {
             $this->logger->error('An error occurred in checkIndexStatus for google.', [
                 'exception' => $e,
-                'node_ref' => $nodeRef,
+                'node_ref' => $node->generateNodeRef(),
                 'url' => $url,
                 'retry_count' => $command->get('ctx_retries'),
                 'stack_trace' => $e->getTraceAsString(),
@@ -124,13 +129,14 @@ class InspectSeoHandler implements CommandHandler
         $isConclusiveForAmp = !$node::schema()->hasField('amp_enabled') || ($ampResult && ($ampResult->getVerdict() === 'PASS' || $ampResult->getVerdict() === 'FAIL'));
 
         if ($isConclusiveForWeb && $isConclusiveForAmp) {
-            $this->putEvent($retryCommand, $node, 'google', $response);
-            return $retryCommand;
+            $this->putEvent($retryCommand, $pbjx, $node, 'google', $response);
+            return $command;
         }
 
+        $retryCommand = clone $command;
         $retries = $command->get('ctx_retries');
         $maxRetries = $this->flags->getInt('inspect_seo_max_retries', 5);
-
+              
         if ($retries >= $maxRetries) {
             $this->logger->error('Number of retries for SEO inspection exceeded maximum.', [
                 'node_ref' => $retryCommand->get('node_ref'),
@@ -141,7 +147,7 @@ class InspectSeoHandler implements CommandHandler
                 'is_conclusive_for_web' => $isConclusiveForWeb,
                 'is_conclusive_for_amp' => $isConclusiveForAmp,
             ]);
-            $this->putEvent($retryCommand, $node, 'google', $response);
+            $this->putEvent($retryCommand, $pbjx, $node, 'google', $response);
         } else {
             $retryCommand->addToSet('search_engines', ['google']);
         }
@@ -150,7 +156,7 @@ class InspectSeoHandler implements CommandHandler
     }
 
 
-    private function putEvent(Message $command, Message $node, string $searchEngine, ?InspectUrlIndexResponse $response = null): void
+    private function putEvent(Message $command, Pbjx $pbjx, Message $node, string $searchEngine, ?InspectUrlIndexResponse $response = null): void
     {
         $nodeRef = $node->generateNodeRef();
         $event = SeoInspectedV1::create()
@@ -163,7 +169,7 @@ class InspectSeoHandler implements CommandHandler
 
         $streamId = StreamId::fromNodeRef($nodeRef);
 
-        $this->pbjx
+        $pbjx
             ->copyContext($command, $event)
             ->getEventStore()
             ->putEvents($streamId, [$event], null, ['causator' => $command]);
