@@ -39,8 +39,6 @@ class InspectSeoHandler implements CommandHandler
     public function handleCommand(Message $command, Pbjx $pbjx): void
     {
         $searchEngines = $command->get('search_engines', ['google']);
-        $retryCommand = clone $command;
-        $retryCommand->clear('search_engines');
         $nodeRef = $retryCommand->get('node_ref');
 
         try {
@@ -52,6 +50,9 @@ class InspectSeoHandler implements CommandHandler
             ]);
             return;
         }
+
+        $retryCommand = clone $command;
+        $retryCommand->clear('search_engines');
 
         foreach ($searchEngines as $searchEngine) {
             $methodName = 'checkIndexStatusFor' . ucfirst($searchEngine);
