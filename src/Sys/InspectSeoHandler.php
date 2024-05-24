@@ -95,7 +95,7 @@ class InspectSeoHandler implements CommandHandler
             return $command;
         }
 
-        $request->setSiteUrl();
+        $request->setSiteUrl($siteUrl);
         $url = UriTemplateService::expand(
             "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
         );
