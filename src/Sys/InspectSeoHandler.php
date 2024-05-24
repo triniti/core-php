@@ -88,6 +88,10 @@ class InspectSeoHandler implements CommandHandler
         $siteUrl = $this->flags->getString('inspect_seo_google_site_url', '');
 
         if (empty($siteUrl)) {
+            $this->logger->error('Must provide a site url.', [
+                'site_url' => $siteUrl,
+            ]);
+            
             return $command;
         }
 
