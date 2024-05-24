@@ -165,7 +165,7 @@ class InspectSeoHandler implements CommandHandler
         $nodeRef = $node->generateNodeRef();
         $event = SeoInspectedV1::create()
             ->set('node_ref', $node->generateNodeRef())
-            ->set('search_engine', $searchEngine);
+            ->set('search_engine', $searchEngine)
             ->set('inspection_response', json_encode($response));
 
         $streamId = StreamId::fromNodeRef($nodeRef);
