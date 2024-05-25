@@ -133,7 +133,7 @@ class InspectSeoHandler implements CommandHandler
         $isConclusiveForAmp = !$node::schema()->hasField('amp_enabled') || ($ampResult && ($ampResult->getVerdict() === 'PASS' || $ampResult->getVerdict() === 'FAIL'));
 
         if ($isConclusiveForWeb && $isConclusiveForAmp) {
-            $this->putEvent($retryCommand, $pbjx, $node, 'google', $response);
+            $this->putEvent($command, $pbjx, $node, 'google', $response);
             return $command;
         }
 
@@ -142,7 +142,7 @@ class InspectSeoHandler implements CommandHandler
               
         if ($retries >= $maxRetries) {
             $this->logger->error('Number of retries for SEO inspection exceeded maximum.', [
-                'node_ref' => $retryCommand->get('node_ref'),
+                'node_ref' => $command->get('node_ref'),
                 'retries' => $retries,
                 'max_retries' => $maxRetries,
                 'web_result_verdict' => $indexStatusResult ? $indexStatusResult->getVerdict() : 'N/A',
@@ -150,7 +150,7 @@ class InspectSeoHandler implements CommandHandler
                 'is_conclusive_for_web' => $isConclusiveForWeb,
                 'is_conclusive_for_amp' => $isConclusiveForAmp,
             ]);
-            $this->putEvent($retryCommand, $pbjx, $node, 'google', $response);
+            $this->putEvent($command, $pbjx, $node, 'google', $response);
         } else {
             $command->addToSet('search_engines', ['google']);
         }
