@@ -86,7 +86,7 @@ class InspectSeoHandler implements CommandHandler
     public function checkIndexStatusForGoogle(Message $command, Pbjx $pbjx, Message $node): Message
     {
         $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
-        $siteUrl = $this->flags->getString('inspect_seo_google_site_url', '');
+        $siteUrl = $this->flags->getString('inspect_seo_google_site_url');
 
         if (empty($siteUrl)) {
             $this->logger->error('Must provide a site url.', [
@@ -137,7 +137,6 @@ class InspectSeoHandler implements CommandHandler
             return $command;
         }
 
-        $retryCommand = clone $command;
         $retries = $command->get('ctx_retries');
         $maxRetries = $this->flags->getInt('inspect_seo_max_retries', 5);
               
@@ -153,10 +152,10 @@ class InspectSeoHandler implements CommandHandler
             ]);
             $this->putEvent($retryCommand, $pbjx, $node, 'google', $response);
         } else {
-            $retryCommand->addToSet('search_engines', ['google']);
+            $command->addToSet('search_engines', ['google']);
         }
 
-        return $retryCommand;
+        return $command;
     }
 
 
