@@ -28,16 +28,20 @@ class InspectSeoHandler implements CommandHandler
     }
 
     public function __construct(
-        private readonly Ncr             $ncr,
-        private readonly Key             $key,
-        private readonly Flags           $flags,
-        private readonly LoggerInterface $logger = new NullLogger(),
+        private readonly Ncr                        $ncr,
+        private readonly Key                        $key,
+        private readonly Flags                      $flags,
+        private readonly LoggerInterface|NullLogger $logger = new NullLogger(),
     )
     {
     }
 
     public function handleCommand(Message $command, Pbjx $pbjx): void
     {
+        if ($this->flags->getBoolean('inspect_seo_handler_disabled')) {
+            return;
+        }
+
         $searchEngines = $command->get('search_engines', ['google']);
         $nodeRef = $command->get('node_ref');
 
@@ -76,7 +80,7 @@ class InspectSeoHandler implements CommandHandler
 
             $pbjx->sendAt(
                 $retryCommand,
-                $this->flags->getString('inspect_seo_retry_delay', "+15 minutes"),
+                strotime($this->flags->getString('inspect_seo_retry_delay', "+15 minutes")),
                 "{$nodeRef}.inspect-seo"
             );
         }
@@ -92,7 +96,7 @@ class InspectSeoHandler implements CommandHandler
             $this->logger->error('Must provide a site url.', [
                 'site_url' => $siteUrl,
             ]);
-            
+
             return $command;
         }
 
@@ -139,21 +143,13 @@ class InspectSeoHandler implements CommandHandler
 
         $retries = $command->get('ctx_retries');
         $maxRetries = $this->flags->getInt('inspect_seo_max_retries', 5);
-              
-        if ($retries >= $maxRetries) {
-            $this->logger->error('Number of retries for SEO inspection exceeded maximum.', [
-                'node_ref' => $command->get('node_ref'),
-                'retries' => $retries,
-                'max_retries' => $maxRetries,
-                'web_result_verdict' => $indexStatusResult ? $indexStatusResult->getVerdict() : 'N/A',
-                'amp_result_verdict' => $ampResult ? $ampResult->getVerdict() : 'N/A',
-                'is_conclusive_for_web' => $isConclusiveForWeb,
-                'is_conclusive_for_amp' => $isConclusiveForAmp,
-            ]);
-            $this->putEvent($command, $pbjx, $node, 'google', $response);
-        } else {
+
+        if ($retries < $maxRetries) {
             $command->addToSet('search_engines', ['google']);
+            return $command;
         }
+
+        $this->putEvent($command, $pbjx, $node, 'google', $response);
 
         return $command;
     }
