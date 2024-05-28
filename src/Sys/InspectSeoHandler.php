@@ -89,6 +89,10 @@ class InspectSeoHandler implements CommandHandler
 
     public function checkIndexStatusForGoogle(Message $command, Pbjx $pbjx, Message $node): Message
     {
+        if ($this->flags->getBoolean('inspect_seo_handler_google_disabled')) {
+            return $command;
+        }
+
         $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
         $siteUrl = $this->flags->getString('inspect_seo_google_site_url');
 
