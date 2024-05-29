@@ -28,10 +28,10 @@ class InspectSeoHandler implements CommandHandler
     }
 
     public function __construct(
-        private readonly Ncr                        $ncr,
-        private readonly Key                        $key,
-        private readonly Flags                      $flags,
-        private readonly LoggerInterface|NullLogger $logger = new NullLogger(),
+        private readonly Ncr        $ncr,
+        private readonly Key        $key,
+        private readonly Flags      $flags,
+        private readonly NullLogger $logger = new NullLogger(),
     )
     {
     }
