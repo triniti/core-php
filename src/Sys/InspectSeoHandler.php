@@ -76,7 +76,7 @@ class InspectSeoHandler implements CommandHandler
         $maxRetries = $this->flags->getInt('inspect_seo_max_retries', 5);
 
         if ($retries < $maxRetries) {
-            $retryCommand->set('ctx_retries', $retryCommand->get('ctx_retries') + 1);
+            $retryCommand->set('ctx_retries', $retries + 1);
 
             $pbjx->sendAt(
                 $retryCommand,
@@ -85,7 +85,6 @@ class InspectSeoHandler implements CommandHandler
             );
         }
     }
-
 
     public function checkIndexStatusForGoogle(Message $command, Pbjx $pbjx, Message $node): Message
     {
