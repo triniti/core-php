@@ -13,7 +13,6 @@ use Gdbots\Schemas\Pbjx\StreamId;
 use Gdbots\UriTemplate\UriTemplateService;
 use Google\Service\SearchConsole\InspectUrlIndexResponse;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use Triniti\Schemas\Sys\Event\SeoInspectedV1;
 use Defuse\Crypto\Key;
 
@@ -31,7 +30,7 @@ class InspectSeoHandler implements CommandHandler
         private readonly Ncr        $ncr,
         private readonly Key        $key,
         private readonly Flags      $flags,
-        private readonly NullLogger $logger = new NullLogger(),
+        private readonly LoggerInterface $logger,
     )
     {
     }
