@@ -17,7 +17,7 @@ use Triniti\Schemas\Sys\Event\SeoInspectedV1;
 use Defuse\Crypto\Key;
 
 
-class InspectSeoHandler implements CommandHandler
+final class InspectSeoHandler implements CommandHandler
 {
     public static function handlesCuries(): array
     {
@@ -79,7 +79,7 @@ class InspectSeoHandler implements CommandHandler
 
             $pbjx->sendAt(
                 $retryCommand,
-                strotime($this->flags->getString('inspect_seo_retry_delay', "+15 minutes")),
+                strtotime($this->flags->getString('inspect_seo_retry_delay', "+15 minutes")),
                 "{$nodeRef}.inspect-seo"
             );
         }
