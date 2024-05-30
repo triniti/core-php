@@ -79,8 +79,8 @@ final class InspectSeoHandler implements CommandHandler
 
             $pbjx->sendAt(
                 $retryCommand,
-                strtotime($this->flags->getString('inspect_seo_retry_delay', "+15 minutes")),
-                "{$nodeRef}.inspect-seo"
+                strtotime($this->flags->getString('inspect_seo_retry_delay', '+15 minutes')),
+                "$nodeRef.inspect-seo"
             );
         }
     }
