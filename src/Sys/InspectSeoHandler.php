@@ -45,7 +45,8 @@ final class InspectSeoHandler implements CommandHandler
         $nodeRef = $command->get('node_ref');
 
         try {
-            $node = $this->ncr->getNode($nodeRef);
+            $context = ['causator' => $command];
+            $node = $this->ncr->getNode($nodeRef, true, $context);
         } catch (NodeNotFound $e) {
             $this->logger->error('Unable to get node for search engines processing.', [
                 'exception' => $e,
@@ -117,9 +118,10 @@ final class InspectSeoHandler implements CommandHandler
         $response = null;
 
         try {
-//            $base64EncodedAuthConfig = Crypto::decrypt(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_OAUTH_CONFIG'), $this->key);
-            $client->setAuthConfig($this->config['google_auth_config']);
-//            $client->setAuthConfig(json_decode(base64_decode($base64EncodedAuthConfig), true));
+            $base64EncodedAuthConfig = Crypto::decrypt(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_OAUTH_CONFIG'), $this->key);
+            $client->setAuthConfig(json_decode(base64_decode($base64EncodedAuthConfig), true));
+//            uncomment after update and remove above
+//            $client->setAuthConfig($this->config['google_auth_config']);
             $service = new \Google_Service_SearchConsole($client);
             $response = $service->urlInspection_index->inspect($request);
         } catch (\Throwable $e) {
