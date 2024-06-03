@@ -93,9 +93,13 @@ final class InspectSeoHandler implements CommandHandler
         );
 
         $host = parse_url($url, PHP_URL_HOST);
-        preg_match('/(?P<domain>[a-z0-9][a-z0-9\-]{1,63}\.[a-z\.]{2,6})$/i', $host, $matches);
+        $parts = explode('.', $host);
+        if (count($parts) > 1) {
+            $apexDomain = implode('.', array_slice($parts, -2));
+            return "sc-domain:{$apexDomain}";
+        }
 
-        return isset($matches['domain']) ? "sc-domain:{$matches['domain']}" : "sc-domain:{$host}";
+        return "sc-domain:{$host}";
     }
 
     public function checkIndexStatusForGoogle(Message $command, Pbjx $pbjx, Message $node): Message
