@@ -41,7 +41,7 @@ final class InspectSeoHandler implements CommandHandler
             return;
         }
 
-        $searchEngines = $command->get('search_engines', []);
+        $searchEngines = $command->get('search_engines');
         $nodeRef = $command->get('node_ref');
 
         try {
