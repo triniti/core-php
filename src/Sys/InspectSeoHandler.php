@@ -41,7 +41,7 @@ final class InspectSeoHandler implements CommandHandler
             return;
         }
 
-        $searchEngines = $command->get('search_engines', ['google']);
+        $searchEngines = $command->get('search_engines', []);
         $nodeRef = $command->get('node_ref');
 
         try {
@@ -56,6 +56,7 @@ final class InspectSeoHandler implements CommandHandler
 
         $retryCommand = clone $command;
         $retryCommand->clear('search_engines');
+        $pbjx->copyContext($command, $retryCommand);
 
         foreach ($searchEngines as $searchEngine) {
             $methodName = 'checkIndexStatusFor' . ucfirst($searchEngine);
@@ -85,6 +86,17 @@ final class InspectSeoHandler implements CommandHandler
         }
     }
 
+    public function resolveGoogleSiteUrl(Message $node): string {
+        $url = UriTemplateService::expand(
+            "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
+        );
+
+        $host = parse_url($url, PHP_URL_HOST);
+        preg_match('/(?P<domain>[a-z0-9][a-z0-9\-]{1,63}\.[a-z\.]{2,6})$/i', $host, $matches);
+
+        return isset($matches['domain']) ? "sc-domain:{$matches['domain']}" : "sc-domain:{$host}";
+    }
+
     public function checkIndexStatusForGoogle(Message $command, Pbjx $pbjx, Message $node): Message
     {
         if ($this->flags->getBoolean('inspect_seo_handler_google_disabled')) {
@@ -92,20 +104,12 @@ final class InspectSeoHandler implements CommandHandler
         }
 
         $request = new \Google_Service_SearchConsole_InspectUrlIndexRequest();
-        $siteUrl = $this->flags->getString('inspect_seo_google_site_url');
 
-        if (empty($siteUrl)) {
-            $this->logger->error('Must provide a site url.', [
-                'site_url' => $siteUrl,
-            ]);
-
-            return $command;
-        }
-
-        $request->setSiteUrl($siteUrl);
         $url = UriTemplateService::expand(
             "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
         );
+
+        $request->setSiteUrl($this->resolveGoogleSiteUrl($node));
         $request->setInspectionUrl($url);
         $client = new \Google_Client();
         $client->addScope(\Google_Service_SearchConsole::WEBMASTERS_READONLY);
@@ -113,8 +117,9 @@ final class InspectSeoHandler implements CommandHandler
         $response = null;
 
         try {
-            $base64EncodedAuthConfig = Crypto::decrypt(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_OAUTH_CONFIG'), $this->key);
-            $client->setAuthConfig(json_decode(base64_decode($base64EncodedAuthConfig), true));
+//            $base64EncodedAuthConfig = Crypto::decrypt(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_OAUTH_CONFIG'), $this->key);
+            $client->setAuthConfig($this->config['google_auth_config']);
+//            $client->setAuthConfig(json_decode(base64_decode($base64EncodedAuthConfig), true));
             $service = new \Google_Service_SearchConsole($client);
             $response = $service->urlInspection_index->inspect($request);
         } catch (\Throwable $e) {
