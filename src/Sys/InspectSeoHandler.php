@@ -47,7 +47,7 @@ final class InspectSeoHandler implements CommandHandler
 
         try {
             $context = ['causator' => $command];
-            $node = $this->ncr->getNode($nodeRef, true, $context);
+            $node = $this->ncr->getNode($nodeRef, false, $context);
         } catch (NodeNotFound $e) {
             $this->logger->error('Unable to get node for search engines processing.', [
                 'exception' => $e,
