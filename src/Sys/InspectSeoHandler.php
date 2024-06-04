@@ -31,6 +31,7 @@ final class InspectSeoHandler implements CommandHandler
         private readonly Key        $key,
         private readonly Flags      $flags,
         private readonly LoggerInterface $logger,
+        private readonly array $config,
     )
     {
     }
