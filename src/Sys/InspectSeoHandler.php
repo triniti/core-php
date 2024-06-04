@@ -94,12 +94,9 @@ final class InspectSeoHandler implements CommandHandler
 
         $host = parse_url($url, PHP_URL_HOST);
         $parts = explode('.', $host);
-        if (count($parts) > 1) {
-            $apexDomain = implode('.', array_slice($parts, -2));
-            return "sc-domain:{$apexDomain}";
-        }
 
-        return "sc-domain:{$host}";
+        $apexDomain = implode('.', array_slice($parts, -2));
+        return "sc-domain:{$apexDomain}";
     }
 
     public function checkIndexStatusForGoogle(Message $command, Pbjx $pbjx, Message $node): Message
@@ -122,10 +119,7 @@ final class InspectSeoHandler implements CommandHandler
         $response = null;
 
         try {
-            $base64EncodedAuthConfig = Crypto::decrypt(getenv('GOOGLE_SEARCH_CONSOLE_API_SERVICE_ACCOUNT_OAUTH_CONFIG'), $this->key);
-            $client->setAuthConfig(json_decode(base64_decode($base64EncodedAuthConfig), true));
-//            uncomment after update and remove above
-//            $client->setAuthConfig($this->config['google_auth_config']);
+            $client->setAuthConfig(json_encode($this->config['google_auth_config']));
             $service = new \Google_Service_SearchConsole($client);
             $response = $service->urlInspection_index->inspect($request);
         } catch (\Throwable $e) {
@@ -150,7 +144,7 @@ final class InspectSeoHandler implements CommandHandler
         $isConclusiveForAmp = !$node::schema()->hasField('amp_enabled') || ($ampResult && ($ampResult->getVerdict() === 'PASS' || $ampResult->getVerdict() === 'FAIL'));
 
         if ($isConclusiveForWeb && $isConclusiveForAmp) {
-            $this->putEvent($command, $pbjx, $node, 'google', $response);
+            $this->publishEvent($command, $pbjx, $node, 'google', $response);
             return $command;
         }
 
@@ -162,26 +156,22 @@ final class InspectSeoHandler implements CommandHandler
             return $command;
         }
 
-        $this->putEvent($command, $pbjx, $node, 'google', $response);
+        $this->publishEvent($command, $pbjx, $node, 'google', $response);
 
         return $command;
     }
 
-
-    private function putEvent(Message $command, Pbjx $pbjx, Message $node, string $searchEngine, InspectUrlIndexResponse $response): void
+    private function publishEvent(Message $command, Pbjx $pbjx, Message $node, string $searchEngine, InspectUrlIndexResponse $response): void
     {
-        $nodeRef = $node->generateNodeRef();
         $event = SeoInspectedV1::create()
             ->set('node_ref', $node->generateNodeRef())
             ->set('search_engine', $searchEngine)
             ->set('inspection_response', json_encode($response));
 
-        $streamId = StreamId::fromNodeRef($nodeRef);
-
         $pbjx
             ->copyContext($command, $event)
-            ->getEventStore()
-            ->putEvents($streamId, [$event], null, ['causator' => $command]);
+            ->publish($event);
+
     }
 }
 
