@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
+## v2.6.0
+* Use atomic counters to update poll count in `Triniti\Apollo\NcrPollStatsProjector`
+
+
 ## v2.5.3
 * Use field-based jobId for Jwplayer SyncMedia commands
 

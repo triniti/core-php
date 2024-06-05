@@ -3,11 +3,14 @@ declare(strict_types=1);
 
 namespace Triniti\Apollo;
 
+use Aws\DynamoDb\DynamoDbClient;
 use Gdbots\Ncr\Aggregate;
 use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Ncr\NcrSearch;
+use Gdbots\Ncr\Repository\DynamoDb\NodeTable;
+use Gdbots\Ncr\Repository\DynamoDb\TableManager;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbj\WellKnown\Microtime;
@@ -19,10 +22,6 @@ use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 
 class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
 {
-    protected Ncr $ncr;
-    protected NcrSearch $ncrSearch;
-    protected bool $enabled;
-
     public static function getSubscribedEvents(): array
     {
         return [
@@ -33,12 +32,13 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
             'triniti:apollo:mixin:vote-casted'    => 'onVoteCasted',
         ];
     }
-
-    public function __construct(Ncr $ncr, NcrSearch $ncrSearch, bool $enabled = true)
-    {
-        $this->ncr = $ncr;
-        $this->ncrSearch = $ncrSearch;
-        $this->enabled = $enabled;
+    public function __construct(
+        protected DynamoDbClient $client,
+        protected TableManager $tableManager,
+        protected Ncr $ncr,
+        protected NcrSearch $ncrSearch,
+        protected bool $enabled = true
+    ) {
     }
 
     public function onPollProjected(NodeProjectedEvent $pbjxEvent): void
@@ -70,19 +70,54 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
             return;
         }
 
-        $stats = $this->getOrCreateStats($event->get('poll_ref'), $event);
-        $stats->set('votes', $stats->get('votes') + 1);
-        $answerId = (string)$event->get('answer_id');
-        $answerVotes = $stats->getFromMap('answer_votes', $answerId, 0) + 1;
-        $stats->addToMap('answer_votes', $answerId, $answerVotes);
-        $this->projectNode($stats, $event, $pbjx);
+        if (!$this->ncr->hasNode($this->createStatsRef($event->get('poll_ref')), true, ['causator' => $event])) {
+            return;
+        }
+
+        $this->incrementVote($event);
+    }
+
+    protected function incrementVote(Message $event): void
+    {
+        $expressionAttributeNames = [];
+
+        $context = [
+            'causator' => $event,
+            'tenant_id' => $event->get('ctx_tenant_id'),
+        ];
+
+        $nodeRef = $event->get('poll_ref');
+        $statsRef = $this->createStatsRef($nodeRef);
+        $tableName = $this->tableManager->getNodeTableName($statsRef->getQName(), $context);
+        $updateExpression = "add answer_votes.#answer_id :v_incr, votes :v_incr";
+        $expressionAttributeNames["#answer_id"] = $event->get('answer_id');
+
+        $params = [
+            'TableName'                 => $tableName,
+            'Key'                       => [
+                NodeTable::HASH_KEY_NAME => ['S' => $statsRef->toString()],
+            ],
+            'UpdateExpression'          => $updateExpression,
+            'ExpressionAttributeNames'  => $expressionAttributeNames,
+            'ExpressionAttributeValues' => [
+                ':v_incr' => ['N' => '1'],
+            ],
+            'ReturnValues'              => 'NONE',
+        ];
+
+        $this->client->updateItem($params);
+
+        // this ensures the ncr cache is current
+        // note that we don't put a new node as that would
+        // overwrite the atomic counting above.
+        $this->ncr->getNode($statsRef, true, $context);
     }
 
     protected function projectNode(Message $stats, Message $event, Pbjx $pbjx): void
     {
         $context = ['causator' => $event];
-        // todo: convert stats projection to dynamodb atomic operation
         $expectedEtag = null; // $event->isReplay() ? null : $stats->get('etag');
+
         $stats
             ->set('updated_at', $event->get('occurred_at'))
             ->set('updater_ref', $event->get('ctx_user_ref'))
@@ -106,6 +141,9 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
             $stats = $this->ncr->getNode($statsRef, true, ['causator' => $event]);
         } catch (NodeNotFound $nf) {
             $stats = $class::fromArray(['_id' => $pollRef->getId()]);
+            // Before atomic counters can work need answer_votes map added to poll stats. Add a placeholder key that
+            // will not be used for the poll but needed to add the answer_votes map to node.
+            $stats->addToMap('answer_votes', $pollRef->getId(), 0);
         } catch (\Throwable $e) {
             throw $e;
         }
