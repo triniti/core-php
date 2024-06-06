@@ -2,7 +2,7 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
-## v2.6.0
+## v2.7.0
 * Use atomic counters to update poll count in `Triniti\Apollo\NcrPollStatsProjector`
 
 
