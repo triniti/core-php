@@ -36,11 +36,7 @@ class InspectSeoHandler implements CommandHandler
 
     public function handleCommand(Message $command, Pbjx $pbjx): void
     {
-        if ($this->flags->getBoolean('inspect_seo_handler_disabled')) {
-            return;
-        }
-
-        if (!$command->has('search_engines')){
+        if ($this->flags->getBoolean('inspect_seo_handler_disabled') || !$command->has('search_engines')) {
             return;
         }
 
@@ -174,7 +170,6 @@ class InspectSeoHandler implements CommandHandler
         $pbjx
             ->copyContext($command, $event)
             ->publish($event);
-
     }
 }
 
