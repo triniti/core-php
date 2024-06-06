@@ -16,8 +16,7 @@ use Psr\Log\LoggerInterface;
 use Triniti\Schemas\Sys\Event\SeoInspectedV1;
 use Defuse\Crypto\Key;
 
-
-final class InspectSeoHandler implements CommandHandler
+class InspectSeoHandler implements CommandHandler
 {
     public static function handlesCuries(): array
     {
@@ -28,7 +27,6 @@ final class InspectSeoHandler implements CommandHandler
 
     public function __construct(
         private readonly Ncr        $ncr,
-        private readonly Key        $key,
         private readonly Flags      $flags,
         private readonly LoggerInterface $logger,
         private readonly array $config,
@@ -39,6 +37,10 @@ final class InspectSeoHandler implements CommandHandler
     public function handleCommand(Message $command, Pbjx $pbjx): void
     {
         if ($this->flags->getBoolean('inspect_seo_handler_disabled')) {
+            return;
+        }
+
+        if (!$command->has('search_engines')){
             return;
         }
 
@@ -120,7 +122,7 @@ final class InspectSeoHandler implements CommandHandler
         $response = null;
 
         try {
-            $client->setAuthConfig(json_encode($this->config['google_auth_config']));
+            $client->setAuthConfig(json_decode($this->config['google_auth_config'], true));
             $service = new \Google_Service_SearchConsole($client);
             $response = $service->urlInspection_index->inspect($request);
         } catch (\Throwable $e) {
@@ -164,6 +166,8 @@ final class InspectSeoHandler implements CommandHandler
 
     private function publishEvent(Message $command, Pbjx $pbjx, Message $node, string $searchEngine, InspectUrlIndexResponse $response): void
     {
+        dump("Res: ", $response);die();
+
         $event = SeoInspectedV1::create()
             ->set('node_ref', $node->generateNodeRef())
             ->set('search_engine', $searchEngine)
