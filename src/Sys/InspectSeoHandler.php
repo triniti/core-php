@@ -166,8 +166,6 @@ class InspectSeoHandler implements CommandHandler
 
     private function publishEvent(Message $command, Pbjx $pbjx, Message $node, string $searchEngine, InspectUrlIndexResponse $response): void
     {
-        dump("Res: ", $response);die();
-
         $event = SeoInspectedV1::create()
             ->set('node_ref', $node->generateNodeRef())
             ->set('search_engine', $searchEngine)
