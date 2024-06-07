@@ -95,7 +95,7 @@ class InspectSeoHandler implements CommandHandler
         $parts = explode('.', $host);
 
         $apexDomain = implode('.', array_slice($parts, -2));
-        return "sc-domain:{$apexDomain}";
+        return  "sc-domain:$apexDomain";
     }
 
     public function checkIndexStatusForGoogle(Message $command, Pbjx $pbjx, Message $node): Message
