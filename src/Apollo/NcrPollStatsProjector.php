@@ -32,12 +32,13 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
             'triniti:apollo:mixin:vote-casted'    => 'onVoteCasted',
         ];
     }
+
     public function __construct(
         protected DynamoDbClient $client,
-        protected TableManager $tableManager,
-        protected Ncr $ncr,
-        protected NcrSearch $ncrSearch,
-        protected bool $enabled = true
+        protected TableManager   $tableManager,
+        protected Ncr            $ncr,
+        protected NcrSearch      $ncrSearch,
+        protected bool           $enabled = true
     ) {
     }
 
@@ -82,15 +83,15 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
         $expressionAttributeNames = [];
 
         $context = [
-            'causator' => $event,
+            'causator'  => $event,
             'tenant_id' => $event->get('ctx_tenant_id'),
         ];
 
         $nodeRef = $event->get('poll_ref');
         $statsRef = $this->createStatsRef($nodeRef);
         $tableName = $this->tableManager->getNodeTableName($statsRef->getQName(), $context);
-        $updateExpression = "add answer_votes.#answer_id :v_incr, votes :v_incr";
-        $expressionAttributeNames["#answer_id"] = $event->get('answer_id');
+        $updateExpression = 'add answer_votes.#answer_id :v_incr, votes :v_incr';
+        $expressionAttributeNames['#answer_id'] = $event->fget('answer_id');
 
         $params = [
             'TableName'                 => $tableName,
