@@ -3,18 +3,15 @@ declare(strict_types=1);
 
 namespace Triniti\Sys;
 
-use Defuse\Crypto\Crypto;
 use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Pbjx;
-use Gdbots\Schemas\Pbjx\StreamId;
 use Gdbots\UriTemplate\UriTemplateService;
 use Google\Service\SearchConsole\InspectUrlIndexResponse;
 use Psr\Log\LoggerInterface;
 use Triniti\Schemas\Sys\Event\SeoInspectedV1;
-use Defuse\Crypto\Key;
 
 class InspectSeoHandler implements CommandHandler
 {
