@@ -182,6 +182,7 @@ class TwitterNotifier implements Notifier
                 'base_uri' => self::API_ENDPOINT,
                 'handler'  => $stack,
                 'auth'     => 'oauth',
+                'timeout'  => 5,
             ]);
         }
 

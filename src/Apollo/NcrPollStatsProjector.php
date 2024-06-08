@@ -3,11 +3,12 @@ declare(strict_types=1);
 
 namespace Triniti\Apollo;
 
+use Aws\DynamoDb\DynamoDbClient;
 use Gdbots\Ncr\Aggregate;
 use Gdbots\Ncr\Event\NodeProjectedEvent;
-use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Ncr\Ncr;
-use Gdbots\Ncr\NcrSearch;
+use Gdbots\Ncr\Repository\DynamoDb\NodeTable;
+use Gdbots\Ncr\Repository\DynamoDb\TableManager;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\MessageResolver;
 use Gdbots\Pbj\WellKnown\Microtime;
@@ -19,10 +20,6 @@ use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 
 class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
 {
-    protected Ncr $ncr;
-    protected NcrSearch $ncrSearch;
-    protected bool $enabled;
-
     public static function getSubscribedEvents(): array
     {
         return [
@@ -34,11 +31,12 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
         ];
     }
 
-    public function __construct(Ncr $ncr, NcrSearch $ncrSearch, bool $enabled = true)
-    {
-        $this->ncr = $ncr;
-        $this->ncrSearch = $ncrSearch;
-        $this->enabled = $enabled;
+    public function __construct(
+        protected DynamoDbClient $client,
+        protected TableManager   $tableManager,
+        protected Ncr            $ncr,
+        protected bool           $enabled = true
+    ) {
     }
 
     public function onPollProjected(NodeProjectedEvent $pbjxEvent): void
@@ -50,18 +48,19 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
         $poll = $pbjxEvent->getNode();
         $pollRef = $poll->generateNodeRef();
         $lastEvent = $pbjxEvent->getLastEvent();
+        $context = ['causator' => $lastEvent];
 
         if (NodeStatus::DELETED->value === $poll->fget('status')) {
-            $context = ['causator' => $lastEvent];
             $statsRef = $this->createStatsRef($pollRef);
             $this->ncr->deleteNode($statsRef, $context);
-            $this->ncrSearch->deleteNodes([$statsRef], $context);
             return;
         }
 
-        $stats = $this->getOrCreateStats($pollRef, $lastEvent);
-        $this->mergePoll($poll, $stats);
-        $this->projectNode($stats, $lastEvent, $pbjxEvent::getPbjx());
+        if (!$this->ncr->hasNode($this->createStatsRef($pollRef), true, $context)) {
+            $stats = $this->createStats($pollRef, $lastEvent);
+            $this->mergePoll($poll, $stats);
+            $this->projectNode($stats, $lastEvent, $pbjxEvent::getPbjx());
+        }
     }
 
     public function onVoteCasted(Message $event, Pbjx $pbjx): void
@@ -70,47 +69,90 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
             return;
         }
 
-        $stats = $this->getOrCreateStats($event->get('poll_ref'), $event);
-        $stats->set('votes', $stats->get('votes') + 1);
-        $answerId = (string)$event->get('answer_id');
-        $answerVotes = $stats->getFromMap('answer_votes', $answerId, 0) + 1;
-        $stats->addToMap('answer_votes', $answerId, $answerVotes);
-        $this->projectNode($stats, $event, $pbjx);
+        if (!$this->ncr->hasNode($this->createStatsRef($event->get('poll_ref')), true, ['causator' => $event])) {
+            return;
+        }
+
+        $this->incrementVote($event);
+    }
+
+    protected function incrementVote(Message $event): void
+    {
+        $expressionAttributeNames = [];
+
+        $context = [
+            'causator'  => $event,
+            'tenant_id' => $event->fget('ctx_tenant_id'),
+        ];
+
+        $nodeRef = $event->get('poll_ref');
+        $statsRef = $this->createStatsRef($nodeRef);
+        $tableName = $this->tableManager->getNodeTableName($statsRef->getQName(), $context);
+        $updateExpression = 'add answer_votes.#answer_id :v_incr, votes :v_incr';
+        $expressionAttributeNames['#answer_id'] = $event->fget('answer_id');
+
+        $params = [
+            'TableName'                 => $tableName,
+            'Key'                       => [
+                NodeTable::HASH_KEY_NAME => ['S' => $statsRef->toString()],
+            ],
+            'UpdateExpression'          => $updateExpression,
+            'ExpressionAttributeNames'  => $expressionAttributeNames,
+            'ExpressionAttributeValues' => [
+                ':v_incr' => ['N' => '1'],
+            ],
+            'ReturnValues'              => 'NONE',
+        ];
+
+        $this->client->updateItem($params);
+
+        // this ensures the ncr cache is current
+        // note that we don't put a new node as that would
+        // overwrite the atomic counting above.
+        $this->ncr->getNode($statsRef, true, $context);
     }
 
     protected function projectNode(Message $stats, Message $event, Pbjx $pbjx): void
     {
         $context = ['causator' => $event];
-        // todo: convert stats projection to dynamodb atomic operation
         $expectedEtag = null; // $event->isReplay() ? null : $stats->get('etag');
+
         $stats
             ->set('updated_at', $event->get('occurred_at'))
             ->set('updater_ref', $event->get('ctx_user_ref'))
             ->set('last_event_ref', $event->generateMessageRef())
-            ->set('etag', Aggregate::generateEtag($stats));
+            ->set('etag', Aggregate::generateEtag($stats))
+            ->set('status', NodeStatus::PUBLISHED);
 
         $this->ncr->putNode($stats, $expectedEtag, $context);
-        $this->ncrSearch->indexNodes([$stats], $context);
+
+        // Add empty answer_votes map to node
+        $statsRef = $stats->generateNodeRef();
+        $tableName = $this->tableManager->getNodeTableName($statsRef->getQName(), $context);
+        $params = [
+            'TableName'                 => $tableName,
+            'Key'                       => [
+                NodeTable::HASH_KEY_NAME => ['S' => $statsRef->toString()],
+            ],
+            'UpdateExpression'          => 'set answer_votes = :answer_votes_map',
+            'ExpressionAttributeValues' => [
+                ':answer_votes_map' => ['M' => []],
+            ],
+            'ReturnValues'              => 'NONE',
+        ];
+
+        $this->client->updateItem($params);
         $pbjx->trigger($stats, 'projected', new NodeProjectedEvent($stats, $event), false, false);
     }
 
-    protected function getOrCreateStats(NodeRef $pollRef, Message $event): Message
+    protected function createStats(NodeRef $pollRef, Message $event): Message
     {
         static $class = null;
         if (null === $class) {
             $class = MessageResolver::resolveCurie('*:apollo:node:poll-stats:v1');
         }
 
-        try {
-            $statsRef = $this->createStatsRef($pollRef);
-            $stats = $this->ncr->getNode($statsRef, true, ['causator' => $event]);
-        } catch (NodeNotFound $nf) {
-            $stats = $class::fromArray(['_id' => $pollRef->getId()]);
-        } catch (\Throwable $e) {
-            throw $e;
-        }
-
-        return $stats;
+        return $class::fromArray(['_id' => $pollRef->getId()]);
     }
 
     protected function createStatsRef(NodeRef $pollRef): NodeRef

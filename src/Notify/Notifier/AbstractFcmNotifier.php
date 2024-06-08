@@ -217,6 +217,7 @@ abstract class AbstractFcmNotifier implements Notifier
             $this->guzzleClient = new GuzzleClient([
                 'base_uri' => self::API_ENDPOINT,
                 'handler'  => $stack,
+                'timeout'  => 5,
             ]);
         }
 
