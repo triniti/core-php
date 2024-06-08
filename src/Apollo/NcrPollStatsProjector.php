@@ -6,9 +6,7 @@ namespace Triniti\Apollo;
 use Aws\DynamoDb\DynamoDbClient;
 use Gdbots\Ncr\Aggregate;
 use Gdbots\Ncr\Event\NodeProjectedEvent;
-use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Ncr\Ncr;
-use Gdbots\Ncr\NcrSearch;
 use Gdbots\Ncr\Repository\DynamoDb\NodeTable;
 use Gdbots\Ncr\Repository\DynamoDb\TableManager;
 use Gdbots\Pbj\Message;
@@ -37,7 +35,6 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
         protected DynamoDbClient $client,
         protected TableManager   $tableManager,
         protected Ncr            $ncr,
-        protected NcrSearch      $ncrSearch,
         protected bool           $enabled = true
     ) {
     }
@@ -56,13 +53,14 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
             $context = ['causator' => $lastEvent];
             $statsRef = $this->createStatsRef($pollRef);
             $this->ncr->deleteNode($statsRef, $context);
-            $this->ncrSearch->deleteNodes([$statsRef], $context);
             return;
         }
 
-        $stats = $this->getOrCreateStats($pollRef, $lastEvent);
-        $this->mergePoll($poll, $stats);
-        $this->projectNode($stats, $lastEvent, $pbjxEvent::getPbjx());
+        if (!$this->ncr->hasNode($this->createStatsRef($pollRef), true, ['causator' => $lastEvent])) {
+            $stats = $this->createStats($pollRef, $lastEvent);
+            $this->mergePoll($poll, $stats);
+            $this->projectNode($stats, $lastEvent, $pbjxEvent::getPbjx());
+        }
     }
 
     public function onVoteCasted(Message $event, Pbjx $pbjx): void
@@ -123,33 +121,38 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
             ->set('updated_at', $event->get('occurred_at'))
             ->set('updater_ref', $event->get('ctx_user_ref'))
             ->set('last_event_ref', $event->generateMessageRef())
-            ->set('etag', Aggregate::generateEtag($stats));
+            ->set('etag', Aggregate::generateEtag($stats))
+            ->set('status', NodeStatus::PUBLISHED);
 
         $this->ncr->putNode($stats, $expectedEtag, $context);
-        $this->ncrSearch->indexNodes([$stats], $context);
+
+        // Add empty answer_votes map to node
+        $statsRef = NodeRef::fromNode($stats);
+        $tableName = $this->tableManager->getNodeTableName($statsRef->getQName(), $context);
+        $params = [
+            'TableName'                 => $tableName,
+            'Key'                       => [
+                NodeTable::HASH_KEY_NAME => ['S' => $statsRef->toString()],
+            ],
+            'UpdateExpression'          =>  'set answer_votes = :answer_votes_map',
+            'ExpressionAttributeValues' => [
+                ':answer_votes_map' => ['M' => []],
+            ],
+            'ReturnValues'              => 'NONE',
+        ];
+
+        $this->client->updateItem($params);
         $pbjx->trigger($stats, 'projected', new NodeProjectedEvent($stats, $event), false, false);
     }
 
-    protected function getOrCreateStats(NodeRef $pollRef, Message $event): Message
+    protected function createStats(NodeRef $pollRef, Message $event): Message
     {
         static $class = null;
         if (null === $class) {
             $class = MessageResolver::resolveCurie('*:apollo:node:poll-stats:v1');
         }
 
-        try {
-            $statsRef = $this->createStatsRef($pollRef);
-            $stats = $this->ncr->getNode($statsRef, true, ['causator' => $event]);
-        } catch (NodeNotFound $nf) {
-            $stats = $class::fromArray(['_id' => $pollRef->getId()]);
-            // Before atomic counters can work need answer_votes map added to poll stats. Add a placeholder key that
-            // will not be used for the poll but needed to add the answer_votes map to node.
-            $stats->addToMap('answer_votes', $pollRef->getId(), 0);
-        } catch (\Throwable $e) {
-            throw $e;
-        }
-
-        return $stats;
+        return $class::fromArray(['_id' => $pollRef->getId()]);
     }
 
     protected function createStatsRef(NodeRef $pollRef): NodeRef
