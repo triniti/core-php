@@ -48,15 +48,15 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
         $poll = $pbjxEvent->getNode();
         $pollRef = $poll->generateNodeRef();
         $lastEvent = $pbjxEvent->getLastEvent();
+        $context = ['causator' => $lastEvent];
 
         if (NodeStatus::DELETED->value === $poll->fget('status')) {
-            $context = ['causator' => $lastEvent];
             $statsRef = $this->createStatsRef($pollRef);
             $this->ncr->deleteNode($statsRef, $context);
             return;
         }
 
-        if (!$this->ncr->hasNode($this->createStatsRef($pollRef), true, ['causator' => $lastEvent])) {
+        if (!$this->ncr->hasNode($this->createStatsRef($pollRef), true, $context)) {
             $stats = $this->createStats($pollRef, $lastEvent);
             $this->mergePoll($poll, $stats);
             $this->projectNode($stats, $lastEvent, $pbjxEvent::getPbjx());
@@ -82,7 +82,7 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
 
         $context = [
             'causator'  => $event,
-            'tenant_id' => $event->get('ctx_tenant_id'),
+            'tenant_id' => $event->fget('ctx_tenant_id'),
         ];
 
         $nodeRef = $event->get('poll_ref');
@@ -127,14 +127,14 @@ class NcrPollStatsProjector implements EventSubscriber, PbjxProjector
         $this->ncr->putNode($stats, $expectedEtag, $context);
 
         // Add empty answer_votes map to node
-        $statsRef = NodeRef::fromNode($stats);
+        $statsRef = $stats->generateNodeRef();
         $tableName = $this->tableManager->getNodeTableName($statsRef->getQName(), $context);
         $params = [
             'TableName'                 => $tableName,
             'Key'                       => [
                 NodeTable::HASH_KEY_NAME => ['S' => $statsRef->toString()],
             ],
-            'UpdateExpression'          =>  'set answer_votes = :answer_votes_map',
+            'UpdateExpression'          => 'set answer_votes = :answer_votes_map',
             'ExpressionAttributeValues' => [
                 ':answer_votes_map' => ['M' => []],
             ],
