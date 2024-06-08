@@ -23,12 +23,11 @@ class InspectSeoHandler implements CommandHandler
     }
 
     public function __construct(
-        private readonly Ncr        $ncr,
-        private readonly Flags      $flags,
+        private readonly Ncr             $ncr,
+        private readonly Flags           $flags,
         private readonly LoggerInterface $logger,
-        private readonly array $config,
-    )
-    {
+        private readonly array           $config,
+    ) {
     }
 
     public function handleCommand(Message $command, Pbjx $pbjx): void
@@ -46,7 +45,7 @@ class InspectSeoHandler implements CommandHandler
         } catch (NodeNotFound $e) {
             $this->logger->error('Unable to get node for search engines processing.', [
                 'exception' => $e,
-                'node_ref' => $nodeRef
+                'node_ref'  => $nodeRef,
             ]);
             return;
         }
@@ -83,7 +82,8 @@ class InspectSeoHandler implements CommandHandler
         }
     }
 
-    public function resolveGoogleSiteUrl(Message $node): string {
+    protected function resolveGoogleSiteUrl(Message $node): string
+    {
         $url = UriTemplateService::expand(
             "{$node::schema()->getQName()}.canonical", $node->getUriTemplateVars()
         );
@@ -92,10 +92,10 @@ class InspectSeoHandler implements CommandHandler
         $parts = explode('.', $host);
 
         $apexDomain = implode('.', array_slice($parts, -2));
-        return  "sc-domain:$apexDomain";
+        return "sc-domain:$apexDomain";
     }
 
-    public function checkIndexStatusForGoogle(Message $command, Pbjx $pbjx, Message $node): Message
+    protected function checkIndexStatusForGoogle(Message $command, Pbjx $pbjx, Message $node): Message
     {
         if ($this->flags->getBoolean('inspect_seo_handler_google_disabled')) {
             return $command;
@@ -120,9 +120,9 @@ class InspectSeoHandler implements CommandHandler
             $response = $service->urlInspection_index->inspect($request);
         } catch (\Throwable $e) {
             $this->logger->error('An error occurred in checkIndexStatus for google.', [
-                'exception' => $e,
-                'node_ref' => $node->generateNodeRef(),
-                'url' => $url,
+                'exception'   => $e,
+                'node_ref'    => $node->generateNodeRef(),
+                'url'         => $url,
                 'retry_count' => $command->get('ctx_retries'),
                 'stack_trace' => $e->getTraceAsString(),
             ]);
@@ -157,7 +157,7 @@ class InspectSeoHandler implements CommandHandler
         return $command;
     }
 
-    private function publishEvent(Message $command, Pbjx $pbjx, Message $node, string $searchEngine, InspectUrlIndexResponse $response): void
+    protected function publishEvent(Message $command, Pbjx $pbjx, Message $node, string $searchEngine, InspectUrlIndexResponse $response): void
     {
         $event = SeoInspectedV1::create()
             ->set('node_ref', $node->generateNodeRef())
@@ -169,4 +169,3 @@ class InspectSeoHandler implements CommandHandler
             ->publish($event);
     }
 }
-
