@@ -219,6 +219,7 @@ abstract class AbstractAzureNotifier implements Notifier
             $this->guzzleClient = new GuzzleClient([
                 'base_uri' => $this->endpoint,
                 'handler'  => $stack,
+                'timeout'  => 5,
             ]);
         }
 

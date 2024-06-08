@@ -22,17 +22,17 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
     public static function getSubscribedEvents(): array
     {
         return [
-            'triniti:apollo:mixin:has-reactions.created'  => 'onNodeCreated',
-            'triniti:apollo:mixin:has-reactions.deleted'  => 'onNodeDeleted',
-            'triniti:apollo:event:reactions-added'        => 'onReactionsAdded',
+            'triniti:apollo:mixin:has-reactions.created' => 'onNodeCreated',
+            'triniti:apollo:mixin:has-reactions.deleted' => 'onNodeDeleted',
+            'triniti:apollo:event:reactions-added'       => 'onReactionsAdded',
         ];
     }
 
     public function __construct(
         protected DynamoDbClient $client,
-        protected TableManager $tableManager,
-        protected Ncr $ncr,
-        protected bool $enabled = true
+        protected TableManager   $tableManager,
+        protected Ncr            $ncr,
+        protected bool           $enabled = true
     ) {
     }
 
@@ -89,7 +89,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
         $expressionAttributeNames = [];
 
         $context = [
-            'causator' => $event,
+            'causator'  => $event,
             'tenant_id' => $event->get('ctx_tenant_id'),
         ];
 
@@ -107,7 +107,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             'Key'                       => [
                 NodeTable::HASH_KEY_NAME => ['S' => $reactionsRef->toString()],
             ],
-            'UpdateExpression'          =>  rtrim('add'. $updateExpression, ', '),
+            'UpdateExpression'          => rtrim('add' . $updateExpression, ', '),
             'ExpressionAttributeNames'  => $expressionAttributeNames,
             'ExpressionAttributeValues' => [
                 ':v_incr' => ['N' => '1'],
@@ -142,7 +142,7 @@ class NcrReactionsProjector implements EventSubscriber, PbjxProjector
             'Key'                       => [
                 NodeTable::HASH_KEY_NAME => ['S' => $reactionsRef->toString()],
             ],
-            'UpdateExpression'          =>  'set reactions = :reactions_map',
+            'UpdateExpression'          => 'set reactions = :reactions_map',
             'ExpressionAttributeValues' => [
                 ':reactions_map' => ['M' => []],
             ],
