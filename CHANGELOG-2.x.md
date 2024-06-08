@@ -3,6 +3,7 @@ This changelog references the relevant changes done in 2.x versions.
 
 
 ## v2.6.0
+* Add `Triniti\Sys\InspectSeoHandler` to handle seo inspection
 * Use atomic counters to update poll count in `Triniti\Apollo\NcrPollStatsProjector`
 * Set timeout in notifiers that use guzzle to 5 seconds.
 
