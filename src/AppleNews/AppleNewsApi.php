@@ -278,7 +278,7 @@ class AppleNewsApi
             $this->guzzleClient = new GuzzleClient([
                 'base_uri' => self::ENDPOINT,
                 'handler'  => $stack,
-                'timeout'  => 5,
+                'timeout'  => 15,
             ]);
         }
 

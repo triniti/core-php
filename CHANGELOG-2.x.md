@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
+## v2.6.1
+* Increase Guzzle timeout in `Triniti\AppleNews\AppleNewsApi`.
+
+
 ## v2.6.0
 * Use atomic counters to update poll count in `Triniti\Apollo\NcrPollStatsProjector`
 * Set timeout in notifiers that use guzzle to 5 seconds.
