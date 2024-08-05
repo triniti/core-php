@@ -9,7 +9,6 @@ use Gdbots\Pbj\Message;
 use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\UriTemplate\UriTemplateService;
-use Google\Service\SearchConsole\InspectUrlIndexResponse;
 use Psr\Log\LoggerInterface;
 use Triniti\Schemas\Sys\Event\SeoInspectedV1;
 
@@ -140,24 +139,29 @@ class InspectSeoHandler implements CommandHandler
         $isConclusiveForAmp = !$node::schema()->hasField('amp_enabled') || ($ampResult && ($ampResult->getVerdict() === 'PASS' || $ampResult->getVerdict() === 'FAIL'));
 
         if ($isConclusiveForWeb && $isConclusiveForAmp) {
-            $this->publishEvent($command, $pbjx, $node, 'google', $response);
+            $this->publishEvent($command, $pbjx, $node, 'google', [
+                'response'      => $response,
+                'is_conclusive' => true,
+            ]);
             return $command;
         }
 
         $retries = $command->get('ctx_retries');
         $maxRetries = $this->flags->getInt('inspect_seo_max_retries', 5);
-
         if ($retries < $maxRetries) {
             $command->addToSet('search_engines', ['google']);
             return $command;
         }
 
-        $this->publishEvent($command, $pbjx, $node, 'google', $response);
+        $this->publishEvent($command, $pbjx, $node, 'google', [
+            'response'      => $response,
+            'is_conclusive' => false,
+        ]);
 
         return $command;
     }
 
-    protected function publishEvent(Message $command, Pbjx $pbjx, Message $node, string $searchEngine, InspectUrlIndexResponse $response): void
+    protected function publishEvent(Message $command, Pbjx $pbjx, Message $node, string $searchEngine, array $response): void
     {
         $event = SeoInspectedV1::create()
             ->set('node_ref', $node->generateNodeRef())
