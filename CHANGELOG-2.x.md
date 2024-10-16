@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
+## v2.7.0
+* Add support for browser notifications via Braze.
+
+
 ## v2.6.3
 * Add `is_conclusive` to `Triniti/Sys/InspectSeoHandler`.
 

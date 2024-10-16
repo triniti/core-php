@@ -45,7 +45,7 @@ abstract class AbstractBrazeNotifier implements Notifier
             Middleware::mapRequest(
                 function (RequestInterface $request): RequestInterface {
                     return $request
-                        ->withHeader('Authorization', "Bearer {$this->apiKey}")
+                        ->withHeader('Authorization', "Bearer $this->apiKey")
                         ->withHeader('content-type', 'application/json');
                 }
             )
@@ -143,6 +143,8 @@ abstract class AbstractBrazeNotifier implements Notifier
             if ($result->get('ok') && isset($response['send_id'])) {
                 $result->addToMap('tags', 'send_id', $response['send_id']);
             }
+
+            return $result;
         } catch (\Throwable $e) {
             $code = Code::tryFrom($e->getCode()) ?: Code::UNKNOWN;
 
@@ -152,7 +154,5 @@ abstract class AbstractBrazeNotifier implements Notifier
                 ->set('error_name', ClassUtil::getShortName($e))
                 ->set('error_message', substr($e->getMessage(), 0, 2048));
         }
-
-        return $result;
     }
 }
