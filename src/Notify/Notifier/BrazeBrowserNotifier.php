@@ -18,8 +18,8 @@ class BrazeBrowserNotifier extends AbstractBrazeNotifier
         $title = $content->get('title', $notification->get('title'));
         $body = $notification->get('body');
         $brazePayload['messages']['web_push'] = [
-            'title' => $title,
-            'alert' => $body,
+            'title'               => $title,
+            'alert'               => $body,
             'require_interaction' => $notification->get('require_interaction'),
         ];
 

@@ -29,10 +29,11 @@ abstract class AbstractBrazeNotifier implements Notifier
     const string DISABLED_FLAG_NAME = 'braze_notifier_disabled';
 
     public function __construct(
-        protected readonly Flags $flags,
-        protected readonly Key $key,
+        protected readonly Flags  $flags,
+        protected readonly Key    $key,
         protected readonly string $apiEndpoint,
-    ) { }
+    ) {
+    }
 
     protected function getGuzzleClient(): GuzzleClient
     {
@@ -60,7 +61,8 @@ abstract class AbstractBrazeNotifier implements Notifier
         return $this->guzzleClient;
     }
 
-    protected function buildPayload(Message $notification, Message $app, ?Message $content = null): array {
+    protected function buildPayload(Message $notification, Message $app, ?Message $content = null): array
+    {
         $payload = [
             'broadcast' => true,
         ];
