@@ -31,7 +31,7 @@ abstract class AbstractBrazeNotifier implements Notifier
     public function __construct(
         protected readonly Flags  $flags,
         protected readonly Key    $key,
-        protected readonly string $apiEndpoint,
+        protected readonly string $apiEndpoint = 'https://rest.iad-01.braze.com',
     ) {
     }
 
