@@ -15,7 +15,7 @@ final class CredentialProvider
      * Unwraps the promise for credentials so services expecting
      * a ready to use CredentialsInterface still work.
      *
-     * @param CacheItemPoolInterface $pool
+     * @param CacheItemPoolInterface|null $pool
      *
      * @return CredentialsInterface
      */
