@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
+## v2.8.1
+* Added ovp util for seo support
+
+
 ## v2.8.0
 __POSSIBLE BREAKING CHANGES__
 * Use latest gdbots packages with php 8.4 and symfony updates.
