@@ -8,6 +8,7 @@ use Triniti\Schemas\Dam\AssetId;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbj\Message;
 
+
 final readonly class OvpUtil {
     public function __construct(private readonly ArtifactUrlProvider $artifactUrlProvider)
     {
