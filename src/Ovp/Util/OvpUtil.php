@@ -14,7 +14,7 @@ final readonly class OvpUtil {
     {
     }
 
-    public function getUrl($id, string $type): ?string
+    public function getArtifactUrl($id, string $type): ?string
     {
         if (empty($id)) {
             return null;
