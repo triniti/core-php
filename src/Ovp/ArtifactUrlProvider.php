@@ -75,7 +75,18 @@ class ArtifactUrlProvider
         return $this->getPartial($id) . '-transcribed.json';
     }
 
-    public function getUrl($id, string $type): ?string
+    public function getVideo(AssetId $id): string
+    {
+        return $this->getPartial($id) . '.mp4';
+    }
+
+    protected function getPartial(AssetId $id): string
+    {
+        $pathInfo = pathinfo($this->urlProvider->getUrl($id));
+        return $pathInfo['dirname'] . '/' . $pathInfo['filename'];
+    }
+
+    public function getArtifactUrl($id, string $type): ?string
     {
         if (empty($id)) {
             return null;
@@ -109,16 +120,5 @@ class ArtifactUrlProvider
             'video' => $this->urlProvider->getVideo($assetId),
             default => null,
         };
-    }
-
-    public function getVideo(AssetId $id): string
-    {
-        return $this->getPartial($id) . '.mp4';
-    }
-
-    protected function getPartial(AssetId $id): string
-    {
-        $pathInfo = pathinfo($this->urlProvider->getUrl($id));
-        return $pathInfo['dirname'] . '/' . $pathInfo['filename'];
     }
 }

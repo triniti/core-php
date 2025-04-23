@@ -3,7 +3,7 @@ This changelog references the relevant changes done in 2.x versions.
 
 
 ## v2.8.1
-* Added `OvpUtil` to ovp extension
+* Updated `ArtifactUrlProvider` with
 
 
 ## v2.8.0
