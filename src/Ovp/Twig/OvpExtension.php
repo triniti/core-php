@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Triniti\Ovp\Twig;
 
 use Triniti\Ovp\ArtifactUrlProvider;
-use Triniti\Ovp\Util\OvpUtil;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
