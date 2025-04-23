@@ -23,7 +23,7 @@ final class OvpExtension extends AbstractExtension
     public function getFunctions(): array
     {
         return [
-            new TwigFunction('ovp_artifact_url', [OvpUtil::class, 'getUrl']),
+            new TwigFunction('ovp_artifact_url', [$this, 'getUrl']),
         ];
     }
 
