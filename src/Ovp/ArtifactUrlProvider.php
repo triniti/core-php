@@ -111,7 +111,6 @@ class ArtifactUrlProvider
         };
     }
 
-
     public function getVideo(AssetId $id): string
     {
         return $this->getPartial($id) . '.mp4';
