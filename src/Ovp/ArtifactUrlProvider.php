@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Triniti\Ovp;
 
-
 use Symfony\Component\HttpKernel\KernelInterface;
 use Triniti\Dam\UrlProvider;
 use Triniti\Schemas\Dam\AssetId;
