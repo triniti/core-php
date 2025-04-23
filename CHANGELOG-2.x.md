@@ -3,7 +3,7 @@ This changelog references the relevant changes done in 2.x versions.
 
 
 ## v2.8.1
-* Updated `ArtifactUrlProvider` with
+* Updated `ArtifactUrlProvider` with `getArtifactUrl`.
 
 
 ## v2.8.0
