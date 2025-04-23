@@ -6,7 +6,6 @@ namespace Triniti\Ovp\Twig;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Triniti\Ovp\ArtifactUrlProvider;
-use Triniti\Ovp\Util\OvpUtil;
 use Triniti\Schemas\Dam\AssetId;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;

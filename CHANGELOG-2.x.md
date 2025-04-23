@@ -3,7 +3,7 @@ This changelog references the relevant changes done in 2.x versions.
 
 
 ## v2.8.1
-* Added ovp util for seo support
+* Added `getUrl` to ArtifactUrlProvider
 
 
 ## v2.8.0
