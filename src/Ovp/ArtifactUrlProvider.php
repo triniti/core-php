@@ -75,12 +75,6 @@ class ArtifactUrlProvider
         return $this->getPartial($id) . '-transcribed.json';
     }
 
-    /**
-     * @param AssetId|NodeRef|Message|string $id
-     * @param string                         $type
-     *
-     * @return string|null
-     */
     public function getUrl($id, string $type): ?string
     {
         if (empty($id)) {
