@@ -111,13 +111,13 @@ class ArtifactUrlProvider
         }
 
         return match ($type) {
-            'audio' => $this->urlProvider->getAudio($assetId),
-            'manifest' => $this->urlProvider->getManifest($assetId),
-            'original' => $this->urlProvider->getOriginal($assetId),
-            'tooltip_thumbnail_sprite' => $this->urlProvider->getTooltipThumbnailSprite($assetId),
-            'tooltip_thumbnail_track' => $this->urlProvider->getTooltipThumbnailTrack($assetId),
-            'transcription' => $this->urlProvider->getTranscription($assetId),
-            'video' => $this->urlProvider->getVideo($assetId),
+            'audio' => $this->getAudio($assetId),
+            'manifest' => $this->getManifest($assetId),
+            'original' => $this->getOriginal($assetId),
+            'tooltip_thumbnail_sprite' => $this->getTooltipThumbnailSprite($assetId),
+            'tooltip_thumbnail_track' => $this->getTooltipThumbnailTrack($assetId),
+            'transcription' => $this->getTranscription($assetId),
+            'video' => $this->getVideo($assetId),
             default => null,
         };
     }
