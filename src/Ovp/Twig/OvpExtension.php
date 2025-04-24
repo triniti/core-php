@@ -35,6 +35,6 @@ final class OvpExtension extends AbstractExtension
      */
     public function getUrl($id, string $type): ?string
     {
-        return $this->artifactUrlProvider->getArtifactUrl($type, $id);
+        return $this->artifactUrlProvider->getArtifactUrl($id, $type);
     }
 }
