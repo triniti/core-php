@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Triniti\Ovp;
 
+use Gdbots\Pbj\Message;
+use Gdbots\Pbj\WellKnown\NodeRef;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Triniti\Dam\UrlProvider;
 use Triniti\Schemas\Dam\AssetId;
@@ -82,5 +84,41 @@ class ArtifactUrlProvider
     {
         $pathInfo = pathinfo($this->urlProvider->getUrl($id));
         return $pathInfo['dirname'] . '/' . $pathInfo['filename'];
+    }
+
+    public function getArtifactUrl($id, string $type): ?string
+    {
+        if (empty($id)) {
+            return null;
+        }
+
+        $assetId = null;
+        if ($id instanceof AssetId) {
+            $assetId = $id;
+        } else if ($id instanceof NodeRef) {
+            $assetId = AssetId::fromString($id->getId());
+        } else if ($id instanceof Message) {
+            $assetId = $id->get('_id');
+            if (!$assetId instanceof AssetId) {
+                return null;
+            }
+        } else {
+            try {
+                $assetId = AssetId::fromString((string)$id);
+            } catch (\Throwable $e) {
+                return null;
+            }
+        }
+
+        return match ($type) {
+            'audio' => $this->getAudio($assetId),
+            'manifest' => $this->getManifest($assetId),
+            'original' => $this->getOriginal($assetId),
+            'tooltip_thumbnail_sprite' => $this->getTooltipThumbnailSprite($assetId),
+            'tooltip_thumbnail_track' => $this->getTooltipThumbnailTrack($assetId),
+            'transcription' => $this->getTranscription($assetId),
+            'video' => $this->getVideo($assetId),
+            default => null,
+        };
     }
 }
