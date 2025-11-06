@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
+## v2.8.2
+* Add `Triniti\AppleNews\Style\ConditionalTextStyle`
+
+
 ## v2.8.1
 * Updated `ArtifactUrlProvider` with `getArtifactUrl`.
 
