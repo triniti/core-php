@@ -11,6 +11,9 @@ use Triniti\AppleNews\AppleNewsObject;
  */
 class TextStyle extends AppleNewsObject
 {
+    /** @var ConditionalTextStyle[] */
+    protected $conditional;
+
     /** @var string */
     protected $backgroundColor;
 
@@ -131,6 +134,66 @@ class TextStyle extends AppleNewsObject
         'subscript',
         'baseline',
     ];
+
+    /**
+     * @return ConditionalTextStyle[]
+     */
+    public function getConditional(): array
+    {
+        return $this->conditional;
+    }
+
+    /**
+     * @param ConditionalTextStyle[] $conditionals
+     *
+     * @return static
+     * @throws \Throwable
+     */
+    public function setConditional(?array $conditionals = []): self
+    {
+        $this->conditional = [];
+
+        if (!empty($conditionals)) {
+            foreach ($conditionals as $conditional) {
+                $this->addConditional($conditional);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param ConditionalTextStyle|null $conditional
+     *
+     * @return static
+     * @throws \Throwable
+     */
+    public function addConditional(?ConditionalTextStyle $conditional = null): self
+    {
+        if (null !== $conditional) {
+            $conditional->validate();
+            $this->conditional[] = $conditional;
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param ConditionalTextStyle[] $conditionals
+     *
+     * @return static
+     * @throws \Throwable
+     */
+    public function addConditionals(?array $conditionals = []): self
+    {
+        if (!empty($conditionals)) {
+            foreach ($conditionals as $conditional) {
+                $this->addConditional($conditional);
+            }
+        }
+
+        return $this;
+    }
 
     /**
      * @return string
