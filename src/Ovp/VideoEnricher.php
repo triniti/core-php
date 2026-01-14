@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace Triniti\Ovp;
 
+use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
+use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\DependencyInjection\PbjxEnricher;
 use Gdbots\Pbjx\Event\PbjxEvent;
 use Gdbots\Pbjx\EventSubscriber;
@@ -12,6 +14,7 @@ use Triniti\Schemas\Dam\AssetId;
 
 class VideoEnricher implements EventSubscriber, PbjxEnricher
 {
+    protected Ncr $ncr;
     protected DamUrlProvider $damUrlProvider;
     protected ArtifactUrlProvider $artifactUrlProvider;
 
@@ -22,8 +25,9 @@ class VideoEnricher implements EventSubscriber, PbjxEnricher
         ];
     }
 
-    public function __construct(DamUrlProvider $damUrlProvider, ArtifactUrlProvider $artifactUrlProvider)
+    public function __construct(Ncr $ncr, DamUrlProvider $damUrlProvider, ArtifactUrlProvider $artifactUrlProvider)
     {
+        $this->ncr = $ncr;
         $this->damUrlProvider = $damUrlProvider;
         $this->artifactUrlProvider = $artifactUrlProvider;
     }
@@ -35,15 +39,43 @@ class VideoEnricher implements EventSubscriber, PbjxEnricher
             return;
         }
 
-        if ($pbjxEvent->hasParentEvent()) {
-            $parentEvent = $pbjxEvent->getParentEvent()->getMessage();
-            if (!$parentEvent::schema()->hasMixin('gdbots:pbjx:mixin:event')) {
-                return;
-            }
+        if (!$pbjxEvent->hasParentEvent()) {
+            $this->enrichWithCaptionUrls($node);
+            $this->enrichWithMezzanineUrls($node);
+            return;
+        }
+
+        $parentEvent = $pbjxEvent->getParentEvent()->getMessage();
+        if (!$parentEvent::schema()->hasMixin('gdbots:pbjx:mixin:event')) {
+            return;
         }
 
         $this->enrichWithCaptionUrls($node);
         $this->enrichWithMezzanineUrls($node);
+
+        // Sync is_vertical when mezzanine_ref changes during video update
+        if ($parentEvent->has('old_node') && $parentEvent->has('new_node')) {
+            $oldMezzanineRef = $parentEvent->get('old_node')->fget('mezzanine_ref');
+            $newMezzanineRef = $parentEvent->get('new_node')->fget('mezzanine_ref');
+
+            if ($newMezzanineRef !== null && $newMezzanineRef !== $oldMezzanineRef) {
+                $this->syncIsVerticalFromMezzanine($node, $parentEvent);
+            }
+        }
+    }
+
+    protected function syncIsVerticalFromMezzanine(Message $node, Message $event): void
+    {
+        if (!$node->has('mezzanine_ref') || !$node::schema()->hasField('is_vertical')) {
+            return;
+        }
+
+        $mezzanineRef = $node->get('mezzanine_ref');
+        $videoAsset = $this->ncr->getNode($mezzanineRef, false, ['causator' => $event]);
+
+        if ($videoAsset::schema()->hasField('is_vertical')) {
+            $node->set('is_vertical', $videoAsset->get('is_vertical', false));
+        }
     }
 
     protected function enrichWithCaptionUrls(Message $node): void
