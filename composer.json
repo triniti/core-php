@@ -18,12 +18,12 @@
     "google/apiclient": "^2.15",
     "guzzlehttp/oauth-subscriber": "~0.8",
     "ruflin/elastica": "^7.3",
-    "symfony/asset": "^8.1",
-    "symfony/expression-language": "^8.1",
-    "symfony/monolog-bundle": "^v4.0",
-    "symfony/twig-bundle": "^8.1",
-    "symfony/web-link": "^8.1",
-    "symfony/yaml": "^8.1",
+    "symfony/asset": "^8.0",
+    "symfony/expression-language": "^8.0",
+    "symfony/monolog-bundle": "^3.11 || ^4.0",
+    "symfony/twig-bundle": "^8.0",
+    "symfony/web-link": "^8.0",
+    "symfony/yaml": "^8.0",
     "triniti/schemas": "^3.0"
   },
   "require-dev": {
