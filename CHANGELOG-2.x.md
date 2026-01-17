@@ -2,10 +2,6 @@
 This changelog references the relevant changes done in 2.x versions.
 
 
-## v2.9.0
-* Use latest gdbots packages with php 8.5 and symfony updates.
-
-
 ## v2.8.2
 * Add `Triniti\AppleNews\Style\ConditionalTextStyle`
 
