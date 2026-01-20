@@ -75,8 +75,6 @@ class VideoAggregate extends Aggregate
             $event->addToMap('tags', 'image_asset_ref', $imageRef);
         }
 
-        $event->addToMap('tags', 'is_vertical', $videoAsset->get('is_vertical') ? 'true' : 'false');
-
         $this->copyContext($command, $event);
         $this->recordEvent($event);
     }
@@ -140,10 +138,6 @@ class VideoAggregate extends Aggregate
 
         if ($event->isInMap('tags', 'image_asset_ref')) {
             $this->node->set('image_ref', NodeRef::fromString($event->getFromMap('tags', 'image_asset_ref')));
-        }
-
-        if ($event->isInMap('tags', 'is_vertical') && $this->node::schema()->hasField('is_vertical')) {
-            $this->node->set('is_vertical', $event->getFromMap('tags', 'is_vertical') === 'true');
         }
     }
 

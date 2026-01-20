@@ -64,6 +64,8 @@ class VideoEnricher implements EventSubscriber, PbjxEnricher
         }
     }
 
+    // hasField checks provide backwards compatibility for repos that haven't yet updated
+    // to schema versions containing the is_vertical field.
     protected function syncIsVerticalFromMezzanine(Message $node, Message $event): void
     {
         if (!$node->has('mezzanine_ref') || !$node::schema()->hasField('is_vertical')) {
