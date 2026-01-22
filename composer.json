@@ -20,7 +20,7 @@
     "ruflin/elastica": "^7.3",
     "symfony/asset": "^8.0",
     "symfony/expression-language": "^8.0",
-    "symfony/monolog-bundle": "^v4.0",
+    "symfony/monolog-bundle": "^4.0",
     "symfony/twig-bundle": "^8.0",
     "symfony/web-link": "^8.0",
     "symfony/yaml": "^8.0",
