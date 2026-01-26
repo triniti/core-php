@@ -55,13 +55,6 @@ final class VideoEnricherTest extends TestCase
 
     public function testEnrichSyncsIsVerticalOnMezzanineChange(): void
     {
-        $testVideo = VideoV1::create();
-
-        // Skip test if schema doesn't have is_vertical field yet (backwards compatibility)
-        if (!$testVideo::schema()->hasField('is_vertical')) {
-            $this->markTestSkipped('is_vertical field not yet available in schema');
-        }
-
         $oldVideoAssetId = AssetId::create('video', 'mxf');
         $oldVideoAsset = VideoAssetV1::fromArray([
             '_id' => $oldVideoAssetId,
