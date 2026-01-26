@@ -7,6 +7,7 @@ use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Triniti\AppleNews\AppleNewsApi;
 use Triniti\AppleNews\ArticleDocument;
@@ -52,11 +53,7 @@ class AppleNewsApiTest extends TestCase
         return $method->invokeArgs($object, $parameters);
     }
 
-    /**
-     * @param int $statusCode
-     *
-     * @dataProvider providerTestRequestInvalidStatusCode
-     */
+     #[DataProvider('providerTestRequestInvalidStatusCode')]
     public function testCreateArticleWithExceptionResponse(int $statusCode): void
     {
         $mock = new MockHandler([
@@ -82,11 +79,7 @@ class AppleNewsApiTest extends TestCase
         $this->assertEquals($statusCode, $response['http_code']);
     }
 
-    /**
-     * @param int $statusCode
-     *
-     * @dataProvider providerTestRequestInvalidStatusCode
-     */
+    #[DataProvider('providerTestRequestInvalidStatusCode')]
     public function testUpdateArticleWithExceptionResponse(int $statusCode): void
     {
         $mock = new MockHandler([
@@ -112,11 +105,7 @@ class AppleNewsApiTest extends TestCase
         $this->assertEquals($statusCode, $response['http_code']);
     }
 
-    /**
-     * @param int $statusCode
-     *
-     * @dataProvider providerTestRequestInvalidStatusCode
-     */
+    #[DataProvider('providerTestRequestInvalidStatusCode')]
     public function testDeleteArticleWithExceptionResponse(int $statusCode): void
     {
         $mock = new MockHandler([
@@ -141,11 +130,7 @@ class AppleNewsApiTest extends TestCase
         $this->assertEquals($statusCode, $response['http_code']);
     }
 
-    /**
-     * @param int $statusCode
-     *
-     * @dataProvider providerTestRequestInvalidStatusCode
-     */
+    #[DataProvider('providerTestRequestInvalidStatusCode')]
     public function testCreateArticleNotificationWithExceptionResponse(int $statusCode): void
     {
         $mock = new MockHandler([

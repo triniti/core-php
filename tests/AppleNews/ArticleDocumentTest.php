@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Triniti\Tests\AppleNews;
 
 use Assert\InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Triniti\AppleNews\AdvertisingSettings;
 use Triniti\AppleNews\ArticleDocument;
@@ -60,11 +61,7 @@ class ArticleDocumentTest extends TestCase
         $this->assertSame('foo', $this->articleDocument->getSubtitle());
     }
 
-    /**
-     * @param ArticleDocument $articleDocument
-     *
-     * @dataProvider providerTestMissingGlobalSettings
-     */
+    #[DataProvider('providerTestMissingGlobalSettings')]
     public function testMissingGlobalSettings(ArticleDocument $articleDocument)
     {
         $this->expectException(InvalidArgumentException::class);
