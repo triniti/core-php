@@ -59,23 +59,17 @@ class VideoEnricher implements EventSubscriber, PbjxEnricher
         }
 
         // Sync is_vertical when mezzanine_ref changes
-        $oldMezzanineRef = null;
         if ($pbjxEvent->hasParentEvent()) {
             $parentEvent = $pbjxEvent->getParentEvent()->getMessage();
-            if ($parentEvent->has('old_node')) {
-                $oldMezzanineRef = $parentEvent->get('old_node')->fget('mezzanine_ref');
+            if (
+                $parentEvent->has('old_node')
+                && $node->fget('mezzanine_ref') === $parentEvent->get('old_node')->fget('mezzanine_ref')
+            ) {
+                return;
             }
         }
-        $newMezzanineRef = $node->fget('mezzanine_ref');
-
-        if ($newMezzanineRef !== $oldMezzanineRef) {
-            $mezzanineRef = $node->get('mezzanine_ref');
-            $videoAsset = $this->ncr->getNode($mezzanineRef, false, ['causator' => $pbjxEvent]);
-
-            if ($videoAsset::schema()->hasField('is_vertical')) {
-                $node->set('is_vertical', $videoAsset->get('is_vertical'));
-            }
-        }
+        $videoAsset = $this->ncr->getNode($node->get('mezzanine_ref'), false, ['causator' => $pbjxEvent]);
+        $node->set('is_vertical', $videoAsset->get('is_vertical'));
     }
 
     protected function enrichWithCaptionUrls(Message $node): void
