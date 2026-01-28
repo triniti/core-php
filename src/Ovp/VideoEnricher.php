@@ -70,7 +70,7 @@ class VideoEnricher implements EventSubscriber, PbjxEnricher
 
         if ($newMezzanineRef !== $oldMezzanineRef) {
             $mezzanineRef = $node->get('mezzanine_ref');
-            $videoAsset = $this->ncr->getNode($mezzanineRef, false, ['causator' => $node]);
+            $videoAsset = $this->ncr->getNode($mezzanineRef, false, ['causator' => $pbjxEvent]);
 
             if ($videoAsset::schema()->hasField('is_vertical')) {
                 $node->set('is_vertical', $videoAsset->get('is_vertical'));
