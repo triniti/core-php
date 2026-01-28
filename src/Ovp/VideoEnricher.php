@@ -5,7 +5,6 @@ namespace Triniti\Ovp;
 
 use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
-use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\DependencyInjection\PbjxEnricher;
 use Gdbots\Pbjx\Event\PbjxEvent;
 use Gdbots\Pbjx\EventSubscriber;
@@ -39,44 +38,44 @@ class VideoEnricher implements EventSubscriber, PbjxEnricher
             return;
         }
 
-        if (!$pbjxEvent->hasParentEvent()) {
-            $this->enrichWithCaptionUrls($node);
-            $this->enrichWithMezzanineUrls($node);
-            return;
-        }
-
-        $parentEvent = $pbjxEvent->getParentEvent()->getMessage();
-        if (!$parentEvent::schema()->hasMixin('gdbots:pbjx:mixin:event')) {
-            return;
+        if ($pbjxEvent->hasParentEvent()) {
+            $parentEvent = $pbjxEvent->getParentEvent()->getMessage();
+            if (!$parentEvent::schema()->hasMixin('gdbots:pbjx:mixin:event')) {
+                return;
+            }
         }
 
         $this->enrichWithCaptionUrls($node);
         $this->enrichWithMezzanineUrls($node);
-
-        // Sync is_vertical when mezzanine_ref changes during video update
-        if ($parentEvent->has('old_node') && $parentEvent->has('new_node')) {
-            $oldMezzanineRef = $parentEvent->get('old_node')->fget('mezzanine_ref');
-            $newMezzanineRef = $parentEvent->get('new_node')->fget('mezzanine_ref');
-
-            if ($newMezzanineRef !== null && $newMezzanineRef !== $oldMezzanineRef) {
-                $this->syncIsVerticalFromMezzanine($node, $parentEvent);
-            }
-        }
+        $this->enrichWithIsVertical($pbjxEvent);
     }
 
-    // hasField checks provide backwards compatibility for repos that haven't yet updated
-    // to schema versions containing the is_vertical field.
-    protected function syncIsVerticalFromMezzanine(Message $node, Message $event): void
+    protected function enrichWithIsVertical(PbjxEvent $pbjxEvent): void
     {
-        if (!$node->has('mezzanine_ref') || !$node::schema()->hasField('is_vertical')) {
+        if (!$pbjxEvent->hasParentEvent()) {
             return;
         }
 
-        $mezzanineRef = $node->get('mezzanine_ref');
-        $videoAsset = $this->ncr->getNode($mezzanineRef, false, ['causator' => $event]);
+        $parentEvent = $pbjxEvent->getParentEvent()->getMessage();
+        $node = $pbjxEvent->getMessage();
 
-        if ($videoAsset::schema()->hasField('is_vertical')) {
-            $node->set('is_vertical', $videoAsset->get('is_vertical', false));
+        // Sync is_vertical when mezzanine_ref changes
+        $oldMezzanineRef = $parentEvent->has('old_node')
+            ? $parentEvent->get('old_node')->fget('mezzanine_ref')
+            : null;
+        $newMezzanineRef = $node->fget('mezzanine_ref');
+
+        if ($newMezzanineRef !== null && $newMezzanineRef !== $oldMezzanineRef) {
+            if (!$node::schema()->hasField('is_vertical')) { // backwards compat
+                return;
+            }
+
+            $mezzanineRef = $node->get('mezzanine_ref');
+            $videoAsset = $this->ncr->getNode($mezzanineRef, false, ['causator' => $parentEvent]);
+
+            if ($videoAsset::schema()->hasField('is_vertical')) { // backwards compat
+                $node->set('is_vertical', $videoAsset->get('is_vertical', false));
+            }
         }
     }
 
