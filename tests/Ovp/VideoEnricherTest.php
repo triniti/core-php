@@ -28,6 +28,8 @@ final class VideoEnricherTest extends TestCase
     {
         $videoAssetId = AssetId::create('video', 'mxf');
         $videoAsset = VideoAssetV1::fromArray(['_id' => $videoAssetId]);
+        $this->ncr->putNode($videoAsset);
+
         $documentAssetId = AssetId::create('document', 'vtt');
         $documentAsset = DocumentAssetV1::fromArray(['_id' => $documentAssetId]);
         $oldNode = VideoV1::create();
