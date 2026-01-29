@@ -68,7 +68,13 @@ class VideoEnricher implements EventSubscriber, PbjxEnricher
                 return;
             }
         }
-        $videoAsset = $this->ncr->getNode($node->get('mezzanine_ref'), false, ['causator' => $pbjxEvent]);
+
+        $mezzanineRef = $node->get('mezzanine_ref');
+        if (!$this->ncr->hasNode($mezzanineRef, false, ['causator' => $pbjxEvent])) {
+            return;
+        }
+
+        $videoAsset = $this->ncr->getNode($mezzanineRef, false, ['causator' => $pbjxEvent]);
         $node->set('is_vertical', $videoAsset->get('is_vertical'));
     }
 
