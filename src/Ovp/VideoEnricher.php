@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Triniti\Ovp;
 
 use Gdbots\Ncr\Ncr;
+use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbjx\DependencyInjection\PbjxEnricher;
 use Gdbots\Pbjx\Event\PbjxEvent;
@@ -69,12 +70,20 @@ class VideoEnricher implements EventSubscriber, PbjxEnricher
             }
         }
 
-        $mezzanineRef = $node->get('mezzanine_ref');
-        if (!$this->ncr->hasNode($mezzanineRef, false, ['causator' => $pbjxEvent])) {
-            return;
+        try {
+            $videoAsset = $this->ncr->getNode($node->get('mezzanine_ref'), false, ['causator' => $pbjxEvent]);
+        } catch (NodeNotFound $e) {
+            // During create, asset may not be in NCR, yet is_vertical was already
+            // set from ingest. For any other scenario, rethrow.
+            if ($pbjxEvent->hasParentEvent()) {
+                $parentEvent = $pbjxEvent->getParentEvent()->getMessage();
+                if ($parentEvent::schema()->hasMixin('gdbots:ncr:mixin:node-created')) {
+                    return;
+                }
+            }
+            throw $e;
         }
 
-        $videoAsset = $this->ncr->getNode($mezzanineRef, false, ['causator' => $pbjxEvent]);
         $node->set('is_vertical', $videoAsset->get('is_vertical'));
     }
 
