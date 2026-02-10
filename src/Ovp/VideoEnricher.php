@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Triniti\Ovp;
 
+use Gdbots\Ncr\Ncr;
+use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbjx\DependencyInjection\PbjxEnricher;
 use Gdbots\Pbjx\Event\PbjxEvent;
@@ -12,6 +14,7 @@ use Triniti\Schemas\Dam\AssetId;
 
 class VideoEnricher implements EventSubscriber, PbjxEnricher
 {
+    protected Ncr $ncr;
     protected DamUrlProvider $damUrlProvider;
     protected ArtifactUrlProvider $artifactUrlProvider;
 
@@ -22,8 +25,9 @@ class VideoEnricher implements EventSubscriber, PbjxEnricher
         ];
     }
 
-    public function __construct(DamUrlProvider $damUrlProvider, ArtifactUrlProvider $artifactUrlProvider)
+    public function __construct(Ncr $ncr, DamUrlProvider $damUrlProvider, ArtifactUrlProvider $artifactUrlProvider)
     {
+        $this->ncr = $ncr;
         $this->damUrlProvider = $damUrlProvider;
         $this->artifactUrlProvider = $artifactUrlProvider;
     }
@@ -44,6 +48,43 @@ class VideoEnricher implements EventSubscriber, PbjxEnricher
 
         $this->enrichWithCaptionUrls($node);
         $this->enrichWithMezzanineUrls($node);
+        $this->enrichWithIsVertical($pbjxEvent);
+    }
+
+    protected function enrichWithIsVertical(PbjxEvent $pbjxEvent): void
+    {
+        $node = $pbjxEvent->getMessage();
+
+        if (!$node::schema()->hasField('is_vertical') || !$node->has('mezzanine_ref')) {
+            return;
+        }
+
+        // Sync is_vertical when mezzanine_ref changes
+        if ($pbjxEvent->hasParentEvent()) {
+            $parentEvent = $pbjxEvent->getParentEvent()->getMessage();
+            if (
+                $parentEvent->has('old_node')
+                && $node->fget('mezzanine_ref') === $parentEvent->get('old_node')->fget('mezzanine_ref')
+            ) {
+                return;
+            }
+        }
+
+        try {
+            $videoAsset = $this->ncr->getNode($node->get('mezzanine_ref'), false, ['causator' => $pbjxEvent]);
+        } catch (NodeNotFound $e) {
+            // During create, asset may not be in NCR, yet is_vertical was already
+            // set from ingest. For any other scenario, rethrow.
+            if ($pbjxEvent->hasParentEvent()) {
+                $parentEvent = $pbjxEvent->getParentEvent()->getMessage();
+                if ($parentEvent::schema()->hasMixin('gdbots:ncr:mixin:node-created')) {
+                    return;
+                }
+            }
+            throw $e;
+        }
+
+        $node->set('is_vertical', $videoAsset->get('is_vertical'));
     }
 
     protected function enrichWithCaptionUrls(Message $node): void

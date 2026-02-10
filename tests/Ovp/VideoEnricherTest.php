@@ -5,6 +5,7 @@ namespace Triniti\Tests\Ovp;
 
 use Acme\Schemas\Dam\Node\DocumentAssetV1;
 use Acme\Schemas\Dam\Node\VideoAssetV1;
+use Acme\Schemas\Ovp\Event\VideoUpdatedV1;
 use Acme\Schemas\Ovp\Node\VideoV1;
 use Gdbots\Pbjx\Event\PbjxEvent;
 use PHPUnit\Framework\TestCase;
@@ -12,13 +13,23 @@ use Triniti\Dam\UrlProvider as DamUrlProvider;
 use Triniti\Ovp\ArtifactUrlProvider;
 use Triniti\Ovp\VideoEnricher;
 use Triniti\Schemas\Dam\AssetId;
+use Triniti\Tests\MockNcr;
 
 final class VideoEnricherTest extends TestCase
 {
+    private MockNcr $ncr;
+
+    protected function setUp(): void
+    {
+        $this->ncr = new MockNcr();
+    }
+
     public function testEnrich(): void
     {
         $videoAssetId = AssetId::create('video', 'mxf');
         $videoAsset = VideoAssetV1::fromArray(['_id' => $videoAssetId]);
+        $this->ncr->putNode($videoAsset);
+
         $documentAssetId = AssetId::create('document', 'vtt');
         $documentAsset = DocumentAssetV1::fromArray(['_id' => $documentAssetId]);
         $oldNode = VideoV1::create();
@@ -29,7 +40,7 @@ final class VideoEnricherTest extends TestCase
 
         $damUrlProvider = DamUrlProvider::getInstance();
         $artifactUrlProvider = ArtifactUrlProvider::getInstance();
-        (new VideoEnricher($damUrlProvider, $artifactUrlProvider))->enrich($pbjxEvent);
+        (new VideoEnricher($this->ncr, $damUrlProvider, $artifactUrlProvider))->enrich($pbjxEvent);
 
         $actual = $newNode->get('mezzanine_url');
         $expected = $artifactUrlProvider->getManifest($videoAssetId);
@@ -42,5 +53,41 @@ final class VideoEnricherTest extends TestCase
         $actual = $newNode->getFromMap('caption_urls', 'en');
         $expected = $damUrlProvider->getUrl($documentAssetId);
         $this->assertSame($actual, $expected);
+    }
+
+    public function testEnrichSyncsIsVerticalOnMezzanineChange(): void
+    {
+        $oldVideoAssetId = AssetId::create('video', 'mxf');
+        $oldVideoAsset = VideoAssetV1::fromArray([
+            '_id' => $oldVideoAssetId,
+            'is_vertical' => false,
+        ]);
+        $this->ncr->putNode($oldVideoAsset);
+
+        $newVideoAssetId = AssetId::create('video', 'mov');
+        $newVideoAsset = VideoAssetV1::fromArray([
+            '_id' => $newVideoAssetId,
+            'is_vertical' => true,
+        ]);
+        $this->ncr->putNode($newVideoAsset);
+
+        $oldNode = VideoV1::create()
+            ->set('mezzanine_ref', $oldVideoAsset->generateNodeRef())
+            ->set('is_vertical', false);
+
+        $newNode = (clone $oldNode)
+            ->set('mezzanine_ref', $newVideoAsset->generateNodeRef());
+
+        $event = VideoUpdatedV1::create()
+            ->set('node_ref', $oldNode->generateNodeRef())
+            ->set('old_node', $oldNode)
+            ->set('new_node', $newNode);
+        $pbjxEvent = (new PbjxEvent($event))->createChildEvent($newNode);
+
+        $damUrlProvider = DamUrlProvider::getInstance();
+        $artifactUrlProvider = ArtifactUrlProvider::getInstance();
+        (new VideoEnricher($this->ncr, $damUrlProvider, $artifactUrlProvider))->enrich($pbjxEvent);
+
+        $this->assertTrue($newNode->get('is_vertical'), 'Video should have is_vertical=true synced from new video asset');
     }
 }
