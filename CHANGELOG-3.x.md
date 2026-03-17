@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 3.x versions.
 
 
+## v3.1.0
+* Retry OVP transcoding and transcription PROCESSING status updates when target video asset isn't readable yet in NCR.
+
+
 ## v3.0.1
 * Sync `is_vertical` from video asset to video in `VideoEnricher` when mezzanine changes.
 
