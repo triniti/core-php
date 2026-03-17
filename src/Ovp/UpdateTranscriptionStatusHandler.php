@@ -45,6 +45,27 @@ class UpdateTranscriptionStatusHandler implements CommandHandler
         /** @var NodeRef $videoAssetRef */
         $videoAssetRef = $command->get('node_ref');
         $context = ['causator' => $command];
+
+        if (TranscriptionStatus::PROCESSING->value === $command->fget('transcription_status')) {
+            if (!$this->ncr->hasNode($videoAssetRef, true, $context)) {
+                $retries = $command->get('ctx_retries');
+                if ($retries >= 3) {
+                    return;
+                }
+
+                $retryCommand = clone $command;
+                $retryCommand->set('ctx_retries', $retries + 1);
+                $pbjx->copyContext($command, $retryCommand);
+                $pbjx->sendAt(
+                    $retryCommand,
+                    strtotime('+5 seconds'),
+                    "{$videoAssetRef}.update-transcription-status-processing",
+                    $context
+                );
+                return;
+            }
+        }
+
         $videoAsset = $this->ncr->getNode($videoAssetRef, true, $context);
 
         /** @var VideoAssetAggregate $aggregate */
