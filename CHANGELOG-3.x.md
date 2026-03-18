@@ -3,7 +3,7 @@ This changelog references the relevant changes done in 3.x versions.
 
 
 ## v3.1.0
-* Retry OVP transcoding and transcription PROCESSING status updates when target video asset isn't readable yet in NCR.
+* Retry OVP transcoding PROCESSING updates when video asset is not yet readable in NCR and defer transcription COMPLETED updates until the derived document asset is available.
 
 
 ## v3.0.1
