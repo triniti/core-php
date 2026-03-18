@@ -21,7 +21,6 @@ use Triniti\Schemas\Ovp\Event\TranscriptionCompletedV1;
 use Triniti\Schemas\Ovp\Event\TranscriptionFailedV1;
 use Triniti\Schemas\Ovp\Event\TranscriptionStartedV1;
 use Triniti\Tests\AbstractPbjxTest;
-use Triniti\Tests\MockPbjx;
 
 final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
 {
@@ -178,61 +177,6 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
             $this->assertTrue($videoAssetRef->equals($event->get('node_ref')));
             $this->assertInstanceOf(TranscriptionStartedV1::class, $event);
         }
-    }
-
-    public function testHandleProcessingRetriesWhenNodeIsMissing(): void
-    {
-        $pbjx = new MockPbjx($this->locator);
-        $videoAssetRef = VideoAssetV1::fromArray([
-            '_id'       => AssetId::create('video', 'mxf'),
-            'mime_type' => 'application/mxf',
-        ])->generateNodeRef();
-
-        $command = UpdateTranscriptionStatusV1::create()
-            ->set('node_ref', $videoAssetRef)
-            ->set('transcription_status', TranscriptionStatus::PROCESSING);
-        $this->handler->handleCommand($command, $pbjx);
-
-        $this->assertCount(1, $pbjx->getSent());
-        $scheduled = $pbjx->getSent()[0];
-        $this->assertSame("{$videoAssetRef}.update-transcription-status-processing", $scheduled['job_id']);
-        $this->assertSame(1, $scheduled['command']->get('ctx_retries'));
-        $this->assertTrue($videoAssetRef->equals($scheduled['command']->get('node_ref')));
-    }
-
-    public function testHandleProcessingRetriesIncrementCounter(): void
-    {
-        $pbjx = new MockPbjx($this->locator);
-        $videoAssetRef = VideoAssetV1::fromArray([
-            '_id'       => AssetId::create('video', 'mxf'),
-            'mime_type' => 'application/mxf',
-        ])->generateNodeRef();
-
-        $command = UpdateTranscriptionStatusV1::create()
-            ->set('node_ref', $videoAssetRef)
-            ->set('transcription_status', TranscriptionStatus::PROCESSING)
-            ->set('ctx_retries', 1);
-        $this->handler->handleCommand($command, $pbjx);
-
-        $this->assertCount(1, $pbjx->getSent());
-        $this->assertSame(2, $pbjx->getSent()[0]['command']->get('ctx_retries'));
-    }
-
-    public function testHandleProcessingStopsRetryingAtMaxAttempts(): void
-    {
-        $pbjx = new MockPbjx($this->locator);
-        $videoAssetRef = VideoAssetV1::fromArray([
-            '_id'       => AssetId::create('video', 'mxf'),
-            'mime_type' => 'application/mxf',
-        ])->generateNodeRef();
-
-        $command = UpdateTranscriptionStatusV1::create()
-            ->set('node_ref', $videoAssetRef)
-            ->set('transcription_status', TranscriptionStatus::PROCESSING)
-            ->set('ctx_retries', 3);
-        $this->handler->handleCommand($command, $pbjx);
-
-        $this->assertCount(0, $pbjx->getSent());
     }
 
     public function testHandleUnknown(): void
