@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Triniti\Ovp;
 
 use Gdbots\Ncr\AggregateResolver;
+use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\Util\StringUtil;
@@ -48,6 +49,39 @@ class UpdateTranscriptionStatusHandler implements CommandHandler
 
         $videoAsset = $this->ncr->getNode($videoAssetRef, true, $context);
 
+        $documentAsset = null;
+        $documentRef = null;
+
+        if (TranscriptionStatus::COMPLETED->value === $command->fget('transcription_status')) {
+            /** @var AssetId $videoAssetId */
+            $videoAssetId = $videoAsset->get('_id');
+            $documentRef = NodeRef::fromString(sprintf(
+                '%s:document-asset:document_vtt_%s_%s',
+                $videoAssetRef->getVendor(),
+                $videoAssetId->getDate(),
+                $videoAssetId->getUuid()
+            ));
+
+            try {
+                $documentAsset = $this->ncr->getNode($documentRef, true, $context);
+            } catch (NodeNotFound $nf) {
+                if ($command->get('ctx_retries') >= 3) {
+                    $documentAsset = null;
+                } else {
+                    $retryCommand = clone $command;
+                    $retryCommand->set('ctx_retries', $command->get('ctx_retries') + 1);
+                    $pbjx->copyContext($command, $retryCommand);
+                    $pbjx->sendAt(
+                        $retryCommand,
+                        strtotime('+5 seconds'),
+                        "{$videoAssetRef}.update-transcription-status-completed",
+                        $context
+                    );
+                    return;
+                }
+            }
+        }
+
         /** @var VideoAssetAggregate $aggregate */
         $aggregate = AggregateResolver::resolve($videoAssetRef->getQName())::fromNode($videoAsset, $pbjx);
         $aggregate->sync($context);
@@ -60,19 +94,7 @@ class UpdateTranscriptionStatusHandler implements CommandHandler
             return;
         }
 
-        /** @var AssetId $videoAssetId */
-        $videoAssetId = $videoAsset->get('_id');
-        $documentRef = NodeRef::fromString(sprintf(
-            '%s:document-asset:document_vtt_%s_%s',
-            $videoAssetRef->getVendor(),
-            $videoAssetId->getDate(),
-            $videoAssetId->getUuid()
-        ));
-
-        /** @var NodeRef[] $linkedRefs */
-        $linkedRefs = array_merge($videoAsset->get('linked_refs', []), [$documentRef]);
-
-        foreach ($linkedRefs as $linkedRef) {
+        foreach ($videoAsset->get('linked_refs', []) as $linkedRef) {
             $method = 'update' . StringUtil::toCamelFromSlug($linkedRef->getLabel());
             if (!method_exists($this, $method)) {
                 continue;
@@ -80,6 +102,10 @@ class UpdateTranscriptionStatusHandler implements CommandHandler
 
             $node = $this->ncr->getNode($linkedRef, true, $context);
             $this->$method($node, $videoAsset, $command, $pbjx);
+        }
+
+        if (null !== $documentAsset) {
+            $this->updateDocumentAsset($documentAsset, $videoAsset, $command, $pbjx);
         }
     }
 
