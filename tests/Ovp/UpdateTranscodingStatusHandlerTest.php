@@ -8,6 +8,7 @@ use Acme\Schemas\Dam\Node\ImageAssetV1;
 use Acme\Schemas\Dam\Node\VideoAssetV1;
 use Acme\Schemas\Ovp\Node\VideoV1;
 use Gdbots\Ncr\AggregateResolver;
+use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Ncr\Repository\InMemoryNcr;
 use Gdbots\Schemas\Pbjx\StreamId;
 use Triniti\Dam\VideoAssetAggregate;
@@ -224,7 +225,7 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
         $this->assertSame(2, $pbjx->getSent()[0]['command']->get('ctx_retries'));
     }
 
-    public function testHandleProcessingStopsRetryingAtMaxAttempts(): void
+    public function testHandleProcessingRethrowsAtMaxAttempts(): void
     {
         $pbjx = new MockPbjx($this->locator);
         $videoAssetRef = VideoAssetV1::fromArray([
@@ -236,9 +237,8 @@ final class UpdateTranscodingStatusHandlerTest extends AbstractPbjxTest
             ->set('node_ref', $videoAssetRef)
             ->set('transcoding_status', TranscodingStatus::PROCESSING)
             ->set('ctx_retries', 3);
+        $this->expectException(NodeNotFound::class);
         $this->handler->handleCommand($command, $pbjx);
-
-        $this->assertCount(0, $pbjx->getSent());
     }
 
     public function testHandleUnknown(): void

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Triniti\Ovp;
 
 use Gdbots\Ncr\AggregateResolver;
+use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbj\Util\StringUtil;
@@ -42,28 +43,27 @@ class UpdateTranscodingStatusHandler implements CommandHandler
         /** @var NodeRef $videoAssetRef */
         $videoAssetRef = $command->get('node_ref');
         $context = ['causator' => $command];
-
-        if (TranscodingStatus::PROCESSING->value === $command->fget('transcoding_status')) {
-            if (!$this->ncr->hasNode($videoAssetRef, true, $context)) {
-                $retries = $command->get('ctx_retries');
-                if ($retries >= 3) {
-                    return;
-                }
-
-                $retryCommand = clone $command;
-                $retryCommand->set('ctx_retries', $retries + 1);
-                $pbjx->copyContext($command, $retryCommand);
-                $pbjx->sendAt(
-                    $retryCommand,
-                    strtotime('+5 seconds'),
-                    "{$videoAssetRef}.update-transcoding-status-processing",
-                    $context
-                );
-                return;
+        try {
+            $videoAsset = $this->ncr->getNode($videoAssetRef, true, $context);
+        } catch (NodeNotFound $nf) {
+            if (
+                TranscodingStatus::PROCESSING->value !== $command->fget('transcoding_status')
+                || $command->get('ctx_retries') >= 3
+            ) {
+                throw $nf;
             }
-        }
 
-        $videoAsset = $this->ncr->getNode($videoAssetRef, true, $context);
+            $retryCommand = clone $command;
+            $retryCommand->set('ctx_retries', $command->get('ctx_retries') + 1);
+            $pbjx->copyContext($command, $retryCommand);
+            $pbjx->sendAt(
+                $retryCommand,
+                strtotime('+5 seconds'),
+                "{$videoAssetRef}.update-transcoding-status-processing",
+                $context
+            );
+            return;
+        }
 
         /** @var VideoAssetAggregate $aggregate */
         $aggregate = AggregateResolver::resolve($videoAssetRef->getQName())::fromNode($videoAsset, $pbjx);
