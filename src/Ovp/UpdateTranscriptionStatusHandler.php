@@ -7,7 +7,6 @@ use Gdbots\Ncr\AggregateResolver;
 use Gdbots\Ncr\Exception\NodeNotFound;
 use Gdbots\Ncr\Ncr;
 use Gdbots\Pbj\Message;
-use Gdbots\Pbj\Util\StringUtil;
 use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Pbjx;
@@ -61,9 +60,7 @@ class UpdateTranscriptionStatusHandler implements CommandHandler
             try {
                 $documentAsset = $this->ncr->getNode($documentRef, true, $context);
             } catch (NodeNotFound) {
-                if ($command->get('ctx_retries') >= 3) {
-                    $documentAsset = null;
-                } else {
+                if ($command->get('ctx_retries') < 3) {
                     $retryCommand = clone $command;
                     $retryCommand->set('ctx_retries', $command->get('ctx_retries') + 1);
                     $pbjx->copyContext($command, $retryCommand);
@@ -92,14 +89,17 @@ class UpdateTranscriptionStatusHandler implements CommandHandler
             return;
         }
 
+        $videoRef = null;
         foreach ($videoAsset->get('linked_refs', []) as $linkedRef) {
-            $method = 'update' . StringUtil::toCamelFromSlug($linkedRef->getLabel());
-            if (!method_exists($this, $method)) {
-                continue;
+            if ('video' === $linkedRef->getLabel()) {
+                $videoRef = $linkedRef;
+                break;
             }
+        }
 
-            $node = $this->ncr->getNode($linkedRef, true, $context);
-            $this->$method($node, $videoAsset, $command, $pbjx);
+        if (null !== $videoRef) {
+            $video = $this->ncr->getNode($videoRef, true, $context);
+            $this->updateVideo($video, $videoAsset, $command, $pbjx);
         }
 
         if (null !== $documentAsset) {
