@@ -46,15 +46,11 @@ class UpdateTranscriptionStatusHandler implements CommandHandler
         /** @var NodeRef $videoAssetRef */
         $videoAssetRef = $command->get('node_ref');
         $context = ['causator' => $command];
-
-        $videoAsset = $this->ncr->getNode($videoAssetRef, true, $context);
-
         $documentAsset = null;
-        $documentRef = null;
 
         if (TranscriptionStatus::COMPLETED->value === $command->fget('transcription_status')) {
             /** @var AssetId $videoAssetId */
-            $videoAssetId = $videoAsset->get('_id');
+            $videoAssetId = AssetId::fromString($videoAssetRef->getId());
             $documentRef = NodeRef::fromString(sprintf(
                 '%s:document-asset:document_vtt_%s_%s',
                 $videoAssetRef->getVendor(),
@@ -64,7 +60,7 @@ class UpdateTranscriptionStatusHandler implements CommandHandler
 
             try {
                 $documentAsset = $this->ncr->getNode($documentRef, true, $context);
-            } catch (NodeNotFound $nf) {
+            } catch (NodeNotFound) {
                 if ($command->get('ctx_retries') >= 3) {
                     $documentAsset = null;
                 } else {
@@ -81,6 +77,8 @@ class UpdateTranscriptionStatusHandler implements CommandHandler
                 }
             }
         }
+
+        $videoAsset = $this->ncr->getNode($videoAssetRef, true, $context);
 
         /** @var VideoAssetAggregate $aggregate */
         $aggregate = AggregateResolver::resolve($videoAssetRef->getQName())::fromNode($videoAsset, $pbjx);
