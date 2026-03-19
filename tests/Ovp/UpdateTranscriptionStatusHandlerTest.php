@@ -328,6 +328,26 @@ final class UpdateTranscriptionStatusHandlerTest extends AbstractPbjxTest
         }
     }
 
+    public function testHandleProcessingDoesNotRetryWhenVideoAssetIsMissing(): void
+    {
+        $pbjx = new MockPbjx($this->locator);
+        $videoAssetRef = VideoAssetV1::fromArray([
+            '_id'       => AssetId::create('video', 'mxf'),
+            'mime_type' => 'application/mxf',
+        ])->generateNodeRef();
+
+        $command = UpdateTranscriptionStatusV1::create()
+            ->set('node_ref', $videoAssetRef)
+            ->set('transcription_status', TranscriptionStatus::PROCESSING);
+
+        try {
+            $this->handler->handleCommand($command, $pbjx);
+            $this->fail('Expected NodeNotFound for missing video asset.');
+        } catch (NodeNotFound) {
+            $this->assertCount(0, $pbjx->getSent());
+        }
+    }
+
     public function testHandleUnknown(): void
     {
         $videoAsset = VideoAssetV1::fromArray([
