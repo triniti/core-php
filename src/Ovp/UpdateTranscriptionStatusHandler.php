@@ -89,13 +89,10 @@ class UpdateTranscriptionStatusHandler implements CommandHandler
             return;
         }
 
-        $videoRef = null;
-        foreach ($videoAsset->get('linked_refs', []) as $linkedRef) {
-            if ('video' === $linkedRef->getLabel()) {
-                $videoRef = $linkedRef;
-                break;
-            }
-        }
+        $videoRef = array_find(
+            $videoAsset->get('linked_refs', []),
+            fn (NodeRef $ref): bool => 'video' === $ref->getLabel()
+        );
 
         if (null !== $videoRef) {
             $video = $this->ncr->getNode($videoRef, true, $context);
