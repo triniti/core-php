@@ -62,6 +62,8 @@ class MockPbjx implements Pbjx
         $this->sent[] = [
             'command'   => $command,
             'timestamp' => $timestamp,
+            'job_id'    => $jobId,
+            'context'   => $context,
         ];
         return $jobId ?: 'jobid';
     }
