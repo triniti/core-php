@@ -12,7 +12,7 @@ use Triniti\AppleNews\AppleNewsObject;
 class TextStyle extends AppleNewsObject
 {
     /** @var ConditionalTextStyle[] */
-    protected $conditionals;
+    protected $conditional;
 
     /** @var string */
     protected $backgroundColor;
@@ -140,7 +140,7 @@ class TextStyle extends AppleNewsObject
      */
     public function getConditionals(): array
     {
-        return $this->conditionals;
+        return $this->conditional;
     }
 
     /**
@@ -151,7 +151,7 @@ class TextStyle extends AppleNewsObject
      */
     public function setConditionals(?array $newConditionals = []): self
     {
-        $this->conditionals = [];
+        $this->conditional = [];
 
         if (!empty($newConditionals)) {
             foreach ($newConditionals as $conditional) {
@@ -172,7 +172,7 @@ class TextStyle extends AppleNewsObject
     {
         if (null !== $conditional) {
             $conditional->validate();
-            $this->conditionals[] = $conditional;
+            $this->conditional[] = $conditional;
         }
 
         return $this;

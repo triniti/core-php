@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 3.x versions.
 
 
+## vN.N.N
+* Fix conditionals in TextSyles for Apple News
+
+
 ## v3.1.0
 * Retry OVP transcoding PROCESSING updates when video asset is not yet readable in NCR and defer transcription COMPLETED updates until the derived document asset is available.
 
