@@ -2,7 +2,7 @@
 This changelog references the relevant changes done in 3.x versions.
 
 
-## vN.N.N
+## v3.2.0
 * Fix conditionals in TextSyles for Apple News
 
 
