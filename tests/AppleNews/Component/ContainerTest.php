@@ -98,8 +98,8 @@ class ContainerTest extends TestCase
 
     public function testGetSetAllowAutoplacedAds(): void
     {
-        $this->assertTrue($this->container->getAllowAutoplacedAds());
-
+        $this->assertNull($this->container->getAllowAutoplacedAds());
+        
         $this->container->setAllowAutoplacedAds(false);
         $this->assertFalse($this->container->getAllowAutoplacedAds());
 
