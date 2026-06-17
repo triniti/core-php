@@ -34,38 +34,14 @@ class SectionTest extends TestCase
         $this->assertNull($this->section->getScene());
     }
 
-    public function testGetSetAllowAutoplacedAds(): void
-    {
-        $this->assertTrue($this->section->getAllowAutoplacedAds());
-
-        $this->section->setAllowAutoplacedAds(false);
-        $this->assertFalse($this->section->getAllowAutoplacedAds());
-
-        $this->section->setAllowAutoplacedAds(true);
-        $this->assertTrue($this->section->getAllowAutoplacedAds());
-    }
-
     public function testJsonSerialize(): void
     {
         $expected = [
-            'role'               => 'section',
-            'allowAutoplacedAds' => true,
-            'scene'              => new ParallaxScaleHeader(),
+            'role'  => 'section',
+            'scene' => new ParallaxScaleHeader(),
         ];
 
         $this->section->setScene(new ParallaxScaleHeader());
-
-        $this->assertJsonStringEqualsJsonString(json_encode($expected), json_encode($this->section));
-    }
-
-    public function testJsonSerializeWithAllowAutoplacedAdsDisabled(): void
-    {
-        $expected = [
-            'role'               => 'section',
-            'allowAutoplacedAds' => false,
-        ];
-
-        $this->section->setAllowAutoplacedAds(false);
 
         $this->assertJsonStringEqualsJsonString(json_encode($expected), json_encode($this->section));
     }

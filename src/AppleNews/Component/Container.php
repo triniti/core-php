@@ -21,6 +21,9 @@ class Container extends Component
     /** @var CollectionDisplay|HorizontalStackDisplay */
     protected $contentDisplay;
 
+    /** @var bool */
+    protected $allowAutoplacedAds;
+
     /**
      * @return ComponentLink[]
      */
@@ -155,6 +158,25 @@ class Container extends Component
         }
 
         $this->contentDisplay = $display;
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getAllowAutoplacedAds(): bool
+    {
+        return $this->allowAutoplacedAds;
+    }
+
+    /**
+     * @param bool $allowAutoplacedAds
+     *
+     * @return static
+     */
+    public function setAllowAutoplacedAds(bool $allowAutoplacedAds = true): self
+    {
+        $this->allowAutoplacedAds = $allowAutoplacedAds;
         return $this;
     }
 

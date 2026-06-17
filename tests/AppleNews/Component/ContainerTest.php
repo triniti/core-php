@@ -96,6 +96,17 @@ class ContainerTest extends TestCase
         $this->assertNull($this->container->getContentDisplay());
     }
 
+    public function testGetSetAllowAutoplacedAds(): void
+    {
+        $this->assertTrue($this->container->getAllowAutoplacedAds());
+
+        $this->container->setAllowAutoplacedAds(false);
+        $this->assertFalse($this->container->getAllowAutoplacedAds());
+
+        $this->container->setAllowAutoplacedAds(true);
+        $this->assertTrue($this->container->getAllowAutoplacedAds());
+    }
+
     public function testJsonSerialize(): void
     {
         $link = new ComponentLink();
@@ -115,6 +126,18 @@ class ContainerTest extends TestCase
             ->setContentDisplay(new CollectionDisplay())
             ->setAdditions([$link])
             ->setComponents([$component]);
+
+        $this->assertJsonStringEqualsJsonString(json_encode($expected), json_encode($this->container));
+    }
+
+    public function testJsonSerializeWithAllowAutoplacedAdsDisabled(): void
+    {
+        $expected = [
+            'role'               => 'container',
+            'allowAutoplacedAds' => false,
+        ];
+
+        $this->container->setAllowAutoplacedAds(false);
 
         $this->assertJsonStringEqualsJsonString(json_encode($expected), json_encode($this->container));
     }

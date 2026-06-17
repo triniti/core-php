@@ -13,9 +13,6 @@ class Section extends Container
     /** @var Scene */
     protected $scene;
 
-    /** @var bool */
-    protected $allowAutoplacedAds = true;
-
     /**
      * @return Scene
      */
@@ -36,25 +33,6 @@ class Section extends Container
         }
 
         $this->scene = $scene;
-        return $this;
-    }
-
-    /**
-     * @return bool
-     */
-    public function getAllowAutoplacedAds(): bool
-    {
-        return $this->allowAutoplacedAds;
-    }
-
-    /**
-     * @param bool $allowAutoplacedAds
-     *
-     * @return static
-     */
-    public function setAllowAutoplacedAds(bool $allowAutoplacedAds = true): self
-    {
-        $this->allowAutoplacedAds = $allowAutoplacedAds;
         return $this;
     }
 
