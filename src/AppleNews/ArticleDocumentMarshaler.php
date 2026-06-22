@@ -30,6 +30,7 @@ use Triniti\AppleNews\Component\Photo;
 use Triniti\AppleNews\Component\Place;
 use Triniti\AppleNews\Component\PullQuote;
 use Triniti\AppleNews\Component\Quote;
+use Triniti\AppleNews\Component\TikTok;
 use Triniti\AppleNews\Component\Tweet;
 use Triniti\AppleNews\Component\Video;
 use Triniti\AppleNews\Exception\ArticleNotPublished;
@@ -1096,7 +1097,19 @@ class ArticleDocumentMarshaler
      */
     protected function transformTiktokEmbedBlock(Message $block, array &$context): ?Component
     {
-        return null;
+        if (!$block->has('tiktok_id') || !$block->has('user_name')) {
+            return null;
+        }
+
+        $tiktokId = $block->get('tiktok_id');
+        $userName = $block->get('user_name');
+
+        $component = new TikTok();
+        $component
+            ->setIdentifier($block->get('etag') . $context['idx'])
+            ->setURL("https://www.tiktok.com/@{$userName}/video/{$tiktokId}");
+
+        return $component;
     }
 
     /**

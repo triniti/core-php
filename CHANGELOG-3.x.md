@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 3.x versions.
 
 
+## v3.4.0
+* Add TikTok block support for Apple News (`TikTok` component and `transformTiktokEmbedBlock` implementation).
+
+
 ## v3.3.0
 * Add allowAutoplacedAds to containers for Apple News
 
