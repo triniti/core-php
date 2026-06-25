@@ -10,22 +10,13 @@ use Assert\Assertion;
  */
 class TikTok extends Component
 {
-    /** @var string */
-    protected $URL;
+    protected ?string $URL = null;
 
-    /**
-     * @return string
-     */
     public function getURL(): ?string
     {
         return $this->URL;
     }
 
-    /**
-     * @param string $url
-     *
-     * @return static
-     */
     public function setURL(string $url): self
     {
         Assertion::url($url);
@@ -33,17 +24,11 @@ class TikTok extends Component
         return $this;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function validate(): void
     {
         Assertion::notNull($this->URL);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function jsonSerialize(): array
     {
         $properties = $this->getSetProperties();
