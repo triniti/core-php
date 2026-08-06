@@ -86,6 +86,7 @@ class ArticleSlottingWatcher implements EventSubscriber
 
         if(empty($newSlotting)) {
             return;
+        }
 
         $command = RemoveArticleSlottingV1::create()
             ->set('except_ref', $event->get('node_ref'));
