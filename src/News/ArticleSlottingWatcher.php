@@ -53,6 +53,7 @@ class ArticleSlottingWatcher implements EventSubscriber
 
         $pbjx->copyContext($event, $command);
         $pbjx->sendAt($command, strtotime('+5 seconds'));
+        $this->clearSlottingKeys($node->get('slotting'));
     }
 
     public function onArticleUpdated(NodeProjectedEvent $pbjxEvent): void
@@ -77,9 +78,14 @@ class ArticleSlottingWatcher implements EventSubscriber
         ksort($oldSlotting);
         ksort($newSlotting);
 
-        if ($oldSlotting === $newSlotting || empty($newSlotting)) {
+        if ($oldSlotting === $newSlotting) {
             return;
         }
+
+        $this->clearSlottingKeys(array_merge($oldSlotting, $newSlotting));
+
+        if(empty($newSlotting)) {
+            return;
 
         $command = RemoveArticleSlottingV1::create()
             ->set('except_ref', $event->get('node_ref'));
@@ -98,8 +104,12 @@ class ArticleSlottingWatcher implements EventSubscriber
             return;
         }
 
+        $this->clearSlottingKeys(array_flip($event->get('slotting_keys', [])));
+    }
+
+    protected function clearSlottingKeys(Array $slottingKeys): void {
         $cacheKeys = [];
-        foreach ($event->get('slotting_keys', []) as $key) {
+        foreach ($slottingKeys as $key => $value) {
             $cacheKeys[] = "news.slotting.{$key}.php";
         }
 
