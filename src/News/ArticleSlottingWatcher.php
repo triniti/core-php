@@ -87,7 +87,7 @@ class ArticleSlottingWatcher implements EventSubscriber
         $slottingKeys = array_keys(array_merge($oldSlotting, $newSlotting));
         $this->clearSlottingKeys($slottingKeys);
 
-        if(empty($newSlotting)) {
+        if (empty($newSlotting)) {
             return;
         }
 
