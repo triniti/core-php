@@ -4,9 +4,7 @@ declare(strict_types=1);
 namespace Triniti\News;
 
 use Gdbots\Ncr\Event\NodeProjectedEvent;
-use Gdbots\Pbj\Message;
 use Gdbots\Pbjx\EventSubscriber;
-use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Triniti\Schemas\News\Command\RemoveArticleSlottingV1;
 
@@ -17,8 +15,6 @@ class ArticleSlottingWatcher implements EventSubscriber
         return [
             'triniti:news:mixin:article.published'        => 'onArticlePublished',
             'triniti:news:mixin:article.updated'          => 'onArticleUpdated',
-            'triniti:news:mixin:article-slotting-removed' => 'onArticleSlottingRemoved',
-            'triniti:news:event:article-slotting-removed' => 'onArticleSlottingRemoved',
         ];
     }
 
@@ -82,12 +78,5 @@ class ArticleSlottingWatcher implements EventSubscriber
 
         $pbjx->copyContext($event, $command);
         $pbjx->sendAt($command, strtotime('+5 seconds'));
-    }
-
-    public function onArticleSlottingRemoved(Message $event, Pbjx $pbjx): void
-    {
-        if ($event->isReplay()) {
-            return;
-        }
     }
 }
