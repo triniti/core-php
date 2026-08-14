@@ -97,12 +97,5 @@ class ArticleSlottingWatcher implements EventSubscriber
         if ($event->isReplay()) {
             return;
         }
-
-        $cacheKeys = [];
-        foreach ($event->get('slotting_keys', []) as $key) {
-            $cacheKeys[] = "news.slotting.{$key}.php";
-        }
-
-        $this->cache->deleteItems($cacheKeys);
     }
 }
