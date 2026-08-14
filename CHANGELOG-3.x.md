@@ -3,7 +3,7 @@ This changelog references the relevant changes done in 3.x versions.
 
 
 ## v3.4.1
-* Clear article slotting cache keys in RemoveArticleSlottingHandler
+* Handle article slotting cache deletion in RemoveArticleSlottingHandler rather than ArticleSlottingWatcher
 
 
 ## v3.4.0
