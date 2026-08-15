@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Triniti\News;
 
 use Gdbots\Ncr\Event\NodeProjectedEvent;
+use Gdbots\Pbj\Message;
 use Gdbots\Pbjx\EventSubscriber;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
 use Triniti\Schemas\News\Command\RemoveArticleSlottingV1;
@@ -13,8 +14,8 @@ class ArticleSlottingWatcher implements EventSubscriber
     public static function getSubscribedEvents(): array
     {
         return [
-            'triniti:news:mixin:article.published'        => 'onArticlePublished',
-            'triniti:news:mixin:article.updated'          => 'onArticleUpdated',
+            'triniti:news:mixin:article.published' => 'onArticlePublished',
+            'triniti:news:mixin:article.updated'   => 'onArticleUpdated',
         ];
     }
 

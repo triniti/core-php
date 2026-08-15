@@ -15,7 +15,7 @@ use Triniti\Schemas\News\Request\SearchArticlesRequestV1;
 
 class RemoveArticleSlottingHandler implements CommandHandler
 {
-    public function __construct(private readonly CacheItemPoolInterface $cache)
+    public function __construct(protected readonly CacheItemPoolInterface $cache)
     {
     }
 
