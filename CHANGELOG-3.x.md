@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 3.x versions.
 
 
+## v3.4.1
+* Handle article slotting cache deletion in RemoveArticleSlottingHandler rather than ArticleSlottingWatcher so we also clear cache even when there are potentially no other articles being unslotted.
+
+
 ## v3.4.0
 * Add TikTok block support for Apple News (`TikTok` component and `transformTiktokEmbedBlock` implementation).
 

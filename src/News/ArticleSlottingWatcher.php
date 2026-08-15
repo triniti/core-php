@@ -6,28 +6,17 @@ namespace Triniti\News;
 use Gdbots\Ncr\Event\NodeProjectedEvent;
 use Gdbots\Pbj\Message;
 use Gdbots\Pbjx\EventSubscriber;
-use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
-use Psr\Cache\CacheItemPoolInterface;
 use Triniti\Schemas\News\Command\RemoveArticleSlottingV1;
 
 class ArticleSlottingWatcher implements EventSubscriber
 {
-    protected CacheItemPoolInterface $cache;
-
     public static function getSubscribedEvents(): array
     {
         return [
-            'triniti:news:mixin:article.published'        => 'onArticlePublished',
-            'triniti:news:mixin:article.updated'          => 'onArticleUpdated',
-            'triniti:news:mixin:article-slotting-removed' => 'onArticleSlottingRemoved',
-            'triniti:news:event:article-slotting-removed' => 'onArticleSlottingRemoved',
+            'triniti:news:mixin:article.published' => 'onArticlePublished',
+            'triniti:news:mixin:article.updated'   => 'onArticleUpdated',
         ];
-    }
-
-    public function __construct(CacheItemPoolInterface $cache)
-    {
-        $this->cache = $cache;
     }
 
     public function onArticlePublished(NodeProjectedEvent $pbjxEvent): void
@@ -90,19 +79,5 @@ class ArticleSlottingWatcher implements EventSubscriber
 
         $pbjx->copyContext($event, $command);
         $pbjx->sendAt($command, strtotime('+5 seconds'));
-    }
-
-    public function onArticleSlottingRemoved(Message $event, Pbjx $pbjx): void
-    {
-        if ($event->isReplay()) {
-            return;
-        }
-
-        $cacheKeys = [];
-        foreach ($event->get('slotting_keys', []) as $key) {
-            $cacheKeys[] = "news.slotting.{$key}.php";
-        }
-
-        $this->cache->deleteItems($cacheKeys);
     }
 }

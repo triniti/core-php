@@ -10,10 +10,15 @@ use Gdbots\Pbj\WellKnown\NodeRef;
 use Gdbots\Pbjx\CommandHandler;
 use Gdbots\Pbjx\Pbjx;
 use Gdbots\Schemas\Ncr\Enum\NodeStatus;
+use Psr\Cache\CacheItemPoolInterface;
 use Triniti\Schemas\News\Request\SearchArticlesRequestV1;
 
 class RemoveArticleSlottingHandler implements CommandHandler
 {
+    public function __construct(protected readonly CacheItemPoolInterface $cache)
+    {
+    }
+
     public static function handlesCuries(): array
     {
         // deprecated mixins, will be removed in 3.x
@@ -32,7 +37,10 @@ class RemoveArticleSlottingHandler implements CommandHandler
         $exceptRef = $command->get('except_ref');
 
         $query = [];
-        foreach ($command->get('slotting') as $key => $value) {
+        $cacheKeys = [];
+        $slotting = $command->get('slotting');
+        foreach ($slotting as $key => $value) {
+            $cacheKeys[] = "news.slotting.{$key}.php";
             $query[] = "slotting.{$key}:{$value}";
         }
 
@@ -55,5 +63,7 @@ class RemoveArticleSlottingHandler implements CommandHandler
             $aggregate->removeArticleSlotting($command);
             $aggregate->commit($context);
         }
+
+        $this->cache->deleteItems($cacheKeys);
     }
 }
