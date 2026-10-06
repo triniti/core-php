@@ -62,6 +62,12 @@ final class CuratorExtension extends AbstractExtension
                 [$this, 'renderPromotionSlots'],
                 ['needs_environment' => true, 'is_safe' => ['html']]
             ),
+
+            new TwigFunction(
+                'curator_make_search_request',
+                [$this, 'makeSearchRequest'],
+                ['needs_environment' => true]
+            ),
         ];
     }
 
@@ -300,6 +306,29 @@ final class CuratorExtension extends AbstractExtension
                 'promotion_ref'  => $promotionRef,
                 'slot'           => $slot,
                 'render_context' => $context instanceof Message ? $context->toArray() : $context,
+            ]);
+        }
+
+        return null;
+    }
+
+    public function makeSearchRequest(Environment $twig, Message $searchRequest): ?Array
+    {
+        try {
+            $searchRequest->set('ctx_causator_ref', $searchRequest->generateMessageRef());
+            $response = $this->pbjx->request($searchRequest);
+            if (!$response->has('nodes')) {
+                return null;
+            }
+
+            return $response->get('nodes');
+        } catch (\Throwable $e) {
+            if ($twig->isDebug()) {
+                throw $e;
+            }
+
+            $this->logger->warning('curator_make_search_request failed.', [
+                'exception' => $e,
             ]);
         }
 
