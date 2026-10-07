@@ -2,6 +2,10 @@
 This changelog references the relevant changes done in 3.x versions.
 
 
+## v3.4.2
+* Add `FlagsetMapper` so flagset key/value maps are not indexed
+
+
 ## v3.4.1
 * Handle article slotting cache deletion in RemoveArticleSlottingHandler rather than ArticleSlottingWatcher so we also clear cache even when there are potentially no other articles being unslotted.
 
