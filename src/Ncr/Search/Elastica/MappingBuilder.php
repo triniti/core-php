@@ -17,6 +17,15 @@ class MappingBuilder extends BaseMappingBuilder
             $this->properties["d__{$dow}_end_at"] = ['type' => 'integer'];
         }
 
+        foreach (['booleans', 'floats', 'ints', 'strings', 'trinaries'] as $fieldName) {
+            $this->properties[$fieldName] = [
+                'type'    => 'object',
+                'enabled' => false,
+            ];
+
+            unset($this->dynamicTemplates["{$fieldName}_template"]);
+        }
+
         return parent::build();
     }
 

@@ -3,7 +3,7 @@ This changelog references the relevant changes done in 3.x versions.
 
 
 ## v3.4.2
-* Add `FlagsetMapper` so flagset key/value maps are not indexed
+* Disable mapping and indexing of keys within flagset maps (`booleans`, `floats`, `ints`, `strings`, `trinaries`).
 
 
 ## v3.4.1
