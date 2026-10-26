@@ -16,6 +16,8 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\RequestInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Triniti\Notify\Exception\RequiredFieldNotSet;
 use Triniti\Notify\Exception\UnableToFetchAccessToken;
 use Triniti\Notify\Notifier;
@@ -30,13 +32,15 @@ abstract class AbstractFcmNotifier implements Notifier
     protected Flags $flags;
     protected ?GuzzleClient $guzzleClient = null;
     protected Key $key;
+    protected LoggerInterface $logger;
     protected string $accessToken = '';
     protected array $authConfig = [];
 
-    public function __construct(Flags $flags, Key $key)
+    public function __construct(Flags $flags, Key $key, ?LoggerInterface $logger = null)
     {
         $this->flags = $flags;
         $this->key = $key;
+        $this->logger = $logger ?: new NullLogger();
     }
 
     public function send(Message $notification, Message $app, ?Message $content = null): Message
@@ -58,11 +62,6 @@ abstract class AbstractFcmNotifier implements Notifier
             $result = $this->sendNotification($payload);
             $response = $result['response'] ?? [];
             $result = NotifierResultV1::fromArray($result);
-
-            if (isset($response['name'])) {
-                preg_match('/.*\/(\d+)/', $response['name'], $matches);
-                $result->addToMap('tags', 'fcm_message_id', $matches[1] ?? '');
-            }
         } catch (\Throwable $e) {
             $code = $e->getCode() > 0 ? $e->getCode() : Code::UNKNOWN->value;
 
@@ -71,6 +70,19 @@ abstract class AbstractFcmNotifier implements Notifier
                 ->set('code', $code)
                 ->set('error_name', ClassUtil::getShortName($e))
                 ->set('error_message', substr($e->getMessage(), 0, 2048));
+        }
+
+        if (isset($response['name'])) {
+            try {
+                $result->addToMap('tags', 'fcm_message_id', $response['name']);
+            } catch (\Throwable $e) {
+                // failure to save fcm_message_id means Firebase changed their message pattern
+                // and it no longer adheres to the regex in gdbots:common:mixin:taggable
+                $this->logger->warning('Failed to save fcm_message_id tag [{fcm_message_id}].', [
+                    'exception'      => $e,
+                    'fcm_message_id' => $response['name'],
+                ]);
+            }
         }
 
         return $result;
