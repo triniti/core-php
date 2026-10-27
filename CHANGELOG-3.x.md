@@ -3,7 +3,7 @@ This changelog references the relevant changes done in 3.x versions.
 
 
 ## v3.4.3
-* Fix bug saving fcm_message_id when sending notifications
+* Fix error saving fcm_message_id when sending notifications
 
 
 ## v3.4.2
