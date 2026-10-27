@@ -73,14 +73,16 @@ abstract class AbstractFcmNotifier implements Notifier
         }
 
         if (isset($response['name'])) {
+            $parts = explode('/', $response['name']);
+            $fcmMessageId = preg_replace('/\D/', '', end($parts));
             try {
-                $result->addToMap('tags', 'fcm_message_id', $response['name']);
+                $result->addToMap('tags', 'fcm_message_id', $fcmMessageId);
             } catch (\Throwable $e) {
                 // failure to save fcm_message_id means Firebase changed their message pattern
                 // and it no longer adheres to the regex in gdbots:common:mixin:taggable
                 $this->logger->warning('Failed to save fcm_message_id tag [{fcm_message_id}].', [
                     'exception'      => $e,
-                    'fcm_message_id' => $response['name'],
+                    'fcm_message_id' => $fcmMessageId,
                 ]);
             }
         }
