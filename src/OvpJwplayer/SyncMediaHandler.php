@@ -493,17 +493,19 @@ class SyncMediaHandler implements CommandHandler
             'title'        => $title,
         ];
 
-        $parameters['date'] = NodeStatus::PUBLISHED->value === $node->fget('status')
+        $isPublished = NodeStatus::PUBLISHED->value === $node->fget('status');
+        $parameters['date'] = $isPublished
             ? $node->get('published_at')->getTimeStamp()
             : $node->get('created_at')->getSeconds();
 
+        $expiresAt = $node->get('expires_at');
+        if ($isPublished && $expiresAt && $expiresAt->getTimestamp() <= time()) {
+            $expiresAt = null;
+        }
+
         $isUpdate = !empty($media);
-        if ($isUpdate) { // cannot send null param on create
-            $parameters['expires_date'] = $node->has('expires_at')
-                ? $node->get('expires_at')->getTimestamp()
-                : null;
-        } else if ($node->has('expires_at')) {
-            $parameters['expires_date'] = $node->get('expires_at')->getTimestamp();
+        if ($isUpdate || null !== $expiresAt) { // cannot send null param on create
+            $parameters['expires_date'] = $expiresAt?->getTimestamp();
         }
 
         $tags = [
