@@ -500,6 +500,7 @@ class SyncMediaHandler implements CommandHandler
 
         $expiresAt = $node->get('expires_at');
         if ($isPublished && $expiresAt && $expiresAt->getTimestamp() <= time()) {
+            // published status takes precedence over a past expiration date
             $expiresAt = null;
         }
 
