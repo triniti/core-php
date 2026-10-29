@@ -25,6 +25,7 @@ use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Utils;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Triniti\Dam\UrlProvider as DamUrlProvider;
 use Triniti\Ovp\ArtifactUrlProvider;
 use Triniti\Ovp\VideoAggregate;
@@ -901,5 +902,104 @@ final class SyncMediaHandlerTest extends AbstractPbjxTest
         $this->assertInstanceOf(SyncMediaV1::class, $scheduled);
         $this->assertTrue($scheduled->get('node_ref')->equals($nodeRef));
         $this->assertTrue($scheduled->get('ctx_retries') === 1 + $command->get('ctx_retries'));
+    }
+
+    #[DataProvider('providerTestRepublishedAt')]
+    public function testUpdatePublishedWithPastExpiresAtClearsExpiresDate(string $publishedAt): void
+    {
+        $queryParams = $this->syncVideoAndGetQueryParams([
+            'jwplayer_media_id' => 'republished',
+            'status'            => NodeStatus::PUBLISHED,
+            'published_at'      => new \DateTime($publishedAt),
+            'expires_at'        => new \DateTime('-1 hour'),
+        ]);
+
+        $this->assertArrayHasKey('expires_date', $queryParams);
+        $this->assertSame('', $queryParams['expires_date']);
+    }
+
+    public static function providerTestRepublishedAt(): array
+    {
+        return [
+            'preserved publication date' => ['-2 hours'],
+            'refreshed publication date' => ['now'],
+        ];
+    }
+
+    public function testUpdatePublishedWithFutureExpiresAtKeepsExpiresDate(): void
+    {
+        $expiresAt = new \DateTime('+1 hour');
+        $queryParams = $this->syncVideoAndGetQueryParams([
+            'jwplayer_media_id' => 'published',
+            'status'            => NodeStatus::PUBLISHED,
+            'published_at'      => new \DateTime(),
+            'expires_at'        => $expiresAt,
+        ]);
+
+        $this->assertSame((string)$expiresAt->getTimestamp(), $queryParams['expires_date']);
+    }
+
+    public function testUpdateExpiredWithPastExpiresAtKeepsExpiresDate(): void
+    {
+        $expiresAt = new \DateTime('-1 hour');
+        $queryParams = $this->syncVideoAndGetQueryParams([
+            'jwplayer_media_id' => 'expired',
+            'status'            => NodeStatus::EXPIRED,
+            'expires_at'        => $expiresAt,
+        ]);
+
+        $this->assertSame((string)$expiresAt->getTimestamp(), $queryParams['expires_date']);
+    }
+
+    public function testCreatePublishedWithPastExpiresAtOmitsExpiresDate(): void
+    {
+        $queryParams = $this->syncVideoAndGetQueryParams([
+            'status'       => NodeStatus::PUBLISHED,
+            'published_at' => new \DateTime(),
+            'expires_at'   => new \DateTime('-1 hour'),
+        ]);
+
+        $this->assertArrayNotHasKey('expires_date', $queryParams);
+    }
+
+    protected function syncVideoAndGetQueryParams(array $fields): array
+    {
+        $isUpdate = isset($fields['jwplayer_media_id']);
+        $stream = Utils::streamFor(json_encode([
+            'video' => [
+                'key' => $fields['jwplayer_media_id'] ?? 'created',
+            ],
+        ]));
+        $responses = $isUpdate
+            ? [new Response(200, [], $stream), new Response(200, [])]
+            : [new Response(200, [], $stream)];
+        $historyContainer = [];
+        $handlerStack = HandlerStack::create(new MockHandler($responses));
+        $handlerStack->push(Middleware::history($historyContainer));
+        $httpClient = new HttpClient(['handler' => $handlerStack]);
+        $damUrlProvider = new DamUrlProvider();
+        $handler = new SyncMediaHandler(
+            'key',
+            'secret',
+            $this->ncr,
+            $damUrlProvider,
+            new ArtifactUrlProvider($damUrlProvider),
+            new Flags($this->ncr, 'acme:flagset:test'),
+            $httpClient
+        );
+        $node = VideoV1::fromArray(array_merge([
+            '_id'           => '7afcc2f1-9654-46d1-8fc1-b0511df257db',
+            'mezzanine_url' => 'https://dam.test.acme.com/video/63/o/2020/01/23/63b44768ab1946ff99e42593e30816ee.mp4',
+            'order_date'    => new \DateTime(),
+        ], $fields));
+        $this->ncr->putNode($node);
+        $command = SyncMediaV1::create()->set('node_ref', $node->generateNodeRef());
+        $handler->handleCommand($command, $this->pbjx);
+
+        /** @var Request $request */
+        $request = end($historyContainer)['request'];
+        $this->assertStringEndsWith($isUpdate ? '/videos/update' : '/videos/create', $request->getUri()->getPath());
+        parse_str($request->getUri()->getQuery(), $queryParams);
+        return $queryParams;
     }
 }
