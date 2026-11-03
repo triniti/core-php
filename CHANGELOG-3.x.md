@@ -2,6 +2,11 @@
 This changelog references the relevant changes done in 3.x versions.
 
 
+## v3.4.3
+* Fix republished videos remaining expired in Jwplayer by omitting past `expires_at` for published videos.
+* Fix error saving fcm_message_id when sending notifications
+
+
 ## v3.4.2
 * Disable mapping and indexing of keys within flagset maps (`booleans`, `floats`, `ints`, `strings`, `trinaries`).
 
