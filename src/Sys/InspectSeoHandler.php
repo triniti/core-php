@@ -118,13 +118,22 @@ class InspectSeoHandler implements CommandHandler
             $service = new \Google_Service_SearchConsole($client);
             $response = $service->urlInspection_index->inspect($request);
         } catch (\Throwable $e) {
-            $this->logger->error('An error occurred in checkIndexStatus for google.', [
+            $context = [
                 'exception'   => $e,
                 'node_ref'    => $node->generateNodeRef(),
                 'url'         => $url,
                 'retry_count' => $command->get('ctx_retries'),
                 'stack_trace' => $e->getTraceAsString(),
-            ]);
+            ];
+
+            $isGoogleInternalError = $e instanceof \Google\Service\Exception
+                && (json_decode($e->getMessage(), true)['error']['message'] ?? null) === 'Internal error encountered.';
+
+            if ($isGoogleInternalError) {
+                $this->logger->warning('Google internal error during checkIndexStatus.', $context);
+            } else {
+                $this->logger->error('Error during checkIndexStatus for google.', $context);
+            }
         }
 
         if ($response === null) {
